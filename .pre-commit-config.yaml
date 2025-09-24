@@ -1,0 +1,39 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+#      - id: no-commit-to-branch
+#        args: ['--branch', 'main']
+#        exclude: '^main$'
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: requirements-txt-fixer
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.6
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+          - --line-length=120
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest --cov --cov-config=.coveragerc
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject

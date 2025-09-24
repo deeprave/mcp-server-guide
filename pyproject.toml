@@ -1,0 +1,41 @@
+[project]
+name = "mcpguide"
+version = "0.5.0"
+description = "Simple MCP server for guidelines and project rules"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.3.0",
+    "mcp[cli]>=1.14.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff", "mypy", "pre-commit"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcpguide"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/mcpguide",
+    "--cov-report=term-missing",
+]
+
+[tool.ruff]
+src = ["src"]
+target-version = "py313"
+line-length = 120
+
+[tool.mypy]
+python_version = "3.13"
+packages = ["src"]
+strict = true
