@@ -10,6 +10,7 @@ import click
 @dataclass
 class ConfigOption:
     """Configuration option with CLI and environment variable support."""
+
     name: str
     cli_short: str
     cli_long: str
@@ -30,7 +31,7 @@ class Config:
             env_var="MCP_DOCROOT",
             default=".",
             is_file=False,
-            description="Document root directory"
+            description="Document root directory",
         )
 
         self.guidesdir = ConfigOption(
@@ -40,7 +41,7 @@ class Config:
             env_var="MCP_GUIDEDIR",
             default="guide/",
             is_file=False,
-            description="Guidelines directory"
+            description="Guidelines directory",
         )
 
         self.guide = ConfigOption(
@@ -50,7 +51,7 @@ class Config:
             env_var="MCP_GUIDE",
             default="guidelines",
             is_file=True,
-            description="Guidelines file (also --guidelines)"
+            description="Guidelines file (also --guidelines)",
         )
 
         self.langdir = ConfigOption(
@@ -60,7 +61,7 @@ class Config:
             env_var="MCP_LANGDIR",
             default="lang/",
             is_file=False,
-            description="Languages directory"
+            description="Languages directory",
         )
 
         self.language = ConfigOption(
@@ -70,7 +71,7 @@ class Config:
             env_var="MCP_LANGUAGE",
             default="",
             is_file=True,
-            description="Language file (also --language)"
+            description="Language file (also --language)",
         )
 
         self.projdir = ConfigOption(
@@ -80,7 +81,7 @@ class Config:
             env_var="MCP_PROJDIR",
             default="project/",
             is_file=False,
-            description="Project directory"
+            description="Project directory",
         )
 
         self.project = ConfigOption(
@@ -90,7 +91,7 @@ class Config:
             env_var="MCP_PROJECT",
             default=get_project_name,
             is_file=True,
-            description="Project context file (also --context)"
+            description="Project context file (also --context)",
         )
 
 
@@ -100,7 +101,7 @@ def create_click_command(config: Config) -> click.Command:
     # Get all config options dynamically
     options = []
     for attr_name in dir(config):
-        if not attr_name.startswith('_'):
+        if not attr_name.startswith("_"):
             attr = getattr(config, attr_name)
             if isinstance(attr, ConfigOption):
                 options.append(attr)
@@ -114,13 +115,11 @@ def create_click_command(config: Config) -> click.Command:
     for option in options:
         default_val = option.default() if callable(option.default) else option.default
         main = click.option(
-            option.cli_short, option.cli_long,
-            envvar=option.env_var,
-            default=default_val,
-            help=option.description
+            option.cli_short, option.cli_long, envvar=option.env_var, default=default_val, help=option.description
         )(main)
 
     return main
+
 
 def resolve_env_vars(config: Config) -> dict[str, str]:
     """Resolve environment variables with fallbacks to defaults."""
@@ -128,7 +127,7 @@ def resolve_env_vars(config: Config) -> dict[str, str]:
 
     # Get all config options dynamically
     for attr_name in dir(config):
-        if not attr_name.startswith('_'):
+        if not attr_name.startswith("_"):
             attr = getattr(config, attr_name)
             if isinstance(attr, ConfigOption):
                 # Check environment variable first, then use default
@@ -140,6 +139,8 @@ def resolve_env_vars(config: Config) -> dict[str, str]:
                     resolved[attr.name] = default_val
 
     return resolved
+
+
 def resolve_path(path: str, docroot: str, is_file: bool) -> str:
     """Resolve path relative to docroot or use absolute path."""
     path_obj = Path(path)
@@ -153,12 +154,12 @@ def resolve_path(path: str, docroot: str, is_file: bool) -> str:
 
     # Add .md extension for files if missing
     if is_file and not resolved.suffix:
-        resolved = resolved.with_suffix('.md')
+        resolved = resolved.with_suffix(".md")
 
     # Preserve trailing slash for directories
     result = str(resolved)
-    if not is_file and path.endswith('/') and not result.endswith('/'):
-        result += '/'
+    if not is_file and path.endswith("/") and not result.endswith("/"):
+        result += "/"
 
     return result
 
@@ -166,12 +167,14 @@ def resolve_path(path: str, docroot: str, is_file: bool) -> str:
 def get_project_name() -> str:
     """Get project name from current directory basename."""
     return Path.cwd().name
+
+
 def validate_config(config_values: dict[str, str]) -> bool:
     """Validate configuration values for file and directory existence."""
     config = Config()
 
     for attr_name in dir(config):
-        if not attr_name.startswith('_'):
+        if not attr_name.startswith("_"):
             attr = getattr(config, attr_name)
             if isinstance(attr, ConfigOption) and attr.name in config_values:
                 path_value = config_values[attr.name]
@@ -188,3 +191,55 @@ def validate_config(config_values: dict[str, str]) -> bool:
                     return False
 
     return True
+
+
+def main() -> click.Command:
+    """Main CLI entry point for MCP server."""
+    config = Config()
+
+    # Get all config options dynamically
+    options = []
+    for attr_name in dir(config):
+        if not attr_name.startswith("_"):
+            attr = getattr(config, attr_name)
+            if isinstance(attr, ConfigOption):
+                options.append(attr)
+
+    @click.command()
+    def cli_main(**kwargs: Any) -> None:
+        """MCP server with configurable paths."""
+        from .server import create_server_with_config
+
+        # Resolve configuration from CLI args, env vars, and defaults
+        resolved_config = {}
+        for option in options:
+            # Use CLI arg if provided, otherwise resolve from env/default
+            if option.name in kwargs and kwargs[option.name] is not None:
+                resolved_config[option.name] = kwargs[option.name]
+            else:
+                env_value = os.environ.get(option.env_var)
+                if env_value is not None:
+                    resolved_config[option.name] = env_value
+                else:
+                    default_val = option.default() if callable(option.default) else option.default
+                    resolved_config[option.name] = default_val
+
+        # Create and start server
+        create_server_with_config(resolved_config)
+        # TODO: Actually start the MCP server
+        click.echo(f"Starting MCP server with config: {resolved_config}")
+
+    # Add options dynamically
+    for option in options:
+        default_val = option.default() if callable(option.default) else option.default
+        cli_main = click.option(
+            option.cli_short, option.cli_long, envvar=option.env_var, default=default_val, help=option.description
+        )(cli_main)
+
+    return cli_main
+
+
+def cli_main() -> None:
+    """Console script entry point."""
+    command = main()
+    command()

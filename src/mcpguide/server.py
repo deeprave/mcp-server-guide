@@ -9,3 +9,10 @@ defaults = {
     "project": "./project/",
     "lang": "./lang/",
 }
+
+
+def create_server_with_config(config: dict[str, str]) -> FastMCP:
+    """Create MCP server instance with configuration."""
+    server = FastMCP(name="Developer Guide MCP")
+    # TODO: Configure server with resolved config values
+    return server

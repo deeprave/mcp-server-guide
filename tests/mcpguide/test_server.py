@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from mcpguide.server import mcp, defaults
+from mcpguide.server import mcp, defaults, create_server_with_config
 
 
 def test_mcp_instance_exists():
@@ -47,3 +47,21 @@ def test_lang_directory_exists(lang_dir: Path):
     """Test lang directory exists."""
     assert lang_dir.exists()
     assert lang_dir.is_dir()
+
+
+def test_create_server_with_config():
+    """Test creating server with configuration."""
+    resolved_config = {
+        "docroot": ".",
+        "guidesdir": "guide/",
+        "guide": "guidelines",
+        "langdir": "lang/",
+        "language": "python",
+        "projdir": "project/",
+        "project": "mcpguide",
+    }
+
+    server = create_server_with_config(resolved_config)
+    assert server is not None
+    assert hasattr(server, "name")
+    assert server.name == "Developer Guide MCP"
