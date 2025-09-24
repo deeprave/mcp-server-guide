@@ -57,7 +57,7 @@ class Config:
         self.langdir = ConfigOption(
             name="langdir",
             cli_short="-l",
-            cli_long="--langs",
+            cli_long="--langsdir",
             env_var="MCP_LANGDIR",
             default="lang/",
             is_file=False,
@@ -210,12 +210,20 @@ def main() -> click.Command:
         """MCP server with configurable paths."""
         from .server import create_server_with_config
 
+        # Create mapping from CLI parameter names to ConfigOption names
+        param_to_option = {}
+        for option in options:
+            # Extract parameter name from CLI long option (remove -- and convert to valid Python identifier)
+            param_name = option.cli_long.lstrip('--')
+            param_to_option[param_name] = option.name
+
         # Resolve configuration from CLI args, env vars, and defaults
         resolved_config = {}
         for option in options:
-            # Use CLI arg if provided, otherwise resolve from env/default
-            if option.name in kwargs and kwargs[option.name] is not None:
-                resolved_config[option.name] = kwargs[option.name]
+            # Check if CLI arg was provided using the parameter mapping
+            cli_param_name = option.cli_long.lstrip('--')
+            if cli_param_name in kwargs and kwargs[cli_param_name] is not None:
+                resolved_config[option.name] = kwargs[cli_param_name]
             else:
                 env_value = os.environ.get(option.env_var)
                 if env_value is not None:
