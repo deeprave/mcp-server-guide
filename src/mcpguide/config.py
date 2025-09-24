@@ -1,5 +1,6 @@
 """Configuration module for MCP server."""
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Any
@@ -87,7 +88,7 @@ class Config:
             cli_short="-P",
             cli_long="--project",
             env_var="MCP_PROJECT",
-            default=lambda: Path.cwd().name,
+            default=get_project_name,
             is_file=True,
             description="Project context file (also --context)"
         )
@@ -120,3 +121,70 @@ def create_click_command(config: Config) -> click.Command:
         )(main)
 
     return main
+
+def resolve_env_vars(config: Config) -> dict[str, str]:
+    """Resolve environment variables with fallbacks to defaults."""
+    resolved = {}
+
+    # Get all config options dynamically
+    for attr_name in dir(config):
+        if not attr_name.startswith('_'):
+            attr = getattr(config, attr_name)
+            if isinstance(attr, ConfigOption):
+                # Check environment variable first, then use default
+                env_value = os.environ.get(attr.env_var)
+                if env_value is not None:
+                    resolved[attr.name] = env_value
+                else:
+                    default_val = attr.default() if callable(attr.default) else attr.default
+                    resolved[attr.name] = default_val
+
+    return resolved
+def resolve_path(path: str, docroot: str, is_file: bool) -> str:
+    """Resolve path relative to docroot or use absolute path."""
+    path_obj = Path(path)
+
+    # If absolute path, use as-is
+    if path_obj.is_absolute():
+        return str(path_obj)
+
+    # Resolve relative to docroot
+    resolved = Path(docroot) / path
+
+    # Add .md extension for files if missing
+    if is_file and not resolved.suffix:
+        resolved = resolved.with_suffix('.md')
+
+    # Preserve trailing slash for directories
+    result = str(resolved)
+    if not is_file and path.endswith('/') and not result.endswith('/'):
+        result += '/'
+
+    return result
+
+
+def get_project_name() -> str:
+    """Get project name from current directory basename."""
+    return Path.cwd().name
+def validate_config(config_values: dict[str, str]) -> bool:
+    """Validate configuration values for file and directory existence."""
+    config = Config()
+
+    for attr_name in dir(config):
+        if not attr_name.startswith('_'):
+            attr = getattr(config, attr_name)
+            if isinstance(attr, ConfigOption) and attr.name in config_values:
+                path_value = config_values[attr.name]
+                path_obj = Path(path_value)
+
+                # Check if path exists
+                if not path_obj.exists():
+                    return False
+
+                # Check if it's the right type (file vs directory)
+                if attr.is_file and not path_obj.is_file():
+                    return False
+                elif not attr.is_file and not path_obj.is_dir():
+                    return False
+
+    return True

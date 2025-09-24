@@ -1,9 +1,10 @@
 """Tests for configuration module."""
 
+import os
 import click
 from click.testing import CliRunner
 
-from mcpguide.config import ConfigOption, Config, create_click_command
+from mcpguide.config import ConfigOption, Config, create_click_command, resolve_env_vars
 
 
 def test_config_option_creation():
@@ -74,3 +75,143 @@ def test_click_command_option_parsing():
     # Test with custom values
     result = runner.invoke(command, ['--docroot', '/custom/path', '--guidesdir', 'custom_guide/'])
     assert result.exit_code == 0
+
+
+def test_resolve_env_vars():
+    """Test environment variable resolution with fallbacks."""
+    config = Config()
+
+    # Test with no env vars set - should use defaults
+    resolved = resolve_env_vars(config)
+    assert resolved['docroot'] == '.'
+    assert resolved['guidesdir'] == 'guide/'
+
+    # Test with env vars set
+    os.environ['MCP_DOCROOT'] = '/custom/root'
+    os.environ['MCP_GUIDEDIR'] = '/custom/guide'
+
+    try:
+        resolved = resolve_env_vars(config)
+        assert resolved['docroot'] == '/custom/root'
+        assert resolved['guidesdir'] == '/custom/guide'
+        # Other values should still be defaults
+        assert resolved['guide'] == 'guidelines'
+    finally:
+        # Clean up
+        del os.environ['MCP_DOCROOT']
+        del os.environ['MCP_GUIDEDIR']
+
+def test_cli_args_override_env_vars():
+    """Test that CLI arguments override environment variables."""
+    config = Config()
+    command = create_click_command(config)
+    runner = CliRunner()
+
+    # Set environment variable
+    os.environ['MCP_DOCROOT'] = '/env/path'
+
+    try:
+        # CLI arg should override env var
+        result = runner.invoke(command, ['--docroot', '/cli/path'])
+        assert result.exit_code == 0
+
+        # Test that env var is used when no CLI arg provided
+        result = runner.invoke(command, [])
+        assert result.exit_code == 0
+    finally:
+        # Clean up
+        del os.environ['MCP_DOCROOT']
+def test_resolve_path():
+    """Test path resolution logic."""
+    from mcpguide.config import resolve_path
+
+    # Test absolute path - should use as-is
+    abs_path = "/absolute/path/file.txt"
+    result = resolve_path(abs_path, "/docroot", is_file=True)
+    assert result == "/absolute/path/file.txt"
+
+    # Test relative path - should resolve relative to docroot
+    rel_path = "guide/guidelines"
+    result = resolve_path(rel_path, "/docroot", is_file=True)
+    assert result == "/docroot/guide/guidelines.md"
+
+    # Test directory path - no extension added
+    dir_path = "guide/"
+    result = resolve_path(dir_path, "/docroot", is_file=False)
+    assert result == "/docroot/guide/"
+
+
+def test_get_project_name():
+    """Test project name extraction from current directory."""
+    from mcpguide.config import get_project_name
+
+    # Should return basename of current directory
+    project_name = get_project_name()
+    assert isinstance(project_name, str)
+    assert len(project_name) > 0
+    assert project_name == "mcpguide"  # Current directory name
+def test_resolve_path_edge_cases():
+    """Test edge cases for path resolution."""
+    from mcpguide.config import resolve_path
+
+    # Test file with existing extension - should not add .md
+    file_with_ext = "config.yaml"
+    result = resolve_path(file_with_ext, "/docroot", is_file=True)
+    assert result == "/docroot/config.yaml"
+
+    # Test empty path
+    result = resolve_path("", "/docroot", is_file=False)
+    assert result == "/docroot"
+
+    # Test path with no trailing slash for directory
+    dir_no_slash = "guide"
+    result = resolve_path(dir_no_slash, "/docroot", is_file=False)
+    assert result == "/docroot/guide"
+def test_validate_config():
+    """Test configuration validation."""
+    from mcpguide.config import validate_config
+
+    # Test with valid configuration (existing directories)
+    valid_config = {
+        'docroot': '.',
+        'guidesdir': 'guide/',
+        'guide': 'guide/guidelines.md',
+        'langdir': 'lang/',
+        'projdir': 'project/'
+    }
+
+    # Should not raise any exceptions
+    result = validate_config(valid_config)
+    assert result is True
+
+    # Test with invalid directory
+    invalid_config = {
+        'docroot': '.',
+        'guidesdir': 'nonexistent/',
+        'guide': 'guide/guidelines.md'
+    }
+
+    # Should return False or raise exception
+    result = validate_config(invalid_config)
+    assert result is False
+def test_validate_config_file_type_mismatch():
+    """Test validation with file/directory type mismatches."""
+    from mcpguide.config import validate_config
+
+    # Test directory where file expected (guide should be a file)
+    config_dir_as_file = {
+        'docroot': '.',
+        'guide': 'guide/'  # This is a directory, but guide should be a file
+    }
+
+    result = validate_config(config_dir_as_file)
+    assert result is False
+
+    # Test file where directory expected (guidesdir should be a directory)
+    config_file_as_dir = {
+        'docroot': '.',
+        'guidesdir': 'guide/guidelines.md'  # This is a file, but guidesdir should be a directory
+    }
+
+    result = validate_config(config_file_as_dir)
+    assert result is False
