@@ -21,6 +21,22 @@ class SessionManager:
     def set_current_project(self, project_name: str) -> None:
         self.current_project = project_name
 
+    def load_project_from_path(self, project_path) -> None:
+        """Load project configuration from path."""
+        from .project_config import ProjectConfigManager
+        manager = ProjectConfigManager()
+        config = manager.load_config(project_path)
+        if config:
+            self.set_current_project(config.project)
+            # Load config into session state
+            for key, value in config.to_dict().items():
+                if key != "project":
+                    self.session_state.set_project_config(config.project, key, value)
+
+    def get_effective_config(self, project_name: str) -> Dict[str, Any]:
+        """Get effective configuration combining file and session overrides."""
+        return self.session_state.get_project_config(project_name)
+
 
 # Global session manager instance
 _session_manager = SessionManager()
