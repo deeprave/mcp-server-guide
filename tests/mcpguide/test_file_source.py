@@ -86,10 +86,10 @@ def test_file_accessor_file_exists():
     exists = accessor.file_exists("README.md", server_source)
     assert isinstance(exists, bool)
 
-    # HTTP file existence (should return True for now)
+    # HTTP file existence (now works in Phase 2)
     http_source = FileSource("http", "https://example.com/")
     exists = accessor.file_exists("guide.md", http_source)
-    assert exists is True  # HTTP existence checking comes in Phase 2
+    assert isinstance(exists, bool)  # Should return boolean (likely False for non-existent URL)
 
 
 def test_file_accessor_read_file():

@@ -1,8 +1,8 @@
 """File source abstraction for hybrid file access (Issue 003 Phase 1)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional, Dict
 from .session import resolve_session_path
 
 
@@ -13,6 +13,7 @@ class FileSource:
     base_path: str
     cache_ttl: int = 3600
     cache_enabled: bool = True
+    auth_headers: Optional[Dict[str, str]] = field(default_factory=dict)
 
     @classmethod
     def from_url(cls, url: str) -> "FileSource":
@@ -87,8 +88,11 @@ class FileAccessor:
     def file_exists(self, relative_path: str, source: FileSource) -> bool:
         """Check if file exists."""
         if source.type == "http":
-            # HTTP existence checking comes in Phase 2
-            return True
+            # HTTP existence checking
+            from .http_client import HttpClient
+            full_url = self.resolve_path(relative_path, source)
+            client = HttpClient(timeout=30, headers=source.auth_headers)
+            return client.exists(full_url)
         else:
             # Local/server file existence
             full_path = self.resolve_path(relative_path, source)
@@ -97,8 +101,11 @@ class FileAccessor:
     def read_file(self, relative_path: str, source: FileSource) -> str:
         """Read file content."""
         if source.type == "http":
-            # HTTP reading comes in Phase 2
-            raise NotImplementedError("HTTP file reading not yet implemented")
+            # HTTP reading
+            from .http_client import HttpClient
+            full_url = self.resolve_path(relative_path, source)
+            client = HttpClient(timeout=30, headers=source.auth_headers)
+            return client.get(full_url)
         else:
             # Local/server file reading
             full_path = self.resolve_path(relative_path, source)
