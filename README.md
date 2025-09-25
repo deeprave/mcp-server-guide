@@ -2,47 +2,6 @@
 
 This is a MCP server that provides developer support by providing a common resource for AI agents with hybrid file access, HTTP caching, and persistent project configuration.
 
-## 🏗️ **Architecture**
-
-### **Hybrid File Access System**
-```python
-# Supports all file source types with intelligent caching
-server = create_server(cache_dir="/tmp/cache")
-
-# URL schemes supported:
-# - local:./path (client filesystem)
-# - server:./path (server filesystem)
-# - file://./path (context-aware files)
-# - https://example.com/path (HTTP with caching & validation)
-# - ./path (context-aware defaults)
-```
-
-### **Persistent Configuration**
-```python
-# Automatic project detection and configuration
-config = ProjectConfig(
-    project="my-app",
-    guide="https://wiki.company.com/guide.md",
-    language="typescript",
-    tools=["eslint", "jest"]
-)
-
-# Saves to .mcpguide.config.json in project root
-manager = ProjectConfigManager()
-manager.save_config(Path("."), config)
-
-# Real-time file watching
-watcher = manager.watch_config(project_root, on_config_change)
-```
-
-### **Session Management**
-```python
-# Context-aware session handling
-session = SessionManager()
-session.load_project_from_path(project_root)
-effective_config = session.get_effective_config("my-app")
-```
-
 ## Installation
 
 ```bash
@@ -81,16 +40,6 @@ mcpguide -d /docs -g guides/ -l langs/ -L python -p projects/
 | `-L` | `--lang` | `MCP_LANGUAGE` | `` | Language file (also --language) |
 | `-p` | `--projdir` | `MCP_PROJDIR` | `project/` | Project directory |
 | `-P` | `--project` | `MCP_PROJECT` | `<current-dir-name>` | Project context file (also --context) |
-
-### Configuration Precedence
-
-Configuration values are resolved in the following order (highest to lowest priority):
-
-1. **CLI Arguments** - Explicitly provided command line options
-2. **Environment Variables** - Environment variables with `MCP_` prefix
-3. **Persistent Configuration** - `.mcpguide.config.json` files
-4. **Session Overrides** - Runtime session modifications
-5. **Defaults** - Built-in default values
 
 ### Environment Variables
 
@@ -259,3 +208,7 @@ uv run mypy src
 # Formatting
 uv run ruff format src tests
 ```
+
+## Technical Documentation
+
+For technical details about the architecture and implementation, see [ARCHITECTURE.md](ARCHITECTURE.md).
