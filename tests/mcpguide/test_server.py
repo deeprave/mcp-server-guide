@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from mcpguide.server import mcp, defaults, create_server_with_config
+from mcpguide.server import mcp, create_server_with_config
 
 
 def test_mcp_instance_exists():

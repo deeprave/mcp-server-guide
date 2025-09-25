@@ -33,7 +33,7 @@ def start_mcp_server(mode: str, config: dict) -> str:
     from .server import mcp, create_server_with_config
 
     # Create server with resolved configuration
-    server = create_server_with_config(config)
+    create_server_with_config(config)
 
     if mode == "stdio":
         # Start MCP server in stdio mode
@@ -51,10 +51,21 @@ def start_mcp_server(mode: str, config: dict) -> str:
 
         parsed = urllib.parse.urlparse(sse_url)
         host = parsed.hostname or "localhost"
-        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+
+        # Determine port: explicit port > default for protocol > 8080 fallback
+        if parsed.port:
+            port = parsed.port
+        elif parsed.scheme == "https":
+            port = 443
+        elif parsed.scheme == "http":
+            port = 80
+        else:
+            port = 8080  # Fallback for development
 
         try:
-            mcp.run_server(host=host, port=port)
+            # Use uvicorn to run the FastMCP server
+            import uvicorn
+            uvicorn.run(mcp, host=host, port=port)
         except KeyboardInterrupt:
             # Graceful shutdown on Ctrl+C
             pass
@@ -109,6 +120,19 @@ def main() -> click.Command:
         if mode_config:
             resolved_config["mode_config"] = mode_config
 
+        # Setup logging based on configuration
+        from .logging_config import setup_logging
+
+        log_level = resolved_config.get('log_level', 'OFF')
+        log_file = resolved_config.get('log_file', '')
+        log_console = resolved_config.get('log_console', True)
+
+        # For stdio mode, disable console logging by default unless explicitly enabled
+        if mode_type == "stdio" and 'log_console' not in kwargs:
+            log_console = False
+
+        setup_logging(log_level, log_file, log_console)
+
         # Start MCP server
         result = start_mcp_server(mode_type, resolved_config)
 
@@ -123,9 +147,25 @@ def main() -> click.Command:
     # Add options dynamically
     for option in options:
         default_val = option.default() if callable(option.default) else option.default
-        cli_main = click.option(
-            option.cli_short, option.cli_long, envvar=option.env_var, default=default_val, help=option.description
-        )(cli_main)
+
+        # Handle boolean options (log_console)
+        if option.name == "log_console":
+            cli_main = click.option(
+                option.cli_long, "--no-log-console", envvar=option.env_var,
+                default=default_val, help=option.description, is_flag=True
+            )(cli_main)
+        else:
+            # Regular options - only add cli_short if it's not empty
+            if option.cli_short:
+                cli_main = click.option(
+                    option.cli_short, option.cli_long, envvar=option.env_var,
+                    default=default_val, help=option.description
+                )(cli_main)
+            else:
+                cli_main = click.option(
+                    option.cli_long, envvar=option.env_var,
+                    default=default_val, help=option.description
+                )(cli_main)
 
     return cli_main
 

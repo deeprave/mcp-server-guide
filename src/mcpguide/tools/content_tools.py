@@ -152,11 +152,11 @@ def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
     guides = get_all_guides(project)
 
     summary = f"# Project: {project}\n\n"
-    summary += f"## Configuration\n"
+    summary += "## Configuration\n"
     for key, value in config.items():
         summary += f"- **{key}**: {value}\n"
 
-    summary += f"\n## Available Content\n"
+    summary += "\n## Available Content\n"
     for guide_type, content in guides.items():
         if content and not content.startswith("Error"):
             summary += f"- **{guide_type}**: {len(content)} characters\n"

@@ -5,7 +5,8 @@ import tempfile
 from pathlib import Path
 from click.testing import CliRunner
 
-from mcpguide.config import main, resolve_env_vars, resolve_path, validate_config, Config
+from mcpguide.main import main
+from mcpguide.config import Config
 
 
 def test_complete_workflow_with_defaults():

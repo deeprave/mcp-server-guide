@@ -1,6 +1,6 @@
 """Session management tools."""
 
-from typing import Dict, Any, Optional
+from typing import Optional
 from pathlib import Path
 from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager

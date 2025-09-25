@@ -1,6 +1,6 @@
 """File operation tools."""
 
-from typing import Dict, Any, List, Optional
+from typing import List, Optional
 from pathlib import Path
 from ..session_tools import SessionManager
 

@@ -1,6 +1,5 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
-import pytest
 from mcpguide.tools import get_current_project, get_guide, get_project_config, switch_project
 
 

@@ -3,8 +3,7 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Union
-import click
+from typing import Callable, Union
 
 
 @dataclass
@@ -85,6 +84,34 @@ class Config:
             env_var="MCP_PROJECT",
             default=lambda: Path.cwd().name,
             description="Project context file (also --context)",
+        )
+
+        # Logging configuration
+        self.log_level = ConfigOption(
+            name="log_level",
+            cli_short="",
+            cli_long="--log-level",
+            env_var="MCP_LOG_LEVEL",
+            default="OFF",
+            description="Logging level (DEBUG, INFO, WARN, ERROR, OFF)"
+        )
+
+        self.log_file = ConfigOption(
+            name="log_file",
+            cli_short="",
+            cli_long="--log-file",
+            env_var="MCP_LOG_FILE",
+            default="",
+            description="Log file path (empty for no file logging)"
+        )
+
+        self.log_console = ConfigOption(
+            name="log_console",
+            cli_short="",
+            cli_long="--log-console",
+            env_var="MCP_LOG_CONSOLE",
+            default=True,
+            description="Enable console logging (default: true unless file specified)"
         )
 
     def resolve_path(self, path: str, relative_to: str = ".") -> str:

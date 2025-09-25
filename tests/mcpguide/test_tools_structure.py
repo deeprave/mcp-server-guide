@@ -1,6 +1,5 @@
 """Tests for tools module structure (Issue 005 Phase 1)."""
 
-import pytest
 
 
 def test_tools_module_imports():
