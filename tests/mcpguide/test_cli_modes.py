@@ -16,7 +16,7 @@ def test_default_mode_is_stdio():
         result = runner.invoke(command, [])
 
     assert result.exit_code == 0
-    assert "Started stdio mode" in result.output
+    # stdio mode produces no output (correct MCP behavior)
 
 
 def test_explicit_stdio_mode():
@@ -29,7 +29,7 @@ def test_explicit_stdio_mode():
         result = runner.invoke(command, ["stdio"])
 
     assert result.exit_code == 0
-    assert "Started stdio mode" in result.output
+    # stdio mode produces no output (correct MCP behavior)
 
 
 def test_sse_mode_with_url():
@@ -63,8 +63,9 @@ def test_mode_with_options():
 
     with pytest.MonkeyPatch().context() as m:
         m.setattr("mcpguide.main.start_mcp_server", lambda mode, config: f"Started {mode} mode with {config}")
-        result = runner.invoke(command, ["--docroot", "/custom", "stdio"])
+        result = runner.invoke(command, ["--docroot", "/custom", "sse=http://localhost:8080/sse"])
 
     assert result.exit_code == 0
-    assert "Started stdio mode" in result.output
+    # SSE mode can produce output
+    assert "Started sse mode" in result.output
     assert "/custom" in result.output

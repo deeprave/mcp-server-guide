@@ -1,32 +1,169 @@
-"""Tests for mcpguide server module."""
+"""Tests for MCP server functionality."""
 
-from mcpguide.server import mcp, create_server_with_config
-
-
-def test_mcp_instance_exists():
-    """Test that MCP instance is created."""
-    assert mcp is not None
+from mcpguide import server
 
 
-def test_create_server_with_config():
-    """Test server creation with configuration."""
-    config = {
-        "docroot": ".",
-        "project": "test",
-        "guide": "guidelines",
-        "lang": "python"
-    }
+def test_server_tool_functions():
+    """Test all MCP server tool functions."""
+    # Test get_current_project
+    result = server.get_current_project()
+    assert isinstance(result, str)
 
-    # Should not raise an exception
-    result = create_server_with_config(config)
-    # Function returns None but should complete successfully
-    assert result is None
+    # Test switch_project
+    result = server.switch_project("test_project")
+    assert isinstance(result, dict)
+
+    # Test list_projects
+    result = server.list_projects()
+    assert isinstance(result, list)
+
+    # Test get_project_config
+    result = server.get_project_config()
+    assert isinstance(result, dict)
+
+    result = server.get_project_config("test_project")
+    assert isinstance(result, dict)
+
+    # Test set_project_config
+    result = server.set_project_config("test_key", "test_value")
+    assert isinstance(result, dict)
+
+    result = server.set_project_config("test_key", "test_value", "test_project")
+    assert isinstance(result, dict)
+
+    # Test get_effective_config
+    result = server.get_effective_config()
+    assert isinstance(result, dict)
+
+    result = server.get_effective_config("test_project")
+    assert isinstance(result, dict)
+
+    # Test get_tools
+    result = server.get_tools()
+    assert isinstance(result, list)
+
+    result = server.get_tools("test_project")
+    assert isinstance(result, list)
+
+    # Test set_tools
+    result = server.set_tools(["tool1", "tool2"])
+    assert isinstance(result, dict)
+
+    result = server.set_tools(["tool1", "tool2"], "test_project")
+    assert isinstance(result, dict)
 
 
-def test_server_has_tools():
-    """Test that server has tools registered."""
-    # MCP server should have tools
-    assert hasattr(mcp, 'tools')
-    # Should have some tools registered
-    tools = list(mcp.tools.keys()) if hasattr(mcp.tools, 'keys') else []
-    assert len(tools) >= 0  # At least some tools should be registered
+def test_server_content_functions():
+    """Test server content-related functions."""
+    # Test get_guide
+    result = server.get_guide()
+    assert isinstance(result, str)
+
+    result = server.get_guide("test_project")
+    assert isinstance(result, str)
+
+    # Test get_language_guide
+    result = server.get_language_guide()
+    assert isinstance(result, str)
+
+    result = server.get_language_guide("test_project")
+    assert isinstance(result, str)
+
+    # Test get_project_context
+    result = server.get_project_context()
+    assert isinstance(result, str)
+
+    result = server.get_project_context("test_project")
+    assert isinstance(result, str)
+
+    # Test get_all_guides
+    result = server.get_all_guides()
+    assert isinstance(result, dict)
+
+    result = server.get_all_guides("test_project")
+    assert isinstance(result, dict)
+
+    # Test search_content
+    result = server.search_content("test")
+    assert isinstance(result, list)
+
+    result = server.search_content("test", "test_project")
+    assert isinstance(result, list)
+
+
+def test_server_display_functions():
+    """Test server display functions."""
+    # Test show_guide
+    result = server.show_guide()
+    assert isinstance(result, dict)
+
+    result = server.show_guide("test_project")
+    assert isinstance(result, dict)
+
+    # Test show_language_guide
+    result = server.show_language_guide()
+    assert isinstance(result, dict)
+
+    result = server.show_language_guide("test_project")
+    assert isinstance(result, dict)
+
+    # Test show_project_summary
+    result = server.show_project_summary()
+    assert isinstance(result, dict)
+
+    result = server.show_project_summary("test_project")
+    assert isinstance(result, dict)
+
+
+def test_server_file_functions():
+    """Test server file-related functions."""
+    # Test list_files
+    result = server.list_files("guide")
+    assert isinstance(result, list)
+
+    result = server.list_files("guide", "test_project")
+    assert isinstance(result, list)
+
+    # Test file_exists
+    result = server.file_exists("test.txt")
+    assert isinstance(result, bool)
+
+    result = server.file_exists("test.txt", "test_project")
+    assert isinstance(result, bool)
+
+    # Test get_file_content
+    result = server.get_file_content("test.txt")
+    assert isinstance(result, str)
+
+    result = server.get_file_content("test.txt", "test_project")
+    assert isinstance(result, str)
+
+
+def test_server_session_functions():
+    """Test server session management functions."""
+    # Test save_session
+    result = server.save_session()
+    assert isinstance(result, dict)
+
+    # Test load_session
+    result = server.load_session()
+    assert isinstance(result, dict)
+
+    result = server.load_session("/test/path")
+    assert isinstance(result, dict)
+
+    # Test reset_session
+    result = server.reset_session()
+    assert isinstance(result, dict)
+
+
+def test_create_server_functions():
+    """Test server creation functions."""
+    # Test create_server
+    server_instance = server.create_server()
+    assert server_instance is not None
+
+    # Test create_server_with_config
+    config = {"docroot": "/test", "project": "test"}
+    server_instance = server.create_server_with_config(config)
+    assert server_instance is not None

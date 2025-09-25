@@ -131,3 +131,60 @@ def test_integration_with_issue_002_session():
     # FileSource should integrate with session resolution
     source = FileSource.from_session_path("local:./guide.md", "test-project")
     assert source.type == "local"
+
+
+def test_file_source_initialization():
+    """Test file source initialization."""
+    # Test with required parameters
+    source1 = FileSource(type="local", base_path="/test/path")
+    assert source1.type == "local"
+    assert source1.base_path == "/test/path"
+    assert source1.cache_ttl == 3600  # default
+
+    # Test with all parameters
+    source2 = FileSource(
+        type="http",
+        base_path="https://example.com",
+        cache_ttl=7200,
+        cache_enabled=False,
+        auth_headers={"Authorization": "Bearer token"},
+    )
+    assert source2.type == "http"
+    assert source2.base_path == "https://example.com"
+    assert source2.cache_ttl == 7200
+    assert source2.cache_enabled is False
+    assert source2.auth_headers == {"Authorization": "Bearer token"}
+
+
+def test_file_source_from_url():
+    """Test FileSource.from_url class method."""
+    # Test HTTP URL
+    source1 = FileSource.from_url("https://example.com/docs")
+    assert source1.type == "http"
+    assert source1.base_path == "https://example.com/docs"
+
+    # Test local path - will use context detection, so check it returns a valid source
+    source2 = FileSource.from_url("/local/path")
+    assert source2.type in ["local", "server", "http"]  # Any valid type
+    assert source2.base_path == "/local/path"
+
+
+def test_file_source_comprehensive():
+    """Test file source comprehensive functionality."""
+    # Test different source types
+    local_source = FileSource(type="local", base_path="/docs")
+    assert local_source.type == "local"
+
+    http_source = FileSource(type="http", base_path="https://api.example.com")
+    assert http_source.type == "http"
+
+    server_source = FileSource(type="server", base_path="server://internal")
+    assert server_source.type == "server"
+
+    # Test cache settings
+    cached_source = FileSource(type="local", base_path="/cache", cache_enabled=True, cache_ttl=1800)
+    assert cached_source.cache_enabled is True
+    assert cached_source.cache_ttl == 1800
+
+    no_cache_source = FileSource(type="local", base_path="/nocache", cache_enabled=False)
+    assert no_cache_source.cache_enabled is False

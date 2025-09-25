@@ -93,7 +93,7 @@ class Config:
             cli_long="--log-level",
             env_var="MCP_LOG_LEVEL",
             default="OFF",
-            description="Logging level (DEBUG, INFO, WARN, ERROR, OFF)"
+            description="Logging level (DEBUG, INFO, WARN, ERROR, OFF)",
         )
 
         self.log_file = ConfigOption(
@@ -102,7 +102,7 @@ class Config:
             cli_long="--log-file",
             env_var="MCP_LOG_FILE",
             default="",
-            description="Log file path (empty for no file logging)"
+            description="Log file path (empty for no file logging)",
         )
 
         self.log_console = ConfigOption(
@@ -111,7 +111,7 @@ class Config:
             cli_long="--log-console",
             env_var="MCP_LOG_CONSOLE",
             default=True,
-            description="Enable console logging (default: true unless file specified)"
+            description="Enable console logging (default: true unless file specified)",
         )
 
     def resolve_path(self, path: str, relative_to: str = ".") -> str:

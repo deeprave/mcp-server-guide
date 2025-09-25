@@ -31,10 +31,7 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True) -> l
     logger.setLevel(numeric_level)
 
     # Create formatter
-    formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
     # Add file handler if specified
     if log_file:

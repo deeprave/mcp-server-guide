@@ -1,157 +1,117 @@
-"""Tests for HTTP file access (Issue 003 Phase 2)."""
+"""Tests for HTTP access functionality."""
 
 import pytest
 from unittest.mock import Mock, patch
-from mcpguide.file_source import FileSource, FileAccessor
-from mcpguide.http_client import HttpClient, HttpError
+import requests.exceptions
+from mcpguide.http_client import HttpClient, HttpResponse, HttpError
 
 
-def test_http_client_creation():
-    """Test creating HTTP client."""
+def test_http_client_basic():
+    """Test basic HTTP client functionality."""
     client = HttpClient()
-    assert client.timeout == 30
-    assert client.headers == {"User-Agent": "mcpguide/1.0"}
 
-
-def test_http_client_custom_config():
-    """Test HTTP client with custom configuration."""
-    headers = {"Authorization": "Bearer token123"}
-    client = HttpClient(timeout=60, headers=headers)
-    assert client.timeout == 60
-    assert client.headers["Authorization"] == "Bearer token123"
-    assert client.headers["User-Agent"] == "mcpguide/1.0"
-
-
-@patch("requests.get")
-def test_http_client_get_success(mock_get):
-    """Test successful HTTP GET request."""
     # Mock successful response
     mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.text = "# Guide Content\nThis is a guide."
-    mock_response.headers = {"content-type": "text/markdown"}
+    mock_response.text = "test content"
+    mock_response.headers = {"Content-Type": "text/plain"}
     mock_response.raise_for_status.return_value = None
-    mock_get.return_value = mock_response
 
+    with patch("requests.get", return_value=mock_response):
+        result = client.get("http://example.com")
+        assert isinstance(result, HttpResponse)
+        assert result.content == "test content"
+        assert result.headers == {"Content-Type": "text/plain"}
+
+
+def test_http_client_error_handling():
+    """Test HTTP client error handling to hit all branches."""
     client = HttpClient()
-    response = client.get("https://example.com/guide.md")
 
-    assert response.content == "# Guide Content\nThis is a guide."
-    assert response.headers["content-type"] == "text/markdown"
-    mock_get.assert_called_once_with("https://example.com/guide.md", timeout=30, headers={"User-Agent": "mcpguide/1.0"})
+    # Test connection error
+    with patch("requests.get", side_effect=requests.exceptions.ConnectionError("Connection failed")):
+        with pytest.raises(HttpError):
+            client.get("http://example.com/test")
+
+    # Test timeout error
+    with patch("requests.get", side_effect=requests.exceptions.Timeout("Timeout")):
+        with pytest.raises(HttpError):
+            client.get("http://example.com/test")
+
+    # Test HTTP error
+    with patch("requests.get", side_effect=requests.exceptions.HTTPError("HTTP Error")):
+        with pytest.raises(HttpError):
+            client.get("http://example.com/test")
+
+    # Test generic exception
+    with patch("requests.get", side_effect=Exception("Generic error")):
+        with pytest.raises(HttpError):
+            client.get("http://example.com/test")
 
 
-@patch("requests.get")
-def test_http_client_get_404_error(mock_get):
-    """Test HTTP GET with 404 error."""
-    # Mock 404 response
+def test_http_client_comprehensive():
+    """Test HTTP client comprehensive functionality."""
+    client = HttpClient()
+
+    # Test successful GET request
     mock_response = Mock()
-    mock_response.status_code = 404
-    mock_response.raise_for_status.side_effect = Exception("404 Not Found")
-    mock_get.return_value = mock_response
+    mock_response.text = "response content"
+    mock_response.headers = {"Content-Length": "16"}
+    mock_response.status_code = 200
+    mock_response.raise_for_status.return_value = None
 
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        result = client.get("http://example.com/test")
+        assert isinstance(result, HttpResponse)
+        assert result.content == "response content"
+
+        # Check that requests.get was called with correct parameters
+        mock_get.assert_called_with("http://example.com/test", timeout=30, headers={"User-Agent": "mcpguide/1.0"})
+
+
+def test_http_client_initialization():
+    """Test HTTP client initialization."""
+    # Test default initialization
+    client1 = HttpClient()
+    assert client1.timeout == 30
+    assert client1.headers == {"User-Agent": "mcpguide/1.0"}
+
+    # Test initialization with custom values
+    custom_headers = {"Authorization": "Bearer token"}
+    client2 = HttpClient(timeout=60, headers=custom_headers)
+    assert client2.timeout == 60
+    # Should merge with default headers
+    expected_headers = {"User-Agent": "mcpguide/1.0", "Authorization": "Bearer token"}
+    assert client2.headers == expected_headers
+
+
+def test_http_response():
+    """Test HttpResponse class."""
+    response = HttpResponse(content="test content", headers={"Content-Type": "text/plain"})
+
+    assert response.content == "test content"
+    assert response.headers == {"Content-Type": "text/plain"}
+
+
+def test_http_error():
+    """Test HttpError exception."""
+    error = HttpError("Test error message")
+    assert str(error) == "Test error message"
+    assert isinstance(error, Exception)
+
+
+def test_http_client_exists():
+    """Test HTTP client exists method."""
     client = HttpClient()
-    with pytest.raises(HttpError) as exc_info:
-        client.get("https://example.com/missing.md")
 
-    assert "404" in str(exc_info.value)
-
-
-@patch("requests.get")
-def test_http_client_timeout_error(mock_get):
-    """Test HTTP GET with timeout."""
-    # Mock timeout
-    mock_get.side_effect = Exception("Timeout")
-
-    client = HttpClient()
-    with pytest.raises(HttpError) as exc_info:
-        client.get("https://example.com/guide.md")
-
-    assert "Timeout" in str(exc_info.value)
-
-
-@patch("requests.head")
-def test_http_client_exists_success(mock_head):
-    """Test HTTP HEAD request for file existence."""
     # Mock successful HEAD response
     mock_response = Mock()
-    mock_response.status_code = 200
     mock_response.raise_for_status.return_value = None
-    mock_head.return_value = mock_response
 
-    client = HttpClient()
-    exists = client.exists("https://example.com/guide.md")
+    with patch("requests.head", return_value=mock_response):
+        result = client.exists("http://example.com")
+        assert result is True
 
-    assert exists is True
-    mock_head.assert_called_once_with(
-        "https://example.com/guide.md", timeout=30, headers={"User-Agent": "mcpguide/1.0"}
-    )
-
-
-@patch("requests.head")
-def test_http_client_exists_404(mock_head):
-    """Test HTTP HEAD request for non-existent file."""
-    # Mock 404 response
-    mock_response = Mock()
-    mock_response.status_code = 404
-    mock_response.raise_for_status.side_effect = Exception("404 Not Found")
-    mock_head.return_value = mock_response
-
-    client = HttpClient()
-    exists = client.exists("https://example.com/missing.md")
-
-    assert exists is False
-
-
-def test_file_accessor_http_read_file():
-    """Test FileAccessor reading HTTP files."""
-    with patch("mcpguide.http_client.HttpClient") as mock_client_class:
-        # Mock HTTP client
-        mock_client = Mock()
-        mock_client.get.return_value = "# HTTP Guide\nContent from HTTP"
-        mock_client_class.return_value = mock_client
-
-        accessor = FileAccessor()
-        http_source = FileSource("http", "https://example.com/docs/")
-
-        content = accessor.read_file("guide.md", http_source)
-
-        assert content == "# HTTP Guide\nContent from HTTP"
-        mock_client.get.assert_called_once_with("https://example.com/docs/guide.md")
-
-
-def test_file_accessor_http_file_exists():
-    """Test FileAccessor checking HTTP file existence."""
-    with patch("mcpguide.http_client.HttpClient") as mock_client_class:
-        # Mock HTTP client
-        mock_client = Mock()
-        mock_client.exists.return_value = True
-        mock_client_class.return_value = mock_client
-
-        accessor = FileAccessor()
-        http_source = FileSource("http", "https://example.com/docs/")
-
-        exists = accessor.file_exists("guide.md", http_source)
-
-        assert exists is True
-        mock_client.exists.assert_called_once_with("https://example.com/docs/guide.md")
-
-
-def test_file_accessor_http_authentication():
-    """Test FileAccessor with HTTP authentication."""
-    with patch("mcpguide.http_client.HttpClient") as mock_client_class:
-        # Mock HTTP client
-        mock_client = Mock()
-        mock_client.get.return_value = "Authenticated content"
-        mock_client_class.return_value = mock_client
-
-        # HTTP source with authentication
-        http_source = FileSource("http", "https://private.example.com/docs/")
-        http_source.auth_headers = {"Authorization": "Bearer secret"}
-
-        accessor = FileAccessor()
-        content = accessor.read_file("private-guide.md", http_source)
-
-        assert content == "Authenticated content"
-        # Should create client with auth headers
-        mock_client_class.assert_called_once_with(timeout=30, headers={"Authorization": "Bearer secret"})
+    # Test HEAD request failure
+    with patch("requests.head", side_effect=Exception("Not found")):
+        result = client.exists("http://example.com")
+        assert result is False

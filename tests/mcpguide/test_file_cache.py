@@ -253,3 +253,45 @@ def test_fallback_to_cache_on_network_error():
             # Second read - network fails, should fall back to cache
             content2 = accessor.read_file("guide.md", http_source)
             assert content2 == "# Cached Guide"  # Should get cached content
+
+
+def test_file_cache_edge_cases():
+    """Test file cache edge cases to hit all branches."""
+    cache = FileCache()
+
+    # Test cache miss with non-existent URL
+    result = cache.get("http://nonexistent.com/file.txt")
+    assert result is None
+
+    # Test cache put and get
+    cache.put("http://example.com/test.txt", "test content", {"Last-Modified": "Wed, 21 Oct 2015 07:28:00 GMT"})
+    result = cache.get("http://example.com/test.txt")
+    assert result is not None
+    assert result.content == "test content"
+
+    # Test cache clear
+    cache.clear()
+    result = cache.get("http://example.com/test.txt")
+    assert result is None
+
+
+def test_file_cache_comprehensive():
+    """Test file cache comprehensive functionality."""
+    cache = FileCache()
+
+    # Test cache operations
+    cache.put("http://test.com/file1.txt", "content1")
+    entry = cache.get("http://test.com/file1.txt")
+    assert entry is not None
+    assert entry.content == "content1"
+
+    # Test with headers - use lowercase keys as expected by the properties
+    headers = {"etag": "123456", "cache-control": "max-age=3600"}
+    cache.put("http://test.com/file2.txt", "content2", headers)
+    entry = cache.get("http://test.com/file2.txt")
+    assert entry is not None
+    assert entry.etag == "123456"
+    assert entry.cache_control == "max-age=3600"
+
+    # Test cache entry validation
+    assert not entry.needs_validation()  # Should not need validation with max-age

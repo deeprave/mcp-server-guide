@@ -65,6 +65,7 @@ def start_mcp_server(mode: str, config: dict) -> str:
         try:
             # Use uvicorn to run the FastMCP server
             import uvicorn
+
             uvicorn.run(mcp, host=host, port=port)
         except KeyboardInterrupt:
             # Graceful shutdown on Ctrl+C
@@ -123,12 +124,12 @@ def main() -> click.Command:
         # Setup logging based on configuration
         from .logging_config import setup_logging
 
-        log_level = resolved_config.get('log_level', 'OFF')
-        log_file = resolved_config.get('log_file', '')
-        log_console = resolved_config.get('log_console', True)
+        log_level = resolved_config.get("log_level", "OFF")
+        log_file = resolved_config.get("log_file", "")
+        log_console = resolved_config.get("log_console", True)
 
         # For stdio mode, disable console logging by default unless explicitly enabled
-        if mode_type == "stdio" and 'log_console' not in kwargs:
+        if mode_type == "stdio" and "log_console" not in kwargs:
             log_console = False
 
         setup_logging(log_level, log_file, log_console)
@@ -151,20 +152,26 @@ def main() -> click.Command:
         # Handle boolean options (log_console)
         if option.name == "log_console":
             cli_main = click.option(
-                option.cli_long, "--no-log-console", envvar=option.env_var,
-                default=default_val, help=option.description, is_flag=True
+                option.cli_long,
+                "--no-log-console",
+                envvar=option.env_var,
+                default=default_val,
+                help=option.description,
+                is_flag=True,
             )(cli_main)
         else:
             # Regular options - only add cli_short if it's not empty
             if option.cli_short:
                 cli_main = click.option(
-                    option.cli_short, option.cli_long, envvar=option.env_var,
-                    default=default_val, help=option.description
+                    option.cli_short,
+                    option.cli_long,
+                    envvar=option.env_var,
+                    default=default_val,
+                    help=option.description,
                 )(cli_main)
             else:
                 cli_main = click.option(
-                    option.cli_long, envvar=option.env_var,
-                    default=default_val, help=option.description
+                    option.cli_long, envvar=option.env_var, default=default_val, help=option.description
                 )(cli_main)
 
     return cli_main

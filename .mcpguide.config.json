@@ -1,0 +1,9 @@
+{
+  "project": "test_project",
+  "guide": "guidelines",
+  "language": "",
+  "docroot": ".",
+  "guidesdir": "guide/",
+  "langdir": "lang/",
+  "projdir": "project/"
+}

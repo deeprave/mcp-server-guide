@@ -13,6 +13,7 @@ def test_complete_workflow_with_defaults():
 
     # Mock the server startup to avoid hanging
     import pytest
+
     with pytest.MonkeyPatch().context() as m:
         m.setattr("mcpguide.main.start_mcp_server", lambda mode, config: "Started")
         result = runner.invoke(command, [])
@@ -26,6 +27,7 @@ def test_complete_workflow_with_cli_args():
     command = main()
 
     import pytest
+
     with pytest.MonkeyPatch().context() as m:
         m.setattr("mcpguide.main.start_mcp_server", lambda mode, config: "Started")
         result = runner.invoke(
@@ -56,9 +58,9 @@ def test_config_class_basic():
     config = Config()
 
     # Should have basic attributes
-    assert hasattr(config, 'docroot')
-    assert hasattr(config, 'project')
-    assert hasattr(config, 'resolve_path')
+    assert hasattr(config, "docroot")
+    assert hasattr(config, "project")
+    assert hasattr(config, "resolve_path")
 
     # Test resolve_path method
     abs_path = "/absolute/path"
