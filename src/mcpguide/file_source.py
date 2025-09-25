@@ -1,4 +1,4 @@
-"""File source abstraction for hybrid file access (Issue 003 Phase 1)."""
+"""File source abstraction for hybrid file access with HTTP-aware caching."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,7 +72,19 @@ class FileSource:
 
 
 class FileAccessor:
-    """Unified file access interface."""
+    """Unified file access interface with HTTP-aware caching."""
+
+    def __init__(self, cache_dir: Optional[str] = None):
+        self.cache_dir = cache_dir
+        self._cache = None
+
+    @property
+    def cache(self):
+        """Lazy-load cache only when needed."""
+        if self._cache is None and self.cache_dir:
+            from .file_cache import FileCache
+            self._cache = FileCache(cache_dir=self.cache_dir)
+        return self._cache
 
     def resolve_path(self, relative_path: str, source: FileSource) -> str:
         """Resolve relative path against file source."""
@@ -99,14 +111,70 @@ class FileAccessor:
             return Path(full_path).exists()
 
     def read_file(self, relative_path: str, source: FileSource) -> str:
-        """Read file content."""
+        """Read file content with HTTP-aware caching."""
         if source.type == "http":
-            # HTTP reading
-            from .http_client import HttpClient
-            full_url = self.resolve_path(relative_path, source)
-            client = HttpClient(timeout=30, headers=source.auth_headers)
-            return client.get(full_url)
+            return self._read_http_file(relative_path, source)
         else:
             # Local/server file reading
             full_path = self.resolve_path(relative_path, source)
             return Path(full_path).read_text()
+
+    def _read_http_file(self, relative_path: str, source: FileSource) -> str:
+        """Read HTTP file with caching support."""
+        from .http_client import HttpClient, HttpError
+
+        full_url = self.resolve_path(relative_path, source)
+        client = HttpClient(timeout=30, headers=source.auth_headers)
+
+        # Check cache if enabled
+        cached_entry = None
+        if source.cache_enabled and self.cache:
+            cached_entry = self.cache.get(full_url)
+
+        # If we have cached content, try conditional request
+        if cached_entry and not cached_entry.needs_validation():
+            # Cache is fresh, use it
+            return cached_entry.content
+        elif cached_entry:
+            # Cache needs validation, make conditional request
+            try:
+                response = client.get_conditional(
+                    full_url,
+                    if_modified_since=cached_entry.last_modified,
+                    if_none_match=cached_entry.etag
+                )
+
+                if response is None:
+                    # 304 Not Modified, use cached content
+                    return cached_entry.content
+                else:
+                    # Content changed, update cache and return new content
+                    if source.cache_enabled and self.cache:
+                        self.cache.put(full_url, response.content, response.headers)
+                    return response.content
+
+            except HttpError:
+                # Network error, fall back to cache if available
+                if cached_entry:
+                    return cached_entry.content
+                raise
+        else:
+            # No cache, make regular request
+            response = client.get(full_url)
+
+            # Cache the response if caching is enabled
+            if source.cache_enabled and self.cache:
+                # Handle both HttpResponse objects and strings (for backward compatibility)
+                if hasattr(response, 'content'):
+                    self.cache.put(full_url, response.content, response.headers)
+                    return response.content
+                else:
+                    # Old string-based response (for tests)
+                    self.cache.put(full_url, response, {})
+                    return response
+
+            # Return content
+            if hasattr(response, 'content'):
+                return response.content
+            else:
+                return response

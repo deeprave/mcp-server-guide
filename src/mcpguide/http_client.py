@@ -1,5 +1,6 @@
-"""HTTP client for remote file access (Issue 003 Phase 2)."""
+"""HTTP client for remote file access with conditional requests (Issue 003 Phase 2-3)."""
 
+from dataclasses import dataclass
 from typing import Dict, Optional
 import requests
 
@@ -7,6 +8,13 @@ import requests
 class HttpError(Exception):
     """HTTP-related errors."""
     pass
+
+
+@dataclass
+class HttpResponse:
+    """HTTP response with content and headers."""
+    content: str
+    headers: Dict[str, str]
 
 
 class HttpClient:
@@ -18,14 +26,43 @@ class HttpClient:
         if headers:
             self.headers.update(headers)
 
-    def get(self, url: str) -> str:
+    def get(self, url: str) -> HttpResponse:
         """Fetch file content via HTTP GET."""
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
             response.raise_for_status()
-            return response.text
+            return HttpResponse(
+                content=response.text,
+                headers=dict(response.headers)
+            )
         except Exception as e:
             raise HttpError(f"HTTP GET failed for {url}: {e}")
+
+    def get_conditional(self, url: str, if_modified_since: Optional[str] = None,
+                       if_none_match: Optional[str] = None) -> Optional[HttpResponse]:
+        """Make conditional HTTP request. Returns None for 304 Not Modified."""
+        conditional_headers = self.headers.copy()
+
+        if if_modified_since:
+            conditional_headers["If-Modified-Since"] = if_modified_since
+
+        if if_none_match:
+            conditional_headers["If-None-Match"] = if_none_match
+
+        try:
+            response = requests.get(url, timeout=self.timeout, headers=conditional_headers)
+
+            if response.status_code == 304:
+                # Not Modified
+                return None
+
+            response.raise_for_status()
+            return HttpResponse(
+                content=response.text,
+                headers=dict(response.headers)
+            )
+        except Exception as e:
+            raise HttpError(f"HTTP conditional GET failed for {url}: {e}")
 
     def exists(self, url: str) -> bool:
         """Check if HTTP resource exists via HEAD request."""

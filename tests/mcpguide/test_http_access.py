@@ -29,13 +29,15 @@ def test_http_client_get_success(mock_get):
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.text = "# Guide Content\nThis is a guide."
+    mock_response.headers = {"content-type": "text/markdown"}
     mock_response.raise_for_status.return_value = None
     mock_get.return_value = mock_response
 
     client = HttpClient()
-    content = client.get("https://example.com/guide.md")
+    response = client.get("https://example.com/guide.md")
 
-    assert content == "# Guide Content\nThis is a guide."
+    assert response.content == "# Guide Content\nThis is a guide."
+    assert response.headers["content-type"] == "text/markdown"
     mock_get.assert_called_once_with(
         "https://example.com/guide.md",
         timeout=30,
