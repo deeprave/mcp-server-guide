@@ -71,6 +71,8 @@ def test_session_config_precedence():
     config = session.get_project_config("test-project")
     assert config["docroot"] == "/custom/path"
     assert config["guidesdir"] == "guide/"  # Default unchanged
+
+
 def test_resolve_session_path_default():
     """Test resolving paths with default behavior."""
     from mcpguide.session import resolve_session_path

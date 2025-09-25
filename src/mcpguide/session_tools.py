@@ -6,6 +6,7 @@ from .session import SessionState
 
 class SessionManager:
     """Singleton session manager."""
+
     _instance = None
 
     def __new__(cls):
@@ -24,6 +25,7 @@ class SessionManager:
     def load_project_from_path(self, project_path) -> None:
         """Load project configuration from path."""
         from .project_config import ProjectConfigManager
+
         manager = ProjectConfigManager()
         config = manager.load_config(project_path)
         if config:
@@ -48,10 +50,7 @@ def set_project_config(key: str, value: str) -> Dict[str, Any]:
 
     session_manager.session_state.set_project_config(session_manager.current_project, key, value)
 
-    return {
-        "success": True,
-        "message": f"Set {key} to '{value}' for project {session_manager.current_project}"
-    }
+    return {"success": True, "message": f"Set {key} to '{value}' for project {session_manager.current_project}"}
 
 
 def get_project_config() -> Dict[str, Any]:
@@ -60,11 +59,7 @@ def get_project_config() -> Dict[str, Any]:
 
     config = session_manager.session_state.get_project_config(session_manager.current_project)
 
-    return {
-        "success": True,
-        "project": session_manager.current_project,
-        "config": config
-    }
+    return {"success": True, "project": session_manager.current_project, "config": config}
 
 
 def list_project_configs() -> Dict[str, Any]:
@@ -75,10 +70,7 @@ def list_project_configs() -> Dict[str, Any]:
     for project_name in session_manager.session_state.projects:
         projects[project_name] = session_manager.session_state.get_project_config(project_name)
 
-    return {
-        "success": True,
-        "projects": projects
-    }
+    return {"success": True, "projects": projects}
 
 
 def reset_project_config() -> Dict[str, Any]:
@@ -88,10 +80,7 @@ def reset_project_config() -> Dict[str, Any]:
     if session_manager.current_project in session_manager.session_state.projects:
         del session_manager.session_state.projects[session_manager.current_project]
 
-    return {
-        "success": True,
-        "message": f"Reset project {session_manager.current_project} to defaults"
-    }
+    return {"success": True, "message": f"Reset project {session_manager.current_project} to defaults"}
 
 
 def switch_project(project_name: str) -> Dict[str, Any]:
@@ -99,10 +88,7 @@ def switch_project(project_name: str) -> Dict[str, Any]:
     session_manager = SessionManager()
     session_manager.current_project = project_name
 
-    return {
-        "success": True,
-        "message": f"Switched to project {project_name}"
-    }
+    return {"success": True, "message": f"Switched to project {project_name}"}
 
 
 def set_local_file(key: str, local_path: str) -> Dict[str, Any]:

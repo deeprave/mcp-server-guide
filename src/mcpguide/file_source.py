@@ -9,6 +9,7 @@ from .session import resolve_session_path
 @dataclass
 class FileSource:
     """File source configuration."""
+
     type: Literal["local", "server", "http"]
     base_path: str
     cache_ttl: int = 3600
@@ -83,6 +84,7 @@ class FileAccessor:
         """Lazy-load cache only when needed."""
         if self._cache is None and self.cache_dir:
             from .file_cache import FileCache
+
             self._cache = FileCache(cache_dir=self.cache_dir)
         return self._cache
 
@@ -102,6 +104,7 @@ class FileAccessor:
         if source.type == "http":
             # HTTP existence checking
             from .http_client import HttpClient
+
             full_url = self.resolve_path(relative_path, source)
             client = HttpClient(timeout=30, headers=source.auth_headers)
             return client.exists(full_url)
@@ -139,9 +142,7 @@ class FileAccessor:
             # Cache needs validation, make conditional request
             try:
                 response = client.get_conditional(
-                    full_url,
-                    if_modified_since=cached_entry.last_modified,
-                    if_none_match=cached_entry.etag
+                    full_url, if_modified_since=cached_entry.last_modified, if_none_match=cached_entry.etag
                 )
 
                 if response is None:
@@ -165,7 +166,7 @@ class FileAccessor:
             # Cache the response if caching is enabled
             if source.cache_enabled and self.cache:
                 # Handle both HttpResponse objects and strings (for backward compatibility)
-                if hasattr(response, 'content'):
+                if hasattr(response, "content"):
                     self.cache.put(full_url, response.content, response.headers)
                     return response.content
                 else:
@@ -174,7 +175,7 @@ class FileAccessor:
                     return response
 
             # Return content
-            if hasattr(response, 'content'):
+            if hasattr(response, "content"):
                 return response.content
             else:
                 return response

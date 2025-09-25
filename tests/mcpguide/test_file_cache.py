@@ -8,10 +8,7 @@ from mcpguide.file_cache import FileCache, CacheEntry
 
 def test_cache_entry_with_http_headers():
     """Test creating cache entries with HTTP headers."""
-    headers = {
-        "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
-        "etag": '"33a64df551425fcc55e4d42a148795d9f25f89d4"'
-    }
+    headers = {"last-modified": "Wed, 21 Oct 2015 07:28:00 GMT", "etag": '"33a64df551425fcc55e4d42a148795d9f25f89d4"'}
     entry = CacheEntry("test content", headers=headers)
     assert entry.content == "test content"
     assert entry.last_modified == "Wed, 21 Oct 2015 07:28:00 GMT"
@@ -40,7 +37,7 @@ def test_http_client_conditional_requests():
     """Test HTTP client making conditional requests."""
     from mcpguide.http_client import HttpClient
 
-    with patch('requests.get') as mock_get:
+    with patch("requests.get") as mock_get:
         # Mock 304 Not Modified response
         mock_response = Mock()
         mock_response.status_code = 304
@@ -51,8 +48,7 @@ def test_http_client_conditional_requests():
 
         # Make conditional request with If-Modified-Since
         result = client.get_conditional(
-            "https://example.com/guide.md",
-            if_modified_since="Wed, 21 Oct 2015 07:28:00 GMT"
+            "https://example.com/guide.md", if_modified_since="Wed, 21 Oct 2015 07:28:00 GMT"
         )
 
         # Should return None for 304 Not Modified
@@ -61,15 +57,15 @@ def test_http_client_conditional_requests():
         # Should have sent conditional headers
         mock_get.assert_called_once()
         call_args = mock_get.call_args
-        headers = call_args[1]['headers']
-        assert 'If-Modified-Since' in headers
+        headers = call_args[1]["headers"]
+        assert "If-Modified-Since" in headers
 
 
 def test_http_client_conditional_with_etag():
     """Test HTTP client conditional requests with ETag."""
     from mcpguide.http_client import HttpClient
 
-    with patch('requests.get') as mock_get:
+    with patch("requests.get") as mock_get:
         # Mock 304 Not Modified response
         mock_response = Mock()
         mock_response.status_code = 304
@@ -79,39 +75,34 @@ def test_http_client_conditional_with_etag():
 
         # Make conditional request with If-None-Match
         result = client.get_conditional(
-            "https://example.com/guide.md",
-            if_none_match='"33a64df551425fcc55e4d42a148795d9f25f89d4"'
+            "https://example.com/guide.md", if_none_match='"33a64df551425fcc55e4d42a148795d9f25f89d4"'
         )
 
         assert result is None
 
         # Should have sent ETag header
         call_args = mock_get.call_args
-        headers = call_args[1]['headers']
-        assert 'If-None-Match' in headers
+        headers = call_args[1]["headers"]
+        assert "If-None-Match" in headers
 
 
 def test_http_client_conditional_modified():
     """Test HTTP client when resource is modified."""
     from mcpguide.http_client import HttpClient
 
-    with patch('requests.get') as mock_get:
+    with patch("requests.get") as mock_get:
         # Mock 200 OK response with new content
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.text = "Updated content"
-        mock_response.headers = {
-            "last-modified": "Thu, 22 Oct 2015 08:30:00 GMT",
-            "etag": '"new-etag-value"'
-        }
+        mock_response.headers = {"last-modified": "Thu, 22 Oct 2015 08:30:00 GMT", "etag": '"new-etag-value"'}
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
         client = HttpClient()
 
         result = client.get_conditional(
-            "https://example.com/guide.md",
-            if_modified_since="Wed, 21 Oct 2015 07:28:00 GMT"
+            "https://example.com/guide.md", if_modified_since="Wed, 21 Oct 2015 07:28:00 GMT"
         )
 
         # Should return new content and headers
@@ -126,10 +117,7 @@ def test_file_cache_with_validation():
         cache = FileCache(cache_dir=temp_dir)
 
         # Put content with HTTP headers
-        headers = {
-            "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
-            "etag": '"original-etag"'
-        }
+        headers = {"last-modified": "Wed, 21 Oct 2015 07:28:00 GMT", "etag": '"original-etag"'}
         cache.put("https://example.com/guide.md", "Original content", headers=headers)
 
         # Get should return content and validation info
@@ -144,16 +132,13 @@ def test_file_accessor_with_http_caching():
     from mcpguide.file_source import FileSource, FileAccessor
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch("mcpguide.http_client.HttpClient") as mock_client_class:
             mock_client = Mock()
 
             # First request returns content with headers
             first_response = Mock()
             first_response.content = "# Guide v1"
-            first_response.headers = {
-                "last-modified": "Wed, 21 Oct 2015 07:28:00 GMT",
-                "etag": '"v1-etag"'
-            }
+            first_response.headers = {"last-modified": "Wed, 21 Oct 2015 07:28:00 GMT", "etag": '"v1-etag"'}
             mock_client.get.return_value = first_response
             mock_client.get_conditional.return_value = None  # 304 Not Modified
             mock_client_class.return_value = mock_client
@@ -167,7 +152,7 @@ def test_file_accessor_with_http_caching():
             assert mock_client.get.call_count == 1
 
             # Force cache to need validation by mocking time
-            with patch('time.time', return_value=time.time() + 400):  # 400 seconds later
+            with patch("time.time", return_value=time.time() + 400):  # 400 seconds later
                 # Second read - should make conditional request, get 304, use cache
                 content2 = accessor.read_file("guide.md", http_source)
                 assert content2 == "# Guide v1"
@@ -175,8 +160,8 @@ def test_file_accessor_with_http_caching():
 
                 # Should have sent conditional headers
                 call_args = mock_client.get_conditional.call_args
-                assert call_args[1]['if_modified_since'] == "Wed, 21 Oct 2015 07:28:00 GMT"
-                assert call_args[1]['if_none_match'] == '"v1-etag"'
+                assert call_args[1]["if_modified_since"] == "Wed, 21 Oct 2015 07:28:00 GMT"
+                assert call_args[1]["if_none_match"] == '"v1-etag"'
 
 
 def test_file_accessor_cache_invalidation():
@@ -184,7 +169,7 @@ def test_file_accessor_cache_invalidation():
     from mcpguide.file_source import FileSource, FileAccessor
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch("mcpguide.http_client.HttpClient") as mock_client_class:
             mock_client = Mock()
 
             # First request
@@ -209,7 +194,7 @@ def test_file_accessor_cache_invalidation():
             assert content1 == "# Guide v1"
 
             # Force cache to need validation by mocking time
-            with patch('time.time', return_value=time.time() + 400):  # 400 seconds later
+            with patch("time.time", return_value=time.time() + 400):  # 400 seconds later
                 # Second read - content has changed
                 content2 = accessor.read_file("guide.md", http_source)
                 assert content2 == "# Guide v2"  # Should get updated content
@@ -245,7 +230,7 @@ def test_fallback_to_cache_on_network_error():
     from mcpguide.http_client import HttpError
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch("mcpguide.http_client.HttpClient") as mock_client_class:
             mock_client = Mock()
 
             # First request succeeds

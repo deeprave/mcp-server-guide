@@ -11,6 +11,7 @@ from watchdog.events import FileSystemEventHandler
 @dataclass
 class ProjectConfig:
     """Project configuration data."""
+
     project: str
     guide: Optional[str] = None
     language: Optional[str] = None
@@ -80,7 +81,7 @@ class ProjectConfigManager:
         """Save project configuration to file."""
         config_file = project_path / self.CONFIG_FILENAME
 
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config.to_dict(), f, indent=2)
 
     def load_config(self, project_path: Path) -> Optional[ProjectConfig]:

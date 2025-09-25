@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mcpguide = "mcpguide.config:cli_main"
+mcpguide = "mcpguide.main:cli_main"
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "ruff", "mypy", "pre-commit"]

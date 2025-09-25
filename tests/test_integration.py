@@ -25,15 +25,25 @@ def test_complete_workflow_with_cli_args():
     runner = CliRunner()
     command = main()
 
-    result = runner.invoke(command, [
-        '--docroot', '/custom/root',
-        '--guidesdir', 'custom_guide/',
-        '--guide', 'custom_guidelines',
-        '--langsdir', 'custom_lang/',
-        '--lang', 'rust',
-        '--projdir', 'custom_project/',
-        '--project', 'test_project'
-    ])
+    result = runner.invoke(
+        command,
+        [
+            "--docroot",
+            "/custom/root",
+            "--guidesdir",
+            "custom_guide/",
+            "--guide",
+            "custom_guidelines",
+            "--langsdir",
+            "custom_lang/",
+            "--lang",
+            "rust",
+            "--projdir",
+            "custom_project/",
+            "--project",
+            "test_project",
+        ],
+    )
 
     assert result.exit_code == 0
     assert "'/custom/root'" in result.output
@@ -51,13 +61,13 @@ def test_environment_variable_precedence():
 
     # Set environment variables
     env_vars = {
-        'MCP_DOCROOT': '/env/root',
-        'MCP_GUIDEDIR': '/env/guide',
-        'MCP_GUIDE': 'env_guidelines',
-        'MCP_LANGDIR': '/env/lang',
-        'MCP_LANGUAGE': 'python',
-        'MCP_PROJDIR': '/env/project',
-        'MCP_PROJECT': 'env_project'
+        "MCP_DOCROOT": "/env/root",
+        "MCP_GUIDEDIR": "/env/guide",
+        "MCP_GUIDE": "env_guidelines",
+        "MCP_LANGDIR": "/env/lang",
+        "MCP_LANGUAGE": "python",
+        "MCP_PROJDIR": "/env/project",
+        "MCP_PROJECT": "env_project",
     }
 
     for key, value in env_vars.items():
@@ -71,7 +81,7 @@ def test_environment_variable_precedence():
         assert "'env_guidelines'" in result.output
 
         # Test CLI args override env vars
-        result = runner.invoke(command, ['--docroot', '/cli/root', '--guide', 'cli_guidelines'])
+        result = runner.invoke(command, ["--docroot", "/cli/root", "--guide", "cli_guidelines"])
         assert result.exit_code == 0
         assert "'/cli/root'" in result.output
         assert "'cli_guidelines'" in result.output
@@ -115,11 +125,11 @@ def test_path_resolution_scenarios():
 
         # Test validation with existing files
         config_values = {
-            'docroot': str(temp_path),
-            'guidesdir': str(guide_dir),
-            'guide': str(guide_file),
-            'langdir': str(lang_dir),
-            'language': str(lang_file)
+            "docroot": str(temp_path),
+            "guidesdir": str(guide_dir),
+            "guide": str(guide_file),
+            "langdir": str(lang_dir),
+            "language": str(lang_file),
         }
 
         assert validate_config(config_values) is True
@@ -131,37 +141,37 @@ def test_configuration_resolution_integration():
 
     # Test with no environment variables - should use defaults
     resolved = resolve_env_vars(config)
-    assert resolved['docroot'] == '.'
-    assert resolved['guidesdir'] == 'guide/'
-    assert resolved['guide'] == 'guidelines'
-    assert resolved['project'] == 'mcpguide'  # Current directory name
+    assert resolved["docroot"] == "."
+    assert resolved["guidesdir"] == "guide/"
+    assert resolved["guide"] == "guidelines"
+    assert resolved["project"] == "mcpguide"  # Current directory name
 
     # Test with environment variables
-    os.environ['MCP_DOCROOT'] = '/test/root'
-    os.environ['MCP_GUIDE'] = 'test_guide'
+    os.environ["MCP_DOCROOT"] = "/test/root"
+    os.environ["MCP_GUIDE"] = "test_guide"
 
     try:
         resolved = resolve_env_vars(config)
-        assert resolved['docroot'] == '/test/root'
-        assert resolved['guide'] == 'test_guide'
+        assert resolved["docroot"] == "/test/root"
+        assert resolved["guide"] == "test_guide"
         # Others should still be defaults
-        assert resolved['guidesdir'] == 'guide/'
+        assert resolved["guidesdir"] == "guide/"
 
     finally:
         # Clean up
-        if 'MCP_DOCROOT' in os.environ:
-            del os.environ['MCP_DOCROOT']
-        if 'MCP_GUIDE' in os.environ:
-            del os.environ['MCP_GUIDE']
+        if "MCP_DOCROOT" in os.environ:
+            del os.environ["MCP_DOCROOT"]
+        if "MCP_GUIDE" in os.environ:
+            del os.environ["MCP_GUIDE"]
 
 
 def test_error_handling_invalid_paths():
     """Test error handling with invalid paths."""
     # Test validation with non-existent paths
     invalid_config = {
-        'docroot': '/nonexistent/path',
-        'guidesdir': '/nonexistent/guide/',
-        'guide': '/nonexistent/guide.md'
+        "docroot": "/nonexistent/path",
+        "guidesdir": "/nonexistent/guide/",
+        "guide": "/nonexistent/guide.md",
     }
 
     assert validate_config(invalid_config) is False
@@ -174,8 +184,8 @@ def test_error_handling_invalid_paths():
 
         # File where directory expected
         wrong_type_config = {
-            'docroot': str(temp_path),
-            'guidesdir': str(test_file)  # File, but should be directory
+            "docroot": str(temp_path),
+            "guidesdir": str(test_file),  # File, but should be directory
         }
 
         assert validate_config(wrong_type_config) is False

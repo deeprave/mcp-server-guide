@@ -4,7 +4,8 @@ import os
 import click
 from click.testing import CliRunner
 
-from mcpguide.config import ConfigOption, Config, create_click_command, resolve_env_vars
+from mcpguide.config import ConfigOption, Config
+from mcpguide.main import main
 
 
 def test_config_option_creation():

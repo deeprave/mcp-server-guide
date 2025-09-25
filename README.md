@@ -31,15 +31,16 @@ mcpguide -d /docs -g guides/ -l langs/ -L python -p projects/
 
 ### CLI Options
 
-| Short | Long | Environment Variable | Default | Description |
-|-------|------|---------------------|---------|-------------|
-| `-d` | `--docroot` | `MCP_DOCROOT` | `.` | Document root directory |
-| `-g` | `--guidesdir` | `MCP_GUIDEDIR` | `guide/` | Guidelines directory |
-| `-G` | `--guide` | `MCP_GUIDE` | `guidelines` | Guidelines file (also --guidelines) |
-| `-l` | `--langsdir` | `MCP_LANGDIR` | `lang/` | Languages directory |
-| `-L` | `--lang` | `MCP_LANGUAGE` | `` | Language file (also --language) |
-| `-p` | `--projdir` | `MCP_PROJDIR` | `project/` | Project directory |
-| `-P` | `--project` | `MCP_PROJECT` | `<current-dir-name>` | Project context file (also --context) |
+
+| Short | Long          | Environment Variable | Default              | Description                           |
+| ----- | ------------- | -------------------- | -------------------- | ------------------------------------- |
+| `-d`  | `--docroot`   | `MCP_DOCROOT`        | `.`                  | Document root directory               |
+| `-g`  | `--guidesdir` | `MCP_GUIDEDIR`       | `guide/`             | Guidelines directory                  |
+| `-G`  | `--guide`     | `MCP_GUIDE`          | `guidelines`         | Guidelines file (also --guidelines)   |
+| `-l`  | `--langsdir`  | `MCP_LANGDIR`        | `lang/`              | Languages directory                   |
+| `-L`  | `--lang`      | `MCP_LANGUAGE`       | ``                   | Language file (also --language)       |
+| `-p`  | `--projdir`   | `MCP_PROJDIR`        | `project/`           | Project directory                     |
+| `-P`  | `--project`   | `MCP_PROJECT`        | `<current-dir-name>` | Project context file (also --context) |
 
 ### Environment Variables
 
@@ -68,6 +69,7 @@ The server supports both absolute and relative paths:
 - **Directory paths** ending with `/` preserve the trailing slash
 
 Examples:
+
 ```bash
 # Absolute paths
 mcpguide --guide /absolute/path/to/guidelines.md
@@ -159,6 +161,7 @@ mcpguide \
 
 **Issue**: Path resolution problems
 **Solution**:
+
 - Use absolute paths for explicit control
 - Ensure relative paths are correct relative to `--docroot`
 - Check that file extensions are correct (`.md` is added automatically for files without extensions)
@@ -176,6 +179,7 @@ mcpguide --docroot /custom --guide my-guide
 ### Validation
 
 The server validates all paths at startup:
+
 - Files must exist and be actual files
 - Directories must exist and be actual directories
 - Invalid configurations will cause startup to fail with descriptive errors

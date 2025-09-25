@@ -8,6 +8,7 @@ from typing import Dict, Any
 @dataclass
 class ProjectContext:
     """Project context information."""
+
     name: str
     path: str
 
@@ -15,10 +16,7 @@ class ProjectContext:
     def detect(cls, path: str) -> "ProjectContext":
         """Detect project context from directory path."""
         project_path = Path(path)
-        return cls(
-            name=project_path.name,
-            path=str(project_path)
-        )
+        return cls(name=project_path.name, path=str(project_path))
 
 
 def resolve_session_path(path: str, project_context: str) -> str:
@@ -90,7 +88,7 @@ class SessionState:
             "langdir": "lang/",
             "language": "",
             "projdir": "project/",
-            "project": "mcpguide"
+            "project": "mcpguide",
         }
 
     def get_project_config(self, project_name: str) -> Dict[str, Any]:

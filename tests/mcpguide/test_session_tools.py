@@ -6,7 +6,7 @@ from mcpguide.session_tools import (
     list_project_configs,
     reset_project_config,
     switch_project,
-    set_local_file
+    set_local_file,
 )
 
 

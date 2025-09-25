@@ -8,12 +8,7 @@ from mcpguide.project_config import ProjectConfig, ProjectConfigManager
 
 def test_project_config_creation():
     """Test creating project configuration."""
-    config = ProjectConfig(
-        project="test-project",
-        guide="local:./guide.md",
-        language="python",
-        docroot="local:./docs"
-    )
+    config = ProjectConfig(project="test-project", guide="local:./guide.md", language="python", docroot="local:./docs")
 
     assert config.project == "test-project"
     assert config.guide == "local:./guide.md"
@@ -24,10 +19,7 @@ def test_project_config_creation():
 def test_project_config_to_dict():
     """Test converting project config to dictionary."""
     config = ProjectConfig(
-        project="web-app",
-        guide="https://example.com/guide.md",
-        language="typescript",
-        tools=["github", "jest"]
+        project="web-app", guide="https://example.com/guide.md", language="typescript", tools=["github", "jest"]
     )
 
     config_dict = config.to_dict()
@@ -35,7 +27,7 @@ def test_project_config_to_dict():
         "project": "web-app",
         "guide": "https://example.com/guide.md",
         "language": "typescript",
-        "tools": ["github", "jest"]
+        "tools": ["github", "jest"],
     }
 
     assert config_dict == expected
@@ -47,7 +39,7 @@ def test_project_config_from_dict():
         "project": "api-service",
         "guide": "server:./api-guide.md",
         "language": "rust",
-        "docroot": "local:./documentation"
+        "docroot": "local:./documentation",
     }
 
     config = ProjectConfig.from_dict(config_dict)
@@ -63,11 +55,7 @@ def test_project_config_manager_save():
         project_path = Path(temp_dir)
         manager = ProjectConfigManager()
 
-        config = ProjectConfig(
-            project="save-test",
-            guide="https://example.com/guide.md",
-            language="python"
-        )
+        config = ProjectConfig(project="save-test", guide="https://example.com/guide.md", language="python")
 
         # Save configuration
         manager.save_config(project_path, config)
@@ -80,11 +68,7 @@ def test_project_config_manager_save():
         with open(config_file) as f:
             saved_data = json.load(f)
 
-        expected = {
-            "project": "save-test",
-            "guide": "https://example.com/guide.md",
-            "language": "python"
-        }
+        expected = {"project": "save-test", "guide": "https://example.com/guide.md", "language": "python"}
         assert saved_data == expected
 
 
@@ -99,10 +83,10 @@ def test_project_config_manager_load():
             "project": "load-test",
             "guide": "local:./team-guide.md",
             "language": "javascript",
-            "tools": ["eslint", "jest"]
+            "tools": ["eslint", "jest"],
         }
 
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config_data, f)
 
         # Load configuration
@@ -138,7 +122,7 @@ def test_project_config_manager_detect_project_root():
         config_file = project_root / ".mcpguide.config.json"
         config_data = {"project": "my-project", "guide": "local:./README.md"}
 
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config_data, f)
 
         manager = ProjectConfigManager()
@@ -170,7 +154,7 @@ def test_project_config_file_watching():
 
         # Create initial config
         initial_config = {"project": "watch-test", "guide": "local:./guide.md"}
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(initial_config, f)
 
         manager = ProjectConfigManager()
@@ -184,7 +168,7 @@ def test_project_config_file_watching():
 
         # Modify config file
         updated_config = {"project": "watch-test", "guide": "https://example.com/guide.md"}
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(updated_config, f)
 
         # Should have called callback (in real implementation)
@@ -208,10 +192,10 @@ def test_session_integration_with_persistent_config():
             "project": "integration-test",
             "guide": "https://example.com/guide.md",
             "language": "python",
-            "tools": ["pytest", "mypy"]
+            "tools": ["pytest", "mypy"],
         }
 
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(persistent_config, f)
 
         # Session should load persistent config
@@ -269,10 +253,10 @@ def test_config_precedence():
         persistent_config = {
             "project": "precedence-test",
             "guide": "https://example.com/guide.md",
-            "language": "python"
+            "language": "python",
         }
 
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(persistent_config, f)
 
         session = SessionManager()

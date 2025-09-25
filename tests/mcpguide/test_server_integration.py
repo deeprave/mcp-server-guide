@@ -11,15 +11,11 @@ def test_server_uses_hybrid_file_access():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create server with cache directory
         server = create_server(
-            docroot=".",
-            guidesdir="guide/",
-            langsdir="lang/",
-            projdir="project/",
-            cache_dir=temp_dir
+            docroot=".", guidesdir="guide/", langsdir="lang/", projdir="project/", cache_dir=temp_dir
         )
 
         # Server should have file accessor with cache
-        assert hasattr(server, 'file_accessor')
+        assert hasattr(server, "file_accessor")
         assert server.file_accessor.cache_dir == temp_dir
 
 
@@ -33,8 +29,8 @@ def test_server_resolves_http_resources():
         session.set_current_project("test-project")
         session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
 
-        with patch.object(server, '_session_manager', session):
-            with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch.object(server, "_session_manager", session):
+            with patch("mcpguide.http_client.HttpClient") as mock_client_class:
                 # Mock HTTP response
                 mock_client = Mock()
                 mock_response = Mock()
@@ -60,8 +56,8 @@ def test_server_caches_http_resources():
         session.set_current_project("test-project")
         session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
 
-        with patch.object(server, '_session_manager', session):
-            with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch.object(server, "_session_manager", session):
+            with patch("mcpguide.http_client.HttpClient") as mock_client_class:
                 mock_client = Mock()
                 mock_response = Mock()
                 mock_response.content = "# Cached Guide"
@@ -76,12 +72,13 @@ def test_server_caches_http_resources():
                 assert mock_client.get.call_count == 1
 
                 # Mock cache entry to need validation
-                with patch.object(server.file_accessor.cache, 'get') as mock_cache_get:
+                with patch.object(server.file_accessor.cache, "get") as mock_cache_get:
                     from mcpguide.file_cache import CacheEntry
+
                     cached_entry = CacheEntry(
                         "# Cached Guide",
                         {"last-modified": "Wed, 21 Oct 2015 07:28:00 GMT"},
-                        cached_at=0  # Very old cache entry
+                        cached_at=0,  # Very old cache entry
                     )
                     mock_cache_get.return_value = cached_entry
 
@@ -99,10 +96,12 @@ def test_server_handles_mixed_sources():
         session = SessionManager()
         session.set_current_project("mixed-project")
         session.session_state.set_project_config("mixed-project", "guide", "local:./README.md")  # Local file
-        session.session_state.set_project_config("mixed-project", "language", "https://example.com/lang.md")  # HTTP file
+        session.session_state.set_project_config(
+            "mixed-project", "language", "https://example.com/lang.md"
+        )  # HTTP file
 
-        with patch.object(server, '_session_manager', session):
-            with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch.object(server, "_session_manager", session):
+            with patch("mcpguide.http_client.HttpClient") as mock_client_class:
                 mock_client = Mock()
                 mock_response = Mock()
                 mock_response.content = "# HTTP Language"
@@ -130,8 +129,8 @@ def test_server_fallback_on_http_error():
         session.set_current_project("fallback-project")
         session.session_state.set_project_config("fallback-project", "guide", "https://example.com/guide.md")
 
-        with patch.object(server, '_session_manager', session):
-            with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch.object(server, "_session_manager", session):
+            with patch("mcpguide.http_client.HttpClient") as mock_client_class:
                 from mcpguide.http_client import HttpError
 
                 mock_client = Mock()
@@ -151,7 +150,7 @@ def test_server_fallback_on_http_error():
                 mock_client.get_conditional.side_effect = HttpError("Network error")
 
                 # Force cache validation
-                with patch('time.time', return_value=1000000000):  # Far future
+                with patch("time.time", return_value=1000000000):  # Far future
                     # Should fall back to cache
                     content2 = server.read_guide("fallback-project")
                     assert content2 == "# Cached Guide"
@@ -170,7 +169,7 @@ def test_server_integration_with_session_paths():
         session.session_state.set_project_config("integration-project", "language", "server:./server-lang.md")
         session.session_state.set_project_config("integration-project", "context", "https://example.com/context.md")
 
-        with patch.object(server, '_session_manager', session):
+        with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
             guide_source = server._get_file_source("guide", "integration-project")
             assert guide_source.type == "local"
@@ -192,8 +191,8 @@ def test_server_respects_cache_settings():
         session.set_current_project("cache-test")
         session.session_state.set_project_config("cache-test", "guide", "https://example.com/guide.md")
 
-        with patch.object(server, '_session_manager', session):
-            with patch('mcpguide.http_client.HttpClient') as mock_client_class:
+        with patch.object(server, "_session_manager", session):
+            with patch("mcpguide.http_client.HttpClient") as mock_client_class:
                 mock_client = Mock()
                 mock_response = Mock()
                 mock_response.content = "# Guide Content"

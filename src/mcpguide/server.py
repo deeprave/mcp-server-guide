@@ -1,23 +1,158 @@
 """MCP server for developer guidelines and project rules with hybrid file access."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from mcp.server.fastmcp import FastMCP
 from .session import resolve_session_path
 from .session_tools import SessionManager
 from .file_source import FileSource, FileAccessor
+from . import tools
 
 mcp = FastMCP(name="Developer Guide MCP")
 
-defaults = {
-    "guide": "./guide/",
-    "project": "./project/",
-    "lang": "./lang/",
-}
+
+# Register MCP Tools
+@mcp.tool()
+def get_current_project() -> str:
+    """Get the active project name."""
+    return tools.get_current_project()
 
 
-def create_server(docroot: str = ".", guidesdir: str = "guide/",
-                 langsdir: str = "lang/", projdir: str = "project/",
-                 cache_dir: Optional[str] = None) -> FastMCP:
+@mcp.tool()
+def switch_project(name: str) -> dict:
+    """Switch to a different project."""
+    return tools.switch_project(name)
+
+
+@mcp.tool()
+def list_projects() -> List[str]:
+    """List available projects."""
+    return tools.list_projects()
+
+
+@mcp.tool()
+def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
+    """Get project configuration."""
+    return tools.get_project_config(project)
+
+
+@mcp.tool()
+def set_project_config(key: str, value: Any, project: Optional[str] = None) -> dict:
+    """Update project settings."""
+    return tools.set_project_config(key, value, project)
+
+
+@mcp.tool()
+def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
+    """Get merged configuration (file + session)."""
+    return tools.get_effective_config(project)
+
+
+@mcp.tool()
+def get_tools(project: Optional[str] = None) -> List[str]:
+    """Get project-specific tools list."""
+    return tools.get_tools(project)
+
+
+@mcp.tool()
+def set_tools(tools_array: List[str], project: Optional[str] = None) -> dict:
+    """Set tools for project."""
+    return tools.set_tools(tools_array, project)
+
+
+@mcp.tool()
+def get_guide(project: Optional[str] = None) -> str:
+    """Get project guidelines for AI injection."""
+    return tools.get_guide(project)
+
+
+@mcp.tool()
+def get_language_guide(project: Optional[str] = None) -> str:
+    """Get language-specific guidelines for AI injection."""
+    return tools.get_language_guide(project)
+
+
+@mcp.tool()
+def get_project_context(project: Optional[str] = None) -> str:
+    """Get project context document for AI injection."""
+    return tools.get_project_context(project)
+
+
+@mcp.tool()
+def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
+    """Get all guide files for comprehensive AI context."""
+    return tools.get_all_guides(project)
+
+
+@mcp.tool()
+def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Search across project content."""
+    return tools.search_content(query, project)
+
+
+@mcp.tool()
+def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
+    """Display guide to user."""
+    return tools.show_guide(project)
+
+
+@mcp.tool()
+def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
+    """Display language guide to user."""
+    return tools.show_language_guide(project)
+
+
+@mcp.tool()
+def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
+    """Display project overview to user."""
+    return tools.show_project_summary(project)
+
+
+@mcp.tool()
+def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
+    """List available files (guides, languages, etc.)."""
+    return tools.list_files(file_type, project)
+
+
+@mcp.tool()
+def file_exists(path: str, project: Optional[str] = None) -> bool:
+    """Check if a file exists."""
+    return tools.file_exists(path, project)
+
+
+@mcp.tool()
+def get_file_content(path: str, project: Optional[str] = None) -> str:
+    """Get raw file content."""
+    return tools.get_file_content(path, project)
+
+
+@mcp.tool()
+def save_session() -> dict:
+    """Persist current session state."""
+    return tools.save_session()
+
+
+@mcp.tool()
+def load_session(project_path: Optional[str] = None) -> dict:
+    """Load session from project."""
+    from pathlib import Path
+
+    path = Path(project_path) if project_path else None
+    return tools.load_session(path)
+
+
+@mcp.tool()
+def reset_session() -> dict:
+    """Reset to defaults."""
+    return tools.reset_session()
+
+
+def create_server(
+    docroot: str = ".",
+    guidesdir: str = "aidocs/guide/",
+    langsdir: str = "aidocs/lang/",
+    projdir: str = "aidocs/project/",
+    cache_dir: Optional[str] = None,
+) -> FastMCP:
     """Create MCP server instance with hybrid file access."""
     server = FastMCP(name="Developer Guide MCP")
 

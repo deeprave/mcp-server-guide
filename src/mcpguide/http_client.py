@@ -7,12 +7,14 @@ import requests
 
 class HttpError(Exception):
     """HTTP-related errors."""
+
     pass
 
 
 @dataclass
 class HttpResponse:
     """HTTP response with content and headers."""
+
     content: str
     headers: Dict[str, str]
 
@@ -31,15 +33,13 @@ class HttpClient:
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
             response.raise_for_status()
-            return HttpResponse(
-                content=response.text,
-                headers=dict(response.headers)
-            )
+            return HttpResponse(content=response.text, headers=dict(response.headers))
         except Exception as e:
             raise HttpError(f"HTTP GET failed for {url}: {e}")
 
-    def get_conditional(self, url: str, if_modified_since: Optional[str] = None,
-                       if_none_match: Optional[str] = None) -> Optional[HttpResponse]:
+    def get_conditional(
+        self, url: str, if_modified_since: Optional[str] = None, if_none_match: Optional[str] = None
+    ) -> Optional[HttpResponse]:
         """Make conditional HTTP request. Returns None for 304 Not Modified."""
         conditional_headers = self.headers.copy()
 
@@ -57,10 +57,7 @@ class HttpClient:
                 return None
 
             response.raise_for_status()
-            return HttpResponse(
-                content=response.text,
-                headers=dict(response.headers)
-            )
+            return HttpResponse(content=response.text, headers=dict(response.headers))
         except Exception as e:
             raise HttpError(f"HTTP conditional GET failed for {url}: {e}")
 

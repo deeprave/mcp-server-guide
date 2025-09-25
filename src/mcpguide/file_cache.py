@@ -11,6 +11,7 @@ from typing import Dict, Optional
 @dataclass
 class CacheEntry:
     """Cache entry with HTTP headers for validation."""
+
     content: str
     headers: Dict[str, str] = field(default_factory=dict)
     cached_at: float = field(default_factory=time.time)
@@ -86,13 +87,11 @@ class FileCache:
             return None
 
         try:
-            with open(cache_file, 'r') as f:
+            with open(cache_file, "r") as f:
                 data = json.load(f)
 
             return CacheEntry(
-                content=data["content"],
-                headers=data.get("headers", {}),
-                cached_at=data.get("cached_at", time.time())
+                content=data["content"], headers=data.get("headers", {}), cached_at=data.get("cached_at", time.time())
             )
         except (json.JSONDecodeError, KeyError, IOError):
             # Invalid cache file, remove it
@@ -104,14 +103,10 @@ class FileCache:
         key = self._generate_key(url)
         cache_file = self.cache_dir / f"{key}.json"
 
-        data = {
-            "content": content,
-            "headers": headers or {},
-            "cached_at": time.time()
-        }
+        data = {"content": content, "headers": headers or {}, "cached_at": time.time()}
 
         try:
-            with open(cache_file, 'w') as f:
+            with open(cache_file, "w") as f:
                 json.dump(data, f)
         except IOError:
             # Ignore cache write failures
