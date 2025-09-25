@@ -16,7 +16,7 @@ def test_create_server_with_config():
         "guide": "guidelines",
         "lang": "python"
     }
-    
+
     # Should not raise an exception
     result = create_server_with_config(config)
     # Function returns None but should complete successfully

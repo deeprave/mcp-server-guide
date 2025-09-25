@@ -1,6 +1,5 @@
 """Integration tests for mcpguide CLI and configuration."""
 
-import os
 from click.testing import CliRunner
 
 from mcpguide.main import main
@@ -55,12 +54,12 @@ def test_complete_workflow_with_cli_args():
 def test_config_class_basic():
     """Test basic Config class functionality."""
     config = Config()
-    
+
     # Should have basic attributes
     assert hasattr(config, 'docroot')
     assert hasattr(config, 'project')
     assert hasattr(config, 'resolve_path')
-    
+
     # Test resolve_path method
     abs_path = "/absolute/path"
     resolved = config.resolve_path(abs_path, "/base")

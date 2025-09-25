@@ -1,6 +1,5 @@
 """Tests for configuration module."""
 
-import os
 from mcpguide.config import Config, ConfigOption
 
 
@@ -40,12 +39,12 @@ def test_config_class_has_all_options():
 def test_config_has_logging_options():
     """Test Config class has logging options."""
     config = Config()
-    
+
     # Should have logging configuration options
     assert hasattr(config, 'log_level')
     assert hasattr(config, 'log_file')
     assert hasattr(config, 'log_console')
-    
+
     # Check default values
     assert config.log_level.default == "OFF"
     assert config.log_file.default == ""
@@ -55,7 +54,7 @@ def test_config_has_logging_options():
 def test_resolve_path():
     """Test path resolution logic."""
     config = Config()
-    
+
     # Test absolute paths
     abs_path = "/absolute/path"
     resolved = config.resolve_path(abs_path, "/base")
