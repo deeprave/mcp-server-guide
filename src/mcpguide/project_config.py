@@ -131,3 +131,42 @@ class ProjectConfigManager:
 
         config = ProjectConfig.from_dict(config_data)
         self.save_config(project_path, config)
+
+    def save_full_session_state(
+        self, project_path: Path, session, config_filename: str = ".mcpguide.config.json"
+    ) -> None:
+        """Save complete session state including all projects."""
+        config_file = project_path / config_filename
+
+        session_data = {"current_project": session.current_project, "projects": session.session_state.projects.copy()}
+
+        import json
+
+        with open(config_file, "w") as f:
+            json.dump(session_data, f, indent=2)
+
+    def load_full_session_state(
+        self, project_path: Path, session, config_filename: str = ".mcpguide.config.json"
+    ) -> bool:
+        """Load complete session state including all projects."""
+        config_file = project_path / config_filename
+
+        if not config_file.exists():
+            return False
+
+        try:
+            import json
+
+            with open(config_file) as f:
+                session_data = json.load(f)
+
+            # Restore session state
+            if "projects" in session_data:
+                session.session_state.projects = session_data["projects"]
+
+            if "current_project" in session_data:
+                session.set_current_project(session_data["current_project"])
+
+            return True
+        except (json.JSONDecodeError, FileNotFoundError, KeyError):
+            return False

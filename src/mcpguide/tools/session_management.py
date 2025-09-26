@@ -6,7 +6,7 @@ from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager
 
 
-def save_session() -> dict:
+def save_session(config_filename: str = ".mcpguide.config.json") -> dict:
     """Persist current session state."""
     try:
         session = SessionManager()
@@ -15,28 +15,39 @@ def save_session() -> dict:
         # Save to current directory by default
         project_path = Path(".")
         manager = ProjectConfigManager()
-        manager.save_session_config(project_path, session, current_project)
+        manager.save_full_session_state(project_path, session, config_filename)
 
         return {"success": True, "project": current_project, "message": f"Session saved for project {current_project}"}
     except Exception as e:
         return {"success": False, "error": str(e), "message": "Failed to save session"}
 
 
-def load_session(project_path: Optional[Path] = None) -> dict:
+def load_session(project_path: Optional[Path] = None, config_filename: str = ".mcpguide.config.json") -> dict:
     """Load session from project."""
     try:
         if project_path is None:
             project_path = Path(".")
 
         session = SessionManager()
-        session.load_project_from_path(project_path)
+        manager = ProjectConfigManager()
 
-        return {
-            "success": True,
-            "path": str(project_path),
-            "project": session.get_current_project(),
-            "message": f"Session loaded from {project_path}",
-        }
+        # Try to load full session state first
+        if manager.load_full_session_state(project_path, session, config_filename):
+            return {
+                "success": True,
+                "path": str(project_path),
+                "project": session.get_current_project(),
+                "message": f"Session loaded from {project_path}",
+            }
+        else:
+            # Fallback to old project-based loading
+            session.load_project_from_path(project_path)
+            return {
+                "success": True,
+                "path": str(project_path),
+                "project": session.get_current_project(),
+                "message": f"Session loaded from {project_path}",
+            }
     except Exception as e:
         return {"success": False, "error": str(e), "message": "Failed to load session"}
 

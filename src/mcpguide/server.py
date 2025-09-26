@@ -176,12 +176,39 @@ def create_server(
     # Add file source resolution method
     def _get_file_source(config_key: str, project_context: str) -> FileSource:
         """Get file source for a configuration key."""
-        session_path = server._session_manager.session_state.get_project_config(project_context).get(config_key)
-        if session_path:
-            return FileSource.from_session_path(session_path, project_context)
+        config = server._session_manager.session_state.get_project_config(project_context)
+
+        # Map config_key to directory and filename keys
+        if config_key == "guide":
+            dir_key, file_key = "guidesdir", "guide"
+        elif config_key == "language":
+            dir_key, file_key = "langdir", "language"
+        else:
+            # Fallback for unknown keys
+            session_path = config.get(config_key)
+            if session_path:
+                return FileSource.from_session_path(session_path, project_context)
+            default_path = server.config.get(config_key, "./")
+            return FileSource("server", default_path)
+
+        # Get the filename value from config
+        filename = config.get(file_key, "")
+
+        # If filename has a session path prefix, use it directly
+        if filename and (":" in filename and filename.split(":", 1)[0] in ["local", "server", "http", "https", "file"]):
+            return FileSource.from_session_path(filename, project_context)
+
+        # Otherwise, construct path from directory and filename
+        directory = config.get(dir_key, "")
+        if directory and filename:
+            # Construct full path: directory + filename + .md
+            if not filename.endswith(".md"):
+                filename += ".md"
+            full_path = f"{directory.rstrip('/')}/{filename}"
+            return FileSource.from_session_path(full_path, project_context)
         else:
             # Fallback to server default
-            default_path = server.config.get(config_key, "./")
+            default_path = server.config.get(dir_key, "./")
             return FileSource("server", default_path)
 
     server._get_file_source = _get_file_source
@@ -208,6 +235,25 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     logger.debug("Creating server with session-aware configuration")
     server = FastMCP(name="Developer Guide MCP")
 
+    # Get config filename (default or custom)
+    config_filename = config.get("config_filename", ".mcpguide.config.json")
+
+    # Auto-load session configuration if it exists
+    try:
+        from pathlib import Path
+        from .project_config import ProjectConfigManager
+
+        session_manager = SessionManager()
+        manager = ProjectConfigManager()
+
+        # Try to load full session state
+        if manager.load_full_session_state(Path("."), session_manager, config_filename):
+            logger.info("Auto-loaded saved session configuration")
+        else:
+            logger.debug("No saved session found, using defaults")
+    except Exception as e:
+        logger.warning(f"Failed to auto-load session: {e}")
+
     # Get session manager
     session_manager = SessionManager()
     current_project = session_manager.current_project
@@ -216,18 +262,19 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     # Get session config for current project
     session_config = session_manager.session_state.get_project_config(session_manager.current_project)
 
-    # Start with provided config
-    merged_config = config.copy()
+    # Start with session defaults
+    merged_config = session_config.copy()
 
-    # Override with session config (session takes precedence)
+    # Override with provided config for keys not set in session
     current_project_overrides = session_manager.session_state.projects.get(session_manager.current_project, {})
+    for key, value in config.items():
+        # Only use provided config if session doesn't have this key set
+        if key not in current_project_overrides and key != "config_filename":
+            merged_config[key] = value
+
+    # Ensure session overrides take precedence
     for key, value in current_project_overrides.items():
         merged_config[key] = value
-
-    # Fill in any missing keys with session defaults
-    for key, value in session_config.items():
-        if key not in merged_config:
-            merged_config[key] = value
 
     logger.debug(f"Merged configuration: {merged_config}")
     # Store session config on server for testing
