@@ -102,7 +102,7 @@ def test_tools_are_callable():
     assert callable(save_session)
 
 
-def test_tools_return_expected_types():
+def test_tools_return_expected_types(isolated_config):
     """Test that tools return expected types."""
     from mcp_server_guide.tools.config_tools import get_project_config
     from mcp_server_guide.tools.content_tools import get_guide
@@ -123,11 +123,11 @@ def test_tools_return_expected_types():
     project = get_current_project()
     assert isinstance(project, str)
 
-    session = save_session()
+    session = save_session(isolated_config)
     assert isinstance(session, dict)
 
 
-def test_tools_with_parameters():
+def test_tools_with_parameters(isolated_config):
     """Test tools with different parameters."""
     from mcp_server_guide.tools.config_tools import get_project_config, set_project_config
     from mcp_server_guide.tools.content_tools import get_guide, get_language_guide
@@ -136,8 +136,8 @@ def test_tools_with_parameters():
     config = get_project_config("test_project")
     assert isinstance(config, dict)
 
-    # Test set_project_config
-    result = set_project_config("test_key", "test_value")
+    # Test set_project_config with isolated config
+    result = set_project_config("test_key", "test_value", config_filename=isolated_config)
     assert isinstance(result, dict)
 
     # Test content tools with project
@@ -184,14 +184,14 @@ def test_project_tools_comprehensive():
     assert isinstance(result, list)
 
 
-def test_session_management_comprehensive():
+def test_session_management_comprehensive(isolated_config):
     """Test session_management functions comprehensively."""
-    # Test save_session
-    result = save_session()
+    # Test save_session with isolated config
+    result = save_session(isolated_config)
     assert isinstance(result, dict)
 
-    # Test load_session
-    result = load_session()
+    # Test load_session with isolated config
+    result = load_session(config_filename=isolated_config)
     assert isinstance(result, dict)
 
     # Test reset_session
@@ -238,7 +238,7 @@ def test_content_tools_comprehensive():
     assert isinstance(result, dict)
 
 
-def test_config_tools_comprehensive():
+def test_config_tools_comprehensive(isolated_config):
     """Test config_tools functions comprehensively."""
     from mcp_server_guide.tools.config_tools import (
         get_project_config,
@@ -252,7 +252,7 @@ def test_config_tools_comprehensive():
     result = get_project_config("test_project")
     assert isinstance(result, dict)
 
-    result = set_project_config("test_key", "test_value", "test_project")
+    result = set_project_config("test_key", "test_value", "test_project", config_filename=isolated_config)
     assert isinstance(result, dict)
     assert result["success"] is True
 

@@ -14,7 +14,7 @@ def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
     config = session.session_state.get_project_config(project)
 
     # Map file types to config keys
-    type_mapping = {"guides": "guidesdir", "languages": "langdir", "projects": "projdir", "docs": "docroot"}
+    type_mapping = {"guides": "guidesdir", "languages": "langdir", "projects": "contextdir", "docs": "docroot"}
 
     dir_key = type_mapping.get(file_type, file_type)
     dir_path = config.get(dir_key, "./")

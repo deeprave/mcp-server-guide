@@ -47,7 +47,7 @@ def get_project_context(project: Optional[str] = None) -> str:
 
     # Get project context from configuration
     config = session.session_state.get_project_config(project)
-    context_path = config.get("projdir", "./aidocs/project/")
+    context_path = config.get("contextdir", "./aidocs/context/")
 
     # Try to read project context file
     try:

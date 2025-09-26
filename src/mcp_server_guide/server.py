@@ -41,6 +41,12 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
+def set_project_config_values(config_dict: Dict[str, Any], project: Optional[str] = None) -> Dict[str, Any]:
+    """Set multiple project configuration values at once."""
+    return tools.set_project_config_values(config_dict, project)
+
+
+@mcp.tool()
 def set_project_config(key: str, value: Any, project: Optional[str] = None) -> Dict[str, Any]:
     """Update project settings."""
     return tools.set_project_config(key, value, project)
@@ -155,7 +161,7 @@ def create_server(
     docroot: str = ".",
     guidesdir: str = "aidocs/guide/",
     langsdir: str = "aidocs/lang/",
-    projdir: str = "aidocs/project/",
+    contextdir: str = "aidocs/context/",
     cache_dir: Optional[str] = None,
 ) -> FastMCP:
     """Create MCP server instance with hybrid file access."""
@@ -170,7 +176,7 @@ def create_server(
         "docroot": docroot,
         "guidesdir": guidesdir,
         "langsdir": langsdir,
-        "projdir": projdir,
+        "contextdir": contextdir,
     }
 
     # Add file source resolution method
@@ -262,20 +268,20 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
             logger.debug("No saved session found, using defaults")
     except Exception as e:
         logger.warning(f"Failed to auto-load session: {e}")
+        session_manager = SessionManager()
 
-    # Get session manager
-    session_manager = SessionManager()
-    current_project = session_manager.current_project
+    # Use the same session manager instance (singleton)
+    current_project = session_manager.get_current_project()
     logger.debug(f"Current project: {current_project}")
 
     # Get session config for current project
-    session_config = session_manager.session_state.get_project_config(session_manager.current_project)
+    session_config = session_manager.session_state.get_project_config(current_project)
 
     # Start with session defaults
     merged_config = session_config.copy()
 
     # Override with provided config for keys not set in session
-    current_project_overrides = session_manager.session_state.projects.get(session_manager.current_project, {})
+    current_project_overrides = session_manager.session_state.projects.get(current_project, {})
     for key, value in config.items():
         # Only use provided config if session doesn't have this key set
         if key not in current_project_overrides and key != "config_filename":
@@ -290,6 +296,6 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     server.session_config = merged_config  # type: ignore[attr-defined]
 
     # Add session path resolution method
-    server.resolve_session_path = lambda path: resolve_session_path(path, session_manager.current_project)  # type: ignore[attr-defined]
+    server.resolve_session_path = lambda path: resolve_session_path(path, current_project)  # type: ignore[attr-defined]
 
     return server

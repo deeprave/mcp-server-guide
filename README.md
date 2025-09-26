@@ -2,6 +2,26 @@
 
 This is a MCP server that provides developer support by providing a common resource for AI agents with hybrid file access, HTTP caching, and persistent project configuration.
 
+## What is this MCP Server for?
+
+This is a developer convenience. It centralises how AI agent instructions are served, regardless which one you happen to be using.
+
+This MCP server works with:
+  - AmazonQ
+  - Claude Code
+  - github copilot (in VSCode & Jetbrains IDEs)
+  - gemini
+
+Since I use multiple (often switching between the first three), I needed a common place I could store AI agent instructions. I used symlinks at first, but this became a little unwieldy to manage, copying files between directories and keeping them updated whenever they changed.
+
+Every AI client has its own idea of where to source instructions by default, and some of the implementations or versions from the same vendor often disagree with each other or just aren't consistent. This was my solution. This also keeps these docs in a central location plus it can keep them out of the project itself.
+
+### The Implementation
+
+Documents are split into three types:
+- **Guidelines**: General developer guidelines. I love TDD nd doing things quickly in small iterations - even if I dislike doing it without AI assistance). It is great for keeping an AI bounded and restricted to doing stuff that's actually useful and to have some assurance that what it is implementing is actually what you want. Your guidelines most likely differ considerably from mine.
+- **Language**: Programming languages each have their naunces. I develop in several, and
+
 ## Installation
 
 ```bash

@@ -124,7 +124,49 @@ def main() -> click.Command:
 
         # Resolve configuration from CLI args, env vars, and defaults
         resolved_config = {}
+
+        # Handle config file path first
+        config_file_path = None
+        global_config = False
+
+        # Check for global config flag
+        if "no_global" in kwargs and kwargs["no_global"]:
+            # --no-global overrides everything
+            global_config = False
+        elif "global_config" in kwargs and kwargs["global_config"]:
+            global_config = True
+            config_file_path = config.get_global_config_path()
+        elif os.environ.get("MG_CONFIG_GLOBAL"):
+            global_config = True
+            config_file_path = config.get_global_config_path()
+
+        # Check for custom config file path (overrides global)
+        if "config" in kwargs and kwargs["config"] is not None:
+            config_file_path = kwargs["config"]
+        elif os.environ.get("MG_CONFIG"):
+            config_file_path = os.environ.get("MG_CONFIG")
+        elif not global_config:
+            # Use default config file
+            config_file_path = ".mcp-server-guide.config.json"
+
+        # Handle directory vs file logic
+        if config_file_path and not global_config:
+            # Resolve relative to current directory
+            if not os.path.isabs(config_file_path):
+                config_file_path = os.path.join(os.getcwd(), config_file_path)
+
+            # If it's a directory, add the config filename (without leading dot)
+            if os.path.isdir(config_file_path):
+                config_file_path = os.path.join(config_file_path, "mcp-server-guide.config.json")
+
+        # Add config file path to resolved config
+        resolved_config["config_filename"] = config_file_path
+
         for option in options:
+            # Skip config-related options as they're handled above
+            if option.name in ["config", "global_config", "no_global"]:
+                continue
+
             # Check if CLI arg was provided using the parameter mapping
             cli_param_name = option.cli_long.lstrip("--")
             if cli_param_name in kwargs and kwargs[cli_param_name] is not None:
@@ -153,7 +195,7 @@ def main() -> click.Command:
         if mode_type == "stdio" and "log_console" not in kwargs:
             log_console = False
 
-        setup_logging(log_level, log_file, log_console)
+        setup_logging(log_level or "INFO", log_file or "", bool(log_console))
 
         # Log startup information
         logger.info(f"Starting MCP server in {mode_type} mode")

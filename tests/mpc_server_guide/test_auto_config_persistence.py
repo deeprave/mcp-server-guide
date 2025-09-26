@@ -25,13 +25,17 @@ class TestAutoConfigPersistence:
             config_data = {
                 "projects": {
                     "test-project": {"language": "python", "guidesdir": "custom/guides/", "langdir": "custom/lang/"}
-                },
-                "current_project": "test-project",
+                }
+                # Note: No current_project field - this is now handled by .current file
             }
 
             import json
 
             config_file.write_text(json.dumps(config_data))
+
+            # Create .current file to set current project
+            current_file = Path(temp_dir) / ".mcp-server-guide.current"
+            current_file.write_text("test-project")
 
             # Change to temp directory and create server
             original_cwd = Path.cwd()
@@ -42,11 +46,11 @@ class TestAutoConfigPersistence:
 
                 # Create server - should auto-load configuration
                 config = {"docroot": ".", "mode": "stdio", "config_filename": test_config_filename}
-                server = create_server_with_config(config)
+                create_server_with_config(config)
 
                 # Verify configuration was loaded
                 session = SessionManager()
-                assert session.current_project == "test-project"
+                assert session.get_current_project() == "test-project"
 
                 project_config = session.session_state.get_project_config("test-project")
                 assert project_config["language"] == "python"
@@ -144,11 +148,13 @@ class TestAutoConfigPersistence:
 
                 # Create server - should handle missing config gracefully
                 config = {"docroot": ".", "mode": "stdio", "config_filename": test_config_filename}
-                server = create_server_with_config(config)
+                create_server_with_config(config)
 
                 # Should use default configuration
                 session = SessionManager()
-                assert session.current_project == "mcp-server-guide"  # Default project name
+                # Should fallback to directory name when no config exists
+                expected_project = Path(temp_dir).name
+                assert session.current_project == expected_project
 
             finally:
                 os.chdir(original_cwd)

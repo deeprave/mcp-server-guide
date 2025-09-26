@@ -2,7 +2,6 @@
 
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable, Union
 
 
@@ -23,11 +22,38 @@ class Config:
 
     def __init__(self) -> None:
         """Initialize configuration options."""
+        self.config = ConfigOption(
+            name="config",
+            cli_short="-c",
+            cli_long="--config",
+            env_var="MG_CONFIG",
+            default=".mcp-server-guide.config.json",
+            description="Configuration file path",
+        )
+
+        self.global_config = ConfigOption(
+            name="global_config",
+            cli_short="",
+            cli_long="--global",
+            env_var="MG_CONFIG_GLOBAL",
+            default="",
+            description="Use global configuration file",
+        )
+
+        self.no_global = ConfigOption(
+            name="no_global",
+            cli_short="",
+            cli_long="--no-global",
+            env_var="",
+            default="",
+            description="Disable global configuration file (overrides MG_CONFIG_GLOBAL)",
+        )
+
         self.docroot = ConfigOption(
             name="docroot",
             cli_short="-d",
             cli_long="--docroot",
-            env_var="MCP_DOCROOT",
+            env_var="MG_DOCROOT",
             default=".",
             description="Document root directory",
         )
@@ -36,8 +62,8 @@ class Config:
             name="guidesdir",
             cli_short="-g",
             cli_long="--guidesdir",
-            env_var="MCP_GUIDEDIR",
-            default="aidocs/guide/",
+            env_var="MG_GUIDEDIR",
+            default="guide/",
             description="Guidelines directory",
         )
 
@@ -45,7 +71,7 @@ class Config:
             name="guide",
             cli_short="-G",
             cli_long="--guide",
-            env_var="MCP_GUIDE",
+            env_var="MG_GUIDE",
             default="guidelines",
             description="Guidelines file (also --guidelines)",
         )
@@ -54,8 +80,8 @@ class Config:
             name="langsdir",
             cli_short="-l",
             cli_long="--langsdir",
-            env_var="MCP_LANGDIR",
-            default="aidocs/lang/",
+            env_var="MG_LANGDIR",
+            default="lang/",
             description="Languages directory",
         )
 
@@ -63,27 +89,27 @@ class Config:
             name="lang",
             cli_short="-L",
             cli_long="--lang",
-            env_var="MCP_LANGUAGE",
-            default="",
+            env_var="MG_LANGUAGE",
+            default="none",
             description="Language file (also --language)",
         )
 
-        self.projdir = ConfigOption(
-            name="projdir",
-            cli_short="-p",
-            cli_long="--projdir",
-            env_var="MCP_PROJDIR",
-            default="aidocs/project/",
-            description="Project directory",
+        self.contextdir = ConfigOption(
+            name="contextdir",
+            cli_short="-x",
+            cli_long="--contextdir",
+            env_var="MG_CONTEXTDIR",
+            default="context/",
+            description="Context directory",
         )
 
-        self.project = ConfigOption(
-            name="project",
-            cli_short="-P",
-            cli_long="--project",
-            env_var="MCP_PROJECT",
-            default=lambda: Path.cwd().name,
-            description="Project context file (also --context)",
+        self.context = ConfigOption(
+            name="context",
+            cli_short="-X",
+            cli_long="--context",
+            env_var="MG_CONTEXT",
+            default="project-context",
+            description="Project context file",
         )
 
         # Logging configuration
@@ -91,7 +117,7 @@ class Config:
             name="log_level",
             cli_short="",
             cli_long="--log-level",
-            env_var="MCP_LOG_LEVEL",
+            env_var="MG_LOG_LEVEL",
             default="OFF",
             description="Logging level (DEBUG, INFO, WARN, ERROR, OFF)",
         )
@@ -100,7 +126,7 @@ class Config:
             name="log_file",
             cli_short="",
             cli_long="--log-file",
-            env_var="MCP_LOG_FILE",
+            env_var="MG_LOG_FILE",
             default="",
             description="Log file path (empty for no file logging)",
         )
@@ -109,10 +135,19 @@ class Config:
             name="log_console",
             cli_short="",
             cli_long="--log-console",
-            env_var="MCP_LOG_CONSOLE",
+            env_var="MG_LOG_CONSOLE",
             default=lambda: "true",
             description="Enable console logging (default: true unless file specified)",
         )
+
+    def get_global_config_path(self) -> str:
+        """Get platform-specific global config path."""
+        if os.name == "nt":  # Windows
+            appdata = os.environ.get("APPDATA", "")
+            return os.path.join(appdata, "mcp-server-guide", "config.json")
+        else:  # Unix-like systems
+            home = os.environ.get("HOME", "")
+            return os.path.join(home, ".config", "mcp-server-guide", "config.json")
 
     def resolve_path(self, path: str, relative_to: str = ".") -> str:
         """Resolve a path relative to a base directory."""

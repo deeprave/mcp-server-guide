@@ -1,28 +1,37 @@
-"""Pytest configuration and fixtures."""
+"""Test configuration and fixtures for proper isolation."""
 
-import pytest
+import tempfile
+import os
 from pathlib import Path
+from typing import Generator
+import pytest
+
+from mcp_server_guide.session_tools import SessionManager
+
+
+@pytest.fixture(autouse=True)
+def reset_session_manager():
+    """Reset SessionManager singleton before each test."""
+    SessionManager._instance = None
+    yield
+    SessionManager._instance = None
 
 
 @pytest.fixture
-def project_root() -> Path:
-    """Return the project root directory."""
-    return Path(__file__).parent.parent
+def isolated_config() -> Generator[str, None, None]:
+    """Provide isolated configuration file for tests."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        original_cwd = Path.cwd()
+        try:
+            os.chdir(temp_dir)
+            config_filename = "test-config.json"
+            yield config_filename
+        finally:
+            os.chdir(original_cwd)
 
 
 @pytest.fixture
-def guide_dir(project_root: Path) -> Path:
-    """Return the guide directory."""
-    return project_root / "guide"
-
-
-@pytest.fixture
-def project_dir(project_root: Path) -> Path:
-    """Return the project directory."""
-    return project_root / "project"
-
-
-@pytest.fixture
-def lang_dir(project_root: Path) -> Path:
-    """Return the lang directory."""
-    return project_root / "lang"
+def temp_project_dir() -> Generator[Path, None, None]:
+    """Provide temporary project directory for tests."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)

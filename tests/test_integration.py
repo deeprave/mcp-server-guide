@@ -43,9 +43,9 @@ def test_complete_workflow_with_cli_args():
                 "custom_lang/",
                 "--lang",
                 "rust",
-                "--projdir",
+                "--contextdir",
                 "custom_project/",
-                "--project",
+                "--context",
                 "test_project",
             ],
         )
@@ -59,7 +59,7 @@ def test_config_class_basic():
 
     # Should have basic attributes
     assert hasattr(config, "docroot")
-    assert hasattr(config, "project")
+    assert hasattr(config, "context")
     assert hasattr(config, "resolve_path")
 
     # Test resolve_path method

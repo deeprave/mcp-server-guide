@@ -39,7 +39,7 @@ root/
 
 ## Iterator Patterns
 **Prefer comprehensions and generators:**
-```python
+```python ignore
 # Good
 valid_items = [item.process() for item in items if item.is_valid()]
 
@@ -180,7 +180,7 @@ fail_under = 90
 - **No `eval()` or `exec()`** without strong justification
 
 ## Common Idioms
-```python
+```python  ignore
 # Dictionary get with default
 value = data.get('key', default_value)
 

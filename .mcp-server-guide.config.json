@@ -1,18 +1,22 @@
 {
-  "current_project": "mcp-server-guide",
   "projects": {
-    "path-resolution-test": {
-      "guide": "local:./client-guide.md",
-      "language": "file:///server/lang.md",
-      "docroot": "./relative-path",
-      "test_key": "test_value"
+    "mcp-server-guide": {
+      "guidesdir": "aidocs/guide/",
+      "langdir": "aidocs/lang/",
+      "projdir": "aidocs/context/",
+      "language": "python",
+      "tools": [
+        "example-tool",
+        "another-tool"
+      ]
     },
     "test_project": {
       "test_key": "test_value",
       "tools": [
         "tool1",
         "tool2"
-      ]
+      ],
+      "language": "python"
     }
   }
 }

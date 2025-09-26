@@ -71,6 +71,10 @@ class TestConfigIsolation:
 
                 config_file.write_text(json.dumps(config_data))
 
+                # Create .current file for new behavior
+                current_file = Path(temp_dir) / ".mcp-server-guide.current"
+                current_file.write_text("loaded-project")
+
                 # Load with custom filename
                 result = load_session(config_filename=custom_filename)
 
@@ -78,7 +82,7 @@ class TestConfigIsolation:
 
                 # Verify loaded data
                 session = SessionManager()
-                assert session.current_project == "loaded-project"
+                assert session.get_current_project() == "loaded-project"
                 project_config = session.session_state.get_project_config("loaded-project")
                 assert project_config["language"] == "rust"
 
@@ -110,7 +114,7 @@ class TestConfigIsolation:
                 from mcp_server_guide.server import create_server_with_config
 
                 config = {"docroot": ".", "config_filename": custom_filename}
-                server = create_server_with_config(config)
+                create_server_with_config(config)
 
                 # Should have loaded the custom config
                 session = SessionManager()

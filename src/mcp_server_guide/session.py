@@ -87,7 +87,7 @@ class SessionState:
             "guide": "guidelines",
             "langdir": "lang/",
             "language": "",
-            "projdir": "project/",
+            "contextdir": "context/",
             "project": "mcp-server-guide",
         }
 

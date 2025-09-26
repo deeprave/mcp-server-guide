@@ -9,6 +9,7 @@ repos:
 #        args: ['--branch', 'main']
 #        exclude: '^main$'
       - id: end-of-file-fixer
+        exclude: \.*$
       - id: trailing-whitespace
       - id: check-yaml
       - id: check-added-large-files

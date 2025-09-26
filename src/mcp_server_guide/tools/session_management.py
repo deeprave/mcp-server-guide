@@ -12,10 +12,8 @@ def save_session(config_filename: str = ".mcp-server-guide.config.json") -> Dict
         session = SessionManager()
         current_project = session.get_current_project()
 
-        # Save to current directory by default
-        project_path = Path(".")
-        manager = ProjectConfigManager()
-        manager.save_full_session_state(project_path, session, config_filename)
+        # Use new save method that preserves existing data
+        session.save_to_file(config_filename)
 
         return {"success": True, "project": current_project, "message": f"Session saved for project {current_project}"}
     except Exception as e:

@@ -16,5 +16,6 @@
 ## Testing & Quality
 
 - **ALL TESTS MUST PASS** at start and end of every phase
-- Resolve build warnings (avoid using `#[allow(dead_code)]`unless with user consent)
-- Maintain required coverage
+- Resolve build warnings any means of suppressing them
+- Maintain required test coverage - do not cheat and suppress warning
+- Exceptions to these rules (other than 100% pass rate for tests) can be made after the user has provided explicit and specific consent.

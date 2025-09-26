@@ -11,7 +11,7 @@ def test_server_uses_hybrid_file_access():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create server with cache directory
         server = create_server(
-            docroot=".", guidesdir="guide/", langsdir="lang/", projdir="project/", cache_dir=temp_dir
+            docroot=".", guidesdir="guide/", langsdir="lang/", contextdir="context/", cache_dir=temp_dir
         )
 
         # Server should have file accessor with cache
