@@ -7,7 +7,7 @@ This is a MCP server that provides developer support by providing a common resou
 ```bash
 # Install from source
 git clone <repository-url>
-cd mcpguide
+cd mcp-server-guide
 uv sync
 uv run pip install -e .
 ```
@@ -16,17 +16,17 @@ uv run pip install -e .
 
 ### Command Line Interface
 
-The `mcpguide` command provides a configurable MCP server with support for CLI arguments, environment variables, and sensible defaults.
+The `mcp-server-guide` command provides a configurable MCP server with support for CLI arguments, environment variables, and sensible defaults.
 
 ```bash
 # Start with defaults
-mcpguide
+mcp-server-guide
 
-# Customize paths
-mcpguide --docroot /path/to/docs --guidesdir custom_guides/ --langsdir languages/
+# mcp-server-guide paths
+mcp-server-guide --docroot /path/to/docs --guidesdir custom_guides/ --langsdir languages/
 
 # Use short options
-mcpguide -d /docs -g guides/ -l langs/ -L python -p projects/
+mcp-server-guide -d /docs -g guides/ -l langs/ -L python -p projects/
 ```
 
 ### CLI Options
@@ -53,10 +53,10 @@ export MCP_GUIDEDIR="/path/to/guidelines"
 export MCP_LANGDIR="/path/to/languages"
 
 # Start server (will use environment variables)
-mcpguide
+mcp-server-guide
 
 # Override specific options (CLI takes precedence)
-mcpguide --docroot /different/path
+mcp-server-guide --docroot /different/path
 ```
 
 ### Path Resolution
@@ -72,13 +72,13 @@ Examples:
 
 ```bash
 # Absolute paths
-mcpguide --guide /absolute/path/to/guidelines.md
+mcp-server-guide --guide /absolute/path/to/guidelines.md
 
 # Relative paths (resolved relative to docroot)
-mcpguide --docroot /docs --guide team/guidelines  # → /docs/team/guidelines.md
+mcp-server-guide --docroot /docs --guide team/guidelines  # → /docs/team/guidelines.md
 
 # Directory paths
-mcpguide --guidesdir custom_guides/  # Preserves trailing slash
+mcp-server-guide --guidesdir custom_guides/  # Preserves trailing slash
 ```
 
 ### Project Context
@@ -87,10 +87,10 @@ The `--project` option defaults to the current directory name, making it easy to
 
 ```bash
 # In /path/to/my-awesome-project/
-mcpguide  # project defaults to "my-awesome-project"
+mcp-server-guide  # project defaults to "my-awesome-project"
 
 # Override project context
-mcpguide --project custom-context
+mcp-server-guide --project custom-context
 ```
 
 ## Examples
@@ -99,13 +99,13 @@ mcpguide --project custom-context
 
 ```bash
 # Start with all defaults
-mcpguide
+mcp-server-guide
 
 # Custom documentation root
-mcpguide --docroot /path/to/docs
+mcp-server-guide --docroot /path/to/docs
 
 # Multiple custom paths
-mcpguide \
+mcp-server-guide \
   --docroot /docs \
   --guidesdir team_guides/ \
   --guide coding_standards \
@@ -123,10 +123,10 @@ export MCP_LANGDIR="/company/docs/languages"
 export MCP_LANGUAGE="typescript"
 
 # Start server with environment config
-mcpguide
+mcp-server-guide
 
 # Override specific options
-mcpguide --lang python --project special-project
+mcp-server-guide --lang python --project special-project
 ```
 
 ### Development Workflow
@@ -137,10 +137,10 @@ export MCP_DOCROOT="./docs"
 export MCP_GUIDEDIR="./docs/dev-guides"
 
 # Start development server
-mcpguide --project dev-environment
+mcp-server-guide --project dev-environment
 
 # Production environment
-mcpguide \
+mcp-server-guide \
   --docroot /prod/docs \
   --guidesdir /prod/docs/guidelines \
   --project production-system
@@ -154,7 +154,7 @@ mcpguide \
 **Solution**: Use `--langsdir` (note the 's') for consistency with other directory options.
 
 **Issue**: Configuration not taking effect
-**Solution**: Check configuration precedence - CLI args override environment variables. Use `mcpguide --help` to see all available options.
+**Solution**: Check configuration precedence - CLI args override environment variables. Use `mcp-server-guide --help` to see all available options.
 
 **Issue**: File not found errors
 **Solution**: Ensure all specified paths exist. The server validates file and directory existence at startup.
@@ -172,7 +172,7 @@ Enable verbose output to see resolved configuration:
 
 ```bash
 # The server shows the final resolved configuration
-mcpguide --docroot /custom --guide my-guide
+mcp-server-guide --docroot /custom --guide my-guide
 # Output: Starting MCP server with config: {'docroot': '/custom', 'guide': 'my-guide', ...}
 ```
 
@@ -196,7 +196,7 @@ uv run pytest
 uv run pytest --cov
 
 # Run specific test categories
-uv run pytest tests/mcpguide/  # Unit tests
+uv run pytest tests/mcp_server_guide/  # Unit tests
 uv run pytest tests/test_integration.py  # Integration tests
 ```
 

@@ -1,9 +1,9 @@
-"""Integration tests for mcpguide CLI and configuration."""
+"""Integration tests for mcp-server-guide CLI and configuration."""
 
 from click.testing import CliRunner
 
-from mcpguide.main import main
-from mcpguide.config import Config
+from mcp_server_guide.main import main
+from mcp_server_guide.config import Config
 
 
 def test_complete_workflow_with_defaults():
@@ -15,7 +15,7 @@ def test_complete_workflow_with_defaults():
     import pytest
 
     with pytest.MonkeyPatch().context() as m:
-        m.setattr("mcpguide.main.start_mcp_server", lambda mode, config: "Started")
+        m.setattr("mcp_server_guide.main.start_mcp_server", lambda mode, config: "Started")
         result = runner.invoke(command, [])
 
     assert result.exit_code == 0
@@ -29,7 +29,7 @@ def test_complete_workflow_with_cli_args():
     import pytest
 
     with pytest.MonkeyPatch().context() as m:
-        m.setattr("mcpguide.main.start_mcp_server", lambda mode, config: "Started")
+        m.setattr("mcp_server_guide.main.start_mcp_server", lambda mode, config: "Started")
         result = runner.invoke(
             command,
             [

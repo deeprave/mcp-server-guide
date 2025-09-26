@@ -323,12 +323,13 @@ cli = [
 ]
 
 [[package]]
-name = "mcpguide"
+name = "mcp-server-guide"
 version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "mcp", extra = ["cli"] },
+    { name = "pytest-cov" },
     { name = "requests" },
     { name = "watchdog" },
 ]
@@ -344,6 +345,10 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "coverage" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "ruff" },
     { name = "types-requests" },
 ]
 
@@ -354,6 +359,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "requests", specifier = ">=2.25.0" },
     { name = "ruff", marker = "extra == 'dev'" },
@@ -362,7 +368,13 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "types-requests", specifier = ">=2.32.4.20250913" }]
+dev = [
+    { name = "coverage", specifier = ">=7.10.7" },
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "ruff", specifier = ">=0.13.1" },
+    { name = "types-requests", specifier = ">=2.32.4.20250913" },
+]
 
 [[package]]
 name = "mdurl"

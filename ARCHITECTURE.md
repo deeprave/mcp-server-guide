@@ -29,7 +29,7 @@ config = ProjectConfig(
     tools=["eslint", "jest"]
 )
 
-# Saves to .mcpguide.config.json in project root
+# Saves to .mcp-server-guide.config.json in project root
 manager = ProjectConfigManager()
 manager.save_config(Path("."), config)
 
@@ -52,7 +52,7 @@ Configuration values are resolved in the following order (highest to lowest prio
 
 1. **CLI Arguments** - Explicitly provided command line options
 2. **Environment Variables** - Environment variables with `MCP_` prefix
-3. **Persistent Configuration** - `.mcpguide.config.json` files
+3. **Persistent Configuration** - `.mcp-server-guide.config.json` files
 4. **Session Overrides** - Runtime session modifications
 5. **Defaults** - Built-in default values
 
@@ -96,7 +96,7 @@ Configuration values are resolved in the following order (highest to lowest prio
 ## **Project Configuration**
 
 ### **Configuration Files**
-- `.mcpguide.config.json` in project root
+- `.mcp-server-guide.config.json` in project root
 - JSON format with structured data
 - Automatic project root detection
 - Real-time file watching for changes
@@ -144,7 +144,7 @@ Configuration values are resolved in the following order (highest to lowest prio
 
 ### **Module Structure**
 ```
-src/mcpguide/
+src/mcp_server_-_guide/
 ├── __init__.py
 ├── config.py              # CLI configuration
 ├── file_cache.py          # HTTP caching system
