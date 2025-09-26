@@ -5,8 +5,10 @@ from mcp.server.fastmcp import FastMCP
 from .session import resolve_session_path
 from .session_tools import SessionManager
 from .file_source import FileSource, FileAccessor
+from .logging_config import get_logger
 from . import tools
 
+logger = get_logger(__name__)
 mcp = FastMCP(name="Developer Guide MCP")
 
 
@@ -14,18 +16,21 @@ mcp = FastMCP(name="Developer Guide MCP")
 @mcp.tool()
 def get_current_project() -> str:
     """Get the active project name."""
+    logger.debug("Getting current project")
     return tools.get_current_project()
 
 
 @mcp.tool()
 def switch_project(name: str) -> dict:
     """Switch to a different project."""
+    logger.info(f"Switching to project: {name}")
     return tools.switch_project(name)
 
 
 @mcp.tool()
 def list_projects() -> List[str]:
     """List available projects."""
+    logger.debug("Listing available projects")
     return tools.list_projects()
 
 
@@ -200,10 +205,13 @@ def create_server(
 
 def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     """Create MCP server instance with session-aware configuration."""
+    logger.debug("Creating server with session-aware configuration")
     server = FastMCP(name="Developer Guide MCP")
 
     # Get session manager
     session_manager = SessionManager()
+    current_project = session_manager.current_project
+    logger.debug(f"Current project: {current_project}")
 
     # Get session config for current project
     session_config = session_manager.session_state.get_project_config(session_manager.current_project)
@@ -221,6 +229,7 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
         if key not in merged_config:
             merged_config[key] = value
 
+    logger.debug(f"Merged configuration: {merged_config}")
     # Store session config on server for testing
     server.session_config = merged_config
 

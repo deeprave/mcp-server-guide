@@ -2,6 +2,9 @@
 
 from typing import Dict, Any
 from .session import SessionState
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class SessionManager:
@@ -14,16 +17,19 @@ class SessionManager:
             cls._instance = super().__new__(cls)
             cls._instance.session_state = SessionState()
             cls._instance.current_project = "mcpguide"
+            logger.debug("Session manager initialized")
         return cls._instance
 
     def get_current_project(self) -> str:
         return self.current_project
 
     def set_current_project(self, project_name: str) -> None:
+        logger.info(f"Switching current project from {self.current_project} to {project_name}")
         self.current_project = project_name
 
     def load_project_from_path(self, project_path) -> None:
         """Load project configuration from path."""
+        logger.debug(f"Loading project configuration from {project_path}")
         from .project_config import ProjectConfigManager
 
         manager = ProjectConfigManager()

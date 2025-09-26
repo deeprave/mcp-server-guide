@@ -6,6 +6,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Optional
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -84,22 +87,27 @@ class FileCache:
         cache_file = self.cache_dir / f"{key}.json"
 
         if not cache_file.exists():
+            logger.debug(f"Cache miss: {url}")
             return None
 
         try:
             with open(cache_file, "r") as f:
                 data = json.load(f)
 
-            return CacheEntry(
+            entry = CacheEntry(
                 content=data["content"], headers=data.get("headers", {}), cached_at=data.get("cached_at", time.time())
             )
+            logger.debug(f"Cache hit: {url}")
+            return entry
         except (json.JSONDecodeError, KeyError, IOError):
+            logger.debug(f"Invalid cache file for {url}, removing")
             # Invalid cache file, remove it
             cache_file.unlink(missing_ok=True)
             return None
 
     def put(self, url: str, content: str, headers: Optional[Dict[str, str]] = None) -> None:
         """Put content in cache with HTTP headers."""
+        logger.debug(f"Caching content for {url} ({len(content)} chars)")
         key = self._generate_key(url)
         cache_file = self.cache_dir / f"{key}.json"
 
