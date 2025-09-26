@@ -1,6 +1,6 @@
 """MCP tools for session-scoped project configuration."""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from .session import SessionState
 from .logging_config import get_logger
 
@@ -10,9 +10,11 @@ logger = get_logger(__name__)
 class SessionManager:
     """Singleton session manager."""
 
-    _instance = None
+    _instance: Optional["SessionManager"] = None
+    session_state: SessionState
+    current_project: str
 
-    def __new__(cls):
+    def __new__(cls) -> "SessionManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.session_state = SessionState()
@@ -27,7 +29,7 @@ class SessionManager:
         logger.info(f"Switching current project from {self.current_project} to {project_name}")
         self.current_project = project_name
 
-    def load_project_from_path(self, project_path) -> None:
+    def load_project_from_path(self, project_path: Any) -> None:
         """Load project configuration from path."""
         logger.debug(f"Loading project configuration from {project_path}")
         from .project_config import ProjectConfigManager

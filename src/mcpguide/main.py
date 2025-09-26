@@ -2,7 +2,7 @@
 
 import os
 import re
-from typing import Any
+from typing import Any, Dict
 import click
 from .config import Config
 from .logging_config import get_logger
@@ -38,7 +38,7 @@ def validate_mode(mode: str) -> tuple[str, str]:
     raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio' or 'sse=http://host/path'")
 
 
-def start_mcp_server(mode: str, config: dict) -> str:
+def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
     from .server import mcp, create_server_with_config
 
@@ -82,8 +82,10 @@ def start_mcp_server(mode: str, config: dict) -> str:
         try:
             # Use uvicorn to run the FastMCP server
             import uvicorn
+            from typing import cast, Any
 
-            uvicorn.run(mcp, host=host, port=port)
+            # FastMCP is an ASGI app but not properly typed, so cast it
+            uvicorn.run(cast(Any, mcp), host=host, port=port)
         except KeyboardInterrupt:
             logger.debug("SSE server shutdown (interrupted)")
             # Graceful shutdown on Ctrl+C

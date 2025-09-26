@@ -1,6 +1,6 @@
 """Project management tools."""
 
-from typing import List
+from typing import List, Dict, Any
 from ..session_tools import SessionManager
 
 
@@ -10,7 +10,7 @@ def get_current_project() -> str:
     return session.get_current_project()
 
 
-def switch_project(name: str) -> dict:
+def switch_project(name: str) -> Dict[str, Any]:
     """Switch to a different project."""
     session = SessionManager()
     session.set_current_project(name)

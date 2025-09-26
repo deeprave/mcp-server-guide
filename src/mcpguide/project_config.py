@@ -41,12 +41,12 @@ class ConfigFileWatcher:
         self.observer = Observer()
         self.handler = ConfigChangeHandler(config_path, callback)
 
-    def start(self):
+    def start(self) -> None:
         """Start watching for changes."""
         self.observer.schedule(self.handler, str(self.config_path.parent), recursive=False)
         self.observer.start()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop watching for changes."""
         self.observer.stop()
         self.observer.join()
@@ -59,7 +59,7 @@ class ConfigChangeHandler(FileSystemEventHandler):
         self.config_path = config_path
         self.callback = callback
 
-    def on_modified(self, event):
+    def on_modified(self, event: Any) -> None:
         """Handle file modification events."""
         if not event.is_directory and Path(event.src_path) == self.config_path:
             try:
@@ -118,7 +118,7 @@ class ProjectConfigManager:
         watcher.start()
         return watcher
 
-    def save_session_config(self, project_path: Path, session, project_name: str) -> None:
+    def save_session_config(self, project_path: Path, session: Any, project_name: str) -> None:
         """Save session configuration to persistent file."""
         # Get session config for the specific project
         session_config = session.session_state.get_project_config(project_name)
@@ -133,7 +133,7 @@ class ProjectConfigManager:
         self.save_config(project_path, config)
 
     def save_full_session_state(
-        self, project_path: Path, session, config_filename: str = ".mcpguide.config.json"
+        self, project_path: Path, session: Any, config_filename: str = ".mcpguide.config.json"
     ) -> None:
         """Save complete session state including all projects."""
         config_file = project_path / config_filename
@@ -146,7 +146,7 @@ class ProjectConfigManager:
             json.dump(session_data, f, indent=2)
 
     def load_full_session_state(
-        self, project_path: Path, session, config_filename: str = ".mcpguide.config.json"
+        self, project_path: Path, session: Any, config_filename: str = ".mcpguide.config.json"
     ) -> bool:
         """Load complete session state including all projects."""
         config_file = project_path / config_filename

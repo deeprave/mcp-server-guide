@@ -21,7 +21,7 @@ def get_current_project() -> str:
 
 
 @mcp.tool()
-def switch_project(name: str) -> dict:
+def switch_project(name: str) -> Dict[str, Any]:
     """Switch to a different project."""
     logger.info(f"Switching to project: {name}")
     return tools.switch_project(name)
@@ -41,7 +41,7 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
-def set_project_config(key: str, value: Any, project: Optional[str] = None) -> dict:
+def set_project_config(key: str, value: Any, project: Optional[str] = None) -> Dict[str, Any]:
     """Update project settings."""
     return tools.set_project_config(key, value, project)
 
@@ -59,7 +59,7 @@ def get_tools(project: Optional[str] = None) -> List[str]:
 
 
 @mcp.tool()
-def set_tools(tools_array: List[str], project: Optional[str] = None) -> dict:
+def set_tools(tools_array: List[str], project: Optional[str] = None) -> Dict[str, Any]:
     """Set tools for project."""
     return tools.set_tools(tools_array, project)
 
@@ -131,13 +131,13 @@ def get_file_content(path: str, project: Optional[str] = None) -> str:
 
 
 @mcp.tool()
-def save_session() -> dict:
+def save_session() -> Dict[str, Any]:
     """Persist current session state."""
     return tools.save_session()
 
 
 @mcp.tool()
-def load_session(project_path: Optional[str] = None) -> dict:
+def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
     """Load session from project."""
     from pathlib import Path
 
@@ -146,7 +146,7 @@ def load_session(project_path: Optional[str] = None) -> dict:
 
 
 @mcp.tool()
-def reset_session() -> dict:
+def reset_session() -> Dict[str, Any]:
     """Reset to defaults."""
     return tools.reset_session()
 
@@ -162,11 +162,11 @@ def create_server(
     server = FastMCP(name="Developer Guide MCP")
 
     # Initialize hybrid file access
-    server.file_accessor = FileAccessor(cache_dir=cache_dir)
-    server._session_manager = SessionManager()  # Use underscore to avoid conflicts
+    server.file_accessor = FileAccessor(cache_dir=cache_dir)  # type: ignore[attr-defined]
+    server._session_manager = SessionManager()  # type: ignore[assignment]
 
     # Store config
-    server.config = {
+    server.config = {  # type: ignore[attr-defined]
         "docroot": docroot,
         "guidesdir": guidesdir,
         "langsdir": langsdir,
@@ -176,7 +176,14 @@ def create_server(
     # Add file source resolution method
     def _get_file_source(config_key: str, project_context: str) -> FileSource:
         """Get file source for a configuration key."""
-        config = server._session_manager.session_state.get_project_config(project_context)
+        if hasattr(server, "_session_manager") and server._session_manager is not None:
+            config = server._session_manager.session_state.get_project_config(project_context)  # type: ignore[attr-defined]
+        else:
+            # Fallback to default config
+            from .session_tools import SessionManager
+
+            session_manager = SessionManager()
+            config = session_manager.session_state.get_project_config(project_context)
 
         # Map config_key to directory and filename keys
         if config_key == "guide":
@@ -188,7 +195,7 @@ def create_server(
             session_path = config.get(config_key)
             if session_path:
                 return FileSource.from_session_path(session_path, project_context)
-            default_path = server.config.get(config_key, "./")
+            default_path = server.config.get(config_key, "./")  # type: ignore[attr-defined]
             return FileSource("server", default_path)
 
         # Get the filename value from config
@@ -208,24 +215,26 @@ def create_server(
             return FileSource.from_session_path(full_path, project_context)
         else:
             # Fallback to server default
-            default_path = server.config.get(dir_key, "./")
+            default_path = server.config.get(dir_key, "./")  # type: ignore[attr-defined]
             return FileSource("server", default_path)
 
-    server._get_file_source = _get_file_source
+    server._get_file_source = _get_file_source  # type: ignore[attr-defined]
 
     # Add content reading methods
     def read_guide(project_context: str) -> str:
         """Read guide content using hybrid file access."""
         source = _get_file_source("guide", project_context)
-        return server.file_accessor.read_file("", source)
+        result = server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+        return str(result)
 
     def read_language(project_context: str) -> str:
         """Read language content using hybrid file access."""
         source = _get_file_source("language", project_context)
-        return server.file_accessor.read_file("", source)
+        result = server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+        return str(result)
 
-    server.read_guide = read_guide
-    server.read_language = read_language
+    server.read_guide = read_guide  # type: ignore[attr-defined]
+    server.read_language = read_language  # type: ignore[attr-defined]
 
     return server
 
@@ -278,9 +287,9 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
 
     logger.debug(f"Merged configuration: {merged_config}")
     # Store session config on server for testing
-    server.session_config = merged_config
+    server.session_config = merged_config  # type: ignore[attr-defined]
 
     # Add session path resolution method
-    server.resolve_session_path = lambda path: resolve_session_path(path, session_manager.current_project)
+    server.resolve_session_path = lambda path: resolve_session_path(path, session_manager.current_project)  # type: ignore[attr-defined]
 
     return server

@@ -16,7 +16,8 @@ def get_guide(project: Optional[str] = None) -> str:
         from ..server import create_server
 
         server = create_server()
-        return server.read_guide(project)
+        result = server.read_guide(project)  # type: ignore[attr-defined]
+        return str(result)
     except Exception as e:
         return f"Error reading guide for project {project}: {str(e)}"
 
@@ -32,7 +33,8 @@ def get_language_guide(project: Optional[str] = None) -> str:
         from ..server import create_server
 
         server = create_server()
-        return server.read_language(project)
+        result = server.read_language(project)  # type: ignore[attr-defined]
+        return str(result)
     except Exception as e:
         return f"Error reading language guide for project {project}: {str(e)}"
 
@@ -57,7 +59,8 @@ def get_project_context(project: Optional[str] = None) -> str:
             from ..file_source import FileSource
 
             source = FileSource("http", context_path)
-            return server.file_accessor.read_file("", source)
+            result = server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+            return str(result)
         else:
             # Read local file
             context_file = Path(context_path)

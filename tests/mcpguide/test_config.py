@@ -49,7 +49,7 @@ def test_config_has_logging_options():
     # Check default values
     assert config.log_level.default == "OFF"
     assert config.log_file.default == ""
-    assert config.log_console.default is True
+    assert config.log_console.default() == "true"
 
 
 def test_resolve_path():

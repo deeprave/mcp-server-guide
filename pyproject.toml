@@ -44,3 +44,8 @@ line-length = 120
 python_version = "3.13"
 packages = ["src"]
 strict = true
+
+[dependency-groups]
+dev = [
+    "types-requests>=2.32.4.20250913",
+]

@@ -1,12 +1,12 @@
 """Session management tools."""
 
-from typing import Optional
+from typing import Optional, Dict, Any
 from pathlib import Path
 from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager
 
 
-def save_session(config_filename: str = ".mcpguide.config.json") -> dict:
+def save_session(config_filename: str = ".mcpguide.config.json") -> Dict[str, Any]:
     """Persist current session state."""
     try:
         session = SessionManager()
@@ -22,7 +22,7 @@ def save_session(config_filename: str = ".mcpguide.config.json") -> dict:
         return {"success": False, "error": str(e), "message": "Failed to save session"}
 
 
-def load_session(project_path: Optional[Path] = None, config_filename: str = ".mcpguide.config.json") -> dict:
+def load_session(project_path: Optional[Path] = None, config_filename: str = ".mcpguide.config.json") -> Dict[str, Any]:
     """Load session from project."""
     try:
         if project_path is None:
@@ -52,7 +52,7 @@ def load_session(project_path: Optional[Path] = None, config_filename: str = ".m
         return {"success": False, "error": str(e), "message": "Failed to load session"}
 
 
-def reset_session() -> dict:
+def reset_session() -> Dict[str, Any]:
     """Reset to defaults."""
     try:
         session = SessionManager()

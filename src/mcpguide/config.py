@@ -110,7 +110,7 @@ class Config:
             cli_short="",
             cli_long="--log-console",
             env_var="MCP_LOG_CONSOLE",
-            default=True,
+            default=lambda: "true",
             description="Enable console logging (default: true unless file specified)",
         )
 

@@ -2,8 +2,11 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, Optional, Dict
+from typing import Literal, Optional, Dict, TYPE_CHECKING
 from .session import resolve_session_path
+
+if TYPE_CHECKING:
+    from .file_cache import FileCache
 
 
 @dataclass
@@ -77,10 +80,10 @@ class FileAccessor:
 
     def __init__(self, cache_dir: Optional[str] = None):
         self.cache_dir = cache_dir
-        self._cache = None
+        self._cache: Optional["FileCache"] = None
 
     @property
-    def cache(self):
+    def cache(self) -> Optional["FileCache"]:
         """Lazy-load cache only when needed."""
         if self._cache is None and self.cache_dir:
             from .file_cache import FileCache
@@ -171,11 +174,11 @@ class FileAccessor:
                     return response.content
                 else:
                     # Old string-based response (for tests)
-                    self.cache.put(full_url, response, {})
-                    return response
+                    self.cache.put(full_url, str(response), {})
+                    return str(response)
 
             # Return content
             if hasattr(response, "content"):
                 return response.content
             else:
-                return response
+                return str(response)

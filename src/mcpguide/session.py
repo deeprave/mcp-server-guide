@@ -79,7 +79,7 @@ def validate_session_path(path: str) -> bool:
 class SessionState:
     """Manages session-scoped project configurations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.projects: Dict[str, Dict[str, Any]] = {}
         self._defaults = {
             "docroot": ".",

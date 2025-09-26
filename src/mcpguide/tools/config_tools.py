@@ -17,7 +17,7 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 def set_project_config(
     key: str, value: Any, project: Optional[str] = None, config_filename: str = ".mcpguide.config.json"
-) -> dict:
+) -> Dict[str, Any]:
     """Update project settings."""
     session = SessionManager()
     if project is None:
@@ -59,10 +59,11 @@ def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
 def get_tools(project: Optional[str] = None) -> List[str]:
     """Get project-specific tools list."""
     config = get_project_config(project)
-    return config.get("tools", [])
+    result = config.get("tools", [])
+    return list(result) if result else []
 
 
-def set_tools(tools_array: List[str], project: Optional[str] = None) -> dict:
+def set_tools(tools_array: List[str], project: Optional[str] = None) -> Dict[str, Any]:
     """Set tools for project."""
     return set_project_config("tools", tools_array, project)
 
