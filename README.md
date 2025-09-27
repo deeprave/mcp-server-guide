@@ -42,25 +42,34 @@ The `mcp-server-guide` command provides a configurable MCP server with support f
 # Start with defaults
 mcp-server-guide
 
-# mcp-server-guide paths
+# Custom paths
 mcp-server-guide --docroot /path/to/docs --guidesdir custom_guides/ --langsdir languages/
 
 # Use short options
-mcp-server-guide -d /docs -g guides/ -l langs/ -L python -p projects/
+mcp-server-guide -d /docs -g guides/ -l langs/ -L python -c contexts/
 ```
 
 ### CLI Options
 
+| Short | Long           | Environment Variable | Default              | Description                           |
+| ----- | -------------- | -------------------- | -------------------- | ------------------------------------- |
+| `-d`  | `--docroot`    | `MG_DOCROOT`         | `.`                  | Document root directory               |
+| `-g`  | `--guidesdir`  | `MG_GUIDEDIR`        | `guide/`             | Guidelines directory                  |
+| `-G`  | `--guide`      | `MG_GUIDE`           | `guidelines`         | Guidelines file (also --guidelines)   |
+| `-l`  | `--langsdir`   | `MG_LANGDIR`         | `lang/`              | Languages directory                   |
+| `-L`  | `--lang`       | `MG_LANGUAGE`        | `none` (auto-detect) | Language file (also --language)       |
+| `-c`  | `--contextdir` | `MG_CONTEXTDIR`      | `context/`           | Context directory                     |
+| `-C`  | `--context`    | `MG_CONTEXT`         | `project-context`    | Project context file                  |
+|       | `--config`     | `MG_CONFIG`          | `.mcp-server-guide.config.json` | Configuration file path |
+|       | `--global`     | `MG_CONFIG_GLOBAL`   | `false`              | Use global configuration file         |
 
-| Short | Long          | Environment Variable | Default              | Description                           |
-| ----- | ------------- | -------------------- | -------------------- | ------------------------------------- |
-| `-d`  | `--docroot`   | `MCP_DOCROOT`        | `.`                  | Document root directory               |
-| `-g`  | `--guidesdir` | `MCP_GUIDEDIR`       | `guide/`             | Guidelines directory                  |
-| `-G`  | `--guide`     | `MCP_GUIDE`          | `guidelines`         | Guidelines file (also --guidelines)   |
-| `-l`  | `--langsdir`  | `MCP_LANGDIR`        | `lang/`              | Languages directory                   |
-| `-L`  | `--lang`      | `MCP_LANGUAGE`       | ``                   | Language file (also --language)       |
-| `-p`  | `--projdir`   | `MCP_PROJDIR`        | `project/`           | Project directory                     |
-| `-P`  | `--project`   | `MCP_PROJECT`        | `<current-dir-name>` | Project context file (also --context) |
+### Language Auto-Detection
+
+The server automatically detects your project's programming language when `--lang` is not specified or set to `none`. Supports 15+ languages:
+
+- **Build file detection**: `Cargo.toml` → Rust, `pyproject.toml` → Python, `go.mod` → Go
+- **Multi-language projects**: `build.gradle` → Java/Kotlin/Scala (analyzes source files)
+- **Source file detection**: `*.swift` → Swift, `*.cs` → C#, `*.dart` → Dart, `*.sh` → Shell, etc.
 
 ### Environment Variables
 
@@ -68,9 +77,9 @@ Set environment variables to configure default behavior:
 
 ```bash
 # Set custom paths
-export MCP_DOCROOT="/path/to/documentation"
-export MCP_GUIDEDIR="/path/to/guidelines"
-export MCP_LANGDIR="/path/to/languages"
+export MG_DOCROOT="/path/to/documentation"
+export MG_GUIDEDIR="/path/to/guidelines"
+export MG_LANGDIR="/path/to/languages"
 
 # Start server (will use environment variables)
 mcp-server-guide
@@ -78,6 +87,26 @@ mcp-server-guide
 # Override specific options (CLI takes precedence)
 mcp-server-guide --docroot /different/path
 ```
+
+### Configuration Files
+
+The server supports flexible configuration file management:
+
+```bash
+# Use custom config file
+mcp-server-guide --config /path/to/my-config.json
+
+# Use global config (platform-specific)
+mcp-server-guide --global
+
+# Set via environment
+export MG_CONFIG="/path/to/config.json"
+export MG_CONFIG_GLOBAL="1"
+```
+
+**Global config locations:**
+- Unix: `$HOME/.config/mcp-server-guide/config.json`
+- Windows: `%APPDATA%/mcp-server-guide/config.json`
 
 ### Path Resolution
 
@@ -101,24 +130,12 @@ mcp-server-guide --docroot /docs --guide team/guidelines  # → /docs/team/guide
 mcp-server-guide --guidesdir custom_guides/  # Preserves trailing slash
 ```
 
-### Project Context
-
-The `--project` option defaults to the current directory name, making it easy to have project-specific configurations:
-
-```bash
-# In /path/to/my-awesome-project/
-mcp-server-guide  # project defaults to "my-awesome-project"
-
-# Override project context
-mcp-server-guide --project custom-context
-```
-
 ## Examples
 
 ### Basic Usage
 
 ```bash
-# Start with all defaults
+# Start with all defaults (language auto-detected)
 mcp-server-guide
 
 # Custom documentation root
@@ -137,33 +154,32 @@ mcp-server-guide \
 
 ```bash
 # Set up environment
-export MCP_DOCROOT="/company/docs"
-export MCP_GUIDEDIR="/company/docs/guidelines"
-export MCP_LANGDIR="/company/docs/languages"
-export MCP_LANGUAGE="typescript"
+export MG_DOCROOT="/company/docs"
+export MG_GUIDEDIR="/company/docs/guidelines"
+export MG_LANGDIR="/company/docs/languages"
+export MG_LANGUAGE="typescript"
 
 # Start server with environment config
 mcp-server-guide
 
 # Override specific options
-mcp-server-guide --lang python --project special-project
+mcp-server-guide --lang python
 ```
 
 ### Development Workflow
 
 ```bash
 # Development environment
-export MCP_DOCROOT="./docs"
-export MCP_GUIDEDIR="./docs/dev-guides"
+export MG_DOCROOT="./docs"
+export MG_GUIDEDIR="./docs/dev-guides"
 
 # Start development server
-mcp-server-guide --project dev-environment
+mcp-server-guide
 
 # Production environment
 mcp-server-guide \
   --docroot /prod/docs \
-  --guidesdir /prod/docs/guidelines \
-  --project production-system
+  --guidesdir /prod/docs/guidelines
 ```
 
 ## Troubleshooting
@@ -203,6 +219,21 @@ The server validates all paths at startup:
 - Files must exist and be actual files
 - Directories must exist and be actual directories
 - Invalid configurations will cause startup to fail with descriptive errors
+
+## Migration Guide
+
+### Environment Variables
+If you were using any environment variables, update the prefix:
+- `MCP_*` → `MG_*` (e.g., `MCP_DOCROOT` → `MG_DOCROOT`)
+
+### Configuration Fields
+- `projdir` → `contextdir` (directory renamed)
+- `project` → `context` (file renamed)
+
+### Language Detection
+- Language now defaults to `none` (auto-detect) instead of empty
+- Auto-detection supports 15+ languages based on project files
+- Set `--lang none` to explicitly enable auto-detection
 
 ## Development
 
