@@ -12,137 +12,161 @@ logger = get_logger(__name__)
 mcp = FastMCP(name="Developer Guide MCP")
 
 
+class ExtMcpToolDecorator:
+    """Extended MCP tool decorator with flexible prefixing."""
+
+    def __init__(self, mcp_instance: FastMCP, prefix: str = "") -> None:
+        self.mcp = mcp_instance
+        self.default_prefix = prefix
+
+    def tool(self, name: Optional[str] = None, prefix: Optional[str] = None, **kwargs: Any) -> Any:
+        def decorator(func: Any) -> Any:
+            if name:
+                tool_name = f"{self.default_prefix}{name}"
+            elif prefix is not None:
+                tool_name = f"{prefix}{func.__name__}"
+            else:
+                tool_name = f"{self.default_prefix}{func.__name__}"
+            return self.mcp.tool(name=tool_name, **kwargs)(func)
+
+        return decorator
+
+
+# Create guide decorator instance
+guide = ExtMcpToolDecorator(mcp, prefix="guide_")
+
+
 # Register MCP Tools
-@mcp.tool()
+@guide.tool()
 def get_current_project() -> str:
     """Get the active project name."""
     logger.debug("Getting current project")
     return tools.get_current_project()
 
 
-@mcp.tool()
+@guide.tool()
 def switch_project(name: str) -> Dict[str, Any]:
     """Switch to a different project."""
     logger.info(f"Switching to project: {name}")
     return tools.switch_project(name)
 
 
-@mcp.tool()
+@guide.tool()
 def list_projects() -> List[str]:
     """List available projects."""
     logger.debug("Listing available projects")
     return tools.list_projects()
 
 
-@mcp.tool()
+@guide.tool()
 def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration."""
     return tools.get_project_config(project)
 
 
-@mcp.tool()
+@guide.tool()
 def set_project_config_values(config_dict: Dict[str, Any], project: Optional[str] = None) -> Dict[str, Any]:
     """Set multiple project configuration values at once."""
     return tools.set_project_config_values(config_dict, project)
 
 
-@mcp.tool()
+@guide.tool()
 def set_project_config(key: str, value: Any, project: Optional[str] = None) -> Dict[str, Any]:
     """Update project settings."""
     return tools.set_project_config(key, value, project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get merged configuration (file + session)."""
     return tools.get_effective_config(project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_tools(project: Optional[str] = None) -> List[str]:
     """Get project-specific tools list."""
     return tools.get_tools(project)
 
 
-@mcp.tool()
+@guide.tool()
 def set_tools(tools_array: List[str], project: Optional[str] = None) -> Dict[str, Any]:
     """Set tools for project."""
     return tools.set_tools(tools_array, project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_guide(project: Optional[str] = None) -> str:
     """Get project guidelines for AI injection."""
     return tools.get_guide(project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_language_guide(project: Optional[str] = None) -> str:
     """Get language-specific guidelines for AI injection."""
     return tools.get_language_guide(project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_project_context(project: Optional[str] = None) -> str:
     """Get project context document for AI injection."""
     return tools.get_project_context(project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     """Get all guide files for comprehensive AI context."""
     return tools.get_all_guides(project)
 
 
-@mcp.tool()
+@guide.tool()
 def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across project content."""
     return tools.search_content(query, project)
 
 
-@mcp.tool()
+@guide.tool()
 def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display guide to user."""
     return tools.show_guide(project)
 
 
-@mcp.tool()
+@guide.tool()
 def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display language guide to user."""
     return tools.show_language_guide(project)
 
 
-@mcp.tool()
+@guide.tool()
 def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
     """Display project overview to user."""
     return tools.show_project_summary(project)
 
 
-@mcp.tool()
+@guide.tool()
 def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
     """List available files (guides, languages, etc.)."""
     return tools.list_files(file_type, project)
 
 
-@mcp.tool()
+@guide.tool()
 def file_exists(path: str, project: Optional[str] = None) -> bool:
     """Check if a file exists."""
     return tools.file_exists(path, project)
 
 
-@mcp.tool()
+@guide.tool()
 def get_file_content(path: str, project: Optional[str] = None) -> str:
     """Get raw file content."""
     return tools.get_file_content(path, project)
 
 
-@mcp.tool()
+@guide.tool()
 def save_session() -> Dict[str, Any]:
     """Persist current session state."""
     return tools.save_session()
 
 
-@mcp.tool()
+@guide.tool()
 def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
     """Load session from project."""
     from pathlib import Path
@@ -151,7 +175,7 @@ def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
     return tools.load_session(path)
 
 
-@mcp.tool()
+@guide.tool()
 def reset_session() -> Dict[str, Any]:
     """Reset to defaults."""
     return tools.reset_session()
