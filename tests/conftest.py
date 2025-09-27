@@ -10,24 +10,25 @@ from mcp_server_guide.session_tools import SessionManager
 
 
 @pytest.fixture(autouse=True)
-def reset_session_manager():
-    """Reset SessionManager singleton before each test."""
-    SessionManager._instance = None
-    yield
+def complete_test_isolation():
+    """Ensure complete test isolation - no modification of project files."""
+    # Store original working directory
+    original_cwd = os.getcwd()
+
+    # Reset SessionManager singleton
     SessionManager._instance = None
 
-
-@pytest.fixture
-def isolated_config() -> Generator[str, None, None]:
-    """Provide isolated configuration file for tests."""
+    # Create isolated temp directory for each test
     with tempfile.TemporaryDirectory() as temp_dir:
-        original_cwd = Path.cwd()
+        # Change to temp directory to prevent any file creation in project root
+        os.chdir(temp_dir)
+
         try:
-            os.chdir(temp_dir)
-            config_filename = "test-config.json"
-            yield config_filename
+            yield temp_dir
         finally:
+            # Always restore original directory and reset singleton
             os.chdir(original_cwd)
+            SessionManager._instance = None
 
 
 @pytest.fixture

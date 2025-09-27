@@ -86,9 +86,9 @@ class SessionState:
             "guidesdir": "guide/",
             "guide": "guidelines",
             "langdir": "lang/",
-            "language": "",
+            "language": "none",
             "contextdir": "context/",
-            "project": "mcp-server-guide",
+            "context": "project-context",
         }
 
     def get_project_config(self, project_name: str) -> Dict[str, Any]:
@@ -98,6 +98,15 @@ class SessionState:
         # Merge with defaults
         config = self._defaults.copy()
         config.update(project_config)
+
+        # Apply language auto-detection if needed
+        from .language_detection import detect_project_language, should_auto_detect_language
+
+        if should_auto_detect_language(config.get("language")):
+            detected_language = detect_project_language(config.get("docroot", "."))
+            if detected_language:
+                config["language"] = detected_language
+
         return config
 
     def set_project_config(self, project_name: str, key: str, value: str) -> None:

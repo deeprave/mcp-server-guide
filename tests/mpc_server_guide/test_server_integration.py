@@ -1,6 +1,7 @@
 """Tests for server integration with hybrid file access (Issue 003 Phase 4)."""
 
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 from mcp_server_guide.server import create_server
 from mcp_server_guide.session_tools import SessionManager
@@ -93,9 +94,13 @@ def test_server_handles_mixed_sources():
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
+        # Create a test README file
+        readme_path = Path(temp_dir) / "README.md"
+        readme_path.write_text("# Local Guide")
+
         session = SessionManager()
         session.set_current_project("mixed-project")
-        session.session_state.set_project_config("mixed-project", "guide", "local:./README.md")  # Local file
+        session.session_state.set_project_config("mixed-project", "guide", f"local:{readme_path}")  # Local file
         session.session_state.set_project_config(
             "mixed-project", "language", "https://example.com/lang.md"
         )  # HTTP file

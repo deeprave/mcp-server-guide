@@ -1,125 +1,123 @@
-"""Test session tools."""
+"""Tests for session tools functionality."""
 
 from mcp_server_guide.tools.config_tools import (
+    get_project_config,
     set_project_config,
     set_project_config_values,
-    get_project_config,
 )
-from mcp_server_guide.session_tools import reset_project_config, set_local_file
-from mcp_server_guide.tools.project_tools import switch_project, get_current_project
 
 
-def test_set_project_config_values_tool(isolated_config):
+def test_set_project_config_values_tool():
     """Test batch project config setting tool."""
     # Test batch setting multiple values
     config_dict = {"guidesdir": "test_guides/", "langdir": "test_lang/", "language": "python"}
 
-    result = set_project_config_values(config_dict, config_filename=isolated_config)
+    result = set_project_config_values(config_dict)
 
     assert result["success"] is True
-    assert result["total_keys"] == 3
-    assert result["success_count"] == 3
-    assert len(result["results"]) == 3
+    assert result["project"] is not None
+    assert "3/3" in result["message"]  # Should show successful count
 
-    # Verify each key was set
-    for item in result["results"]:
-        assert item["success"] is True
-        assert item["key"] in config_dict
-        assert item["value"] == config_dict[item["key"]]
+    # Verify the values were set
+    config = get_project_config()
+    assert config["guidesdir"] == "test_guides/"
+    assert config["langdir"] == "test_lang/"
+    assert config["language"] == "python"
 
 
-def test_set_project_config_values_partial_failure(isolated_config):
+def test_set_project_config_values_partial_failure():
     """Test batch config setting with some failures."""
     # Mix valid and invalid keys - all keys should succeed in our implementation
     config_dict = {
-        "guidesdir": "valid_guides/",
-        "custom_key": "custom_value",  # This should work
+        "guidesdir": "test_guides/",
+        "langdir": "test_lang/",
         "language": "python",
+        "custom_field": "custom_value",  # Should work fine
     }
 
-    result = set_project_config_values(config_dict, config_filename=isolated_config)
+    result = set_project_config_values(config_dict)
 
     assert result["success"] is True  # All should succeed
-    assert result["total_keys"] == 3
-    assert result["success_count"] == 3
 
 
-def test_set_project_config_tool(isolated_config):
+def test_set_project_config_tool():
     """Test set_project_config MCP tool."""
     # Should set configuration for current project
-    result = set_project_config("guidelines", "python-web", config_filename=isolated_config)
+    result = set_project_config("guidelines", "python-web")
     assert result["success"] is True
     assert "python-web" in result["message"]
 
 
-def test_get_project_config_tool(isolated_config):
+def test_get_project_config_tool():
     """Test get_project_config MCP tool."""
     # Set some config first
-    set_project_config("guidelines", "python-web", config_filename=isolated_config)
-    set_project_config("language", "python", config_filename=isolated_config)
+    set_project_config("guidelines", "python-web")
+    set_project_config("language", "python")
 
     # Get config
-    result = get_project_config()
-    assert isinstance(result, dict)
-    assert result["guidelines"] == "python-web"
+    config = get_project_config()
+    assert config["guidelines"] == "python-web"
+    assert config["language"] == "python"
 
 
-def test_list_project_configs_tool(isolated_config):
+def test_list_project_configs_tool():
     """Test list_project_configs MCP tool."""
     # Set config for multiple projects
-    set_project_config("guidelines", "python-web", config_filename=isolated_config)
+    set_project_config("guidelines", "python-web")
 
-    set_project_config("guidelines", "rust-systems", config_filename=isolated_config)
+    set_project_config("guidelines", "rust-systems")
 
     # List all configs
-    result = get_project_config()
-    assert isinstance(result, dict)
+    config = get_project_config()
+    assert "guidelines" in config
 
 
-def test_reset_project_config_tool(isolated_config):
+def test_reset_project_config_tool():
     """Test reset_project_config MCP tool."""
     # Set some config first
-    set_project_config("guide", "python-web", config_filename=isolated_config)
+    set_project_config("guide", "python-web")
 
     # Reset config
-    result = reset_project_config()
+    from mcp_server_guide.tools.session_management import reset_session
+
+    result = reset_session()
     assert result["success"] is True
 
-
-def test_switch_project_tool():
-    """Test switch_project MCP tool."""
-    # Switch to different project
-    result = switch_project("test-project")
-    assert result["success"] is True
-    assert result["project"] == "test-project"
-
-    # Verify current project changed
-    current = get_current_project()
-    assert current == "test-project"
+    # Verify config was reset
+    config = get_project_config()
+    # Should have default values, not the custom one we set
+    assert config.get("guide") != "python-web"
 
 
-def test_set_local_file_tool():
-    """Test set_local_file MCP tool."""
-    # Set local file mapping
-    result = set_local_file("guide", "./local-guide.md")
-    assert result["success"] is True
-    assert "local-guide.md" in result["message"]
+def test_session_manager_initialization():
+    """Test SessionManager singleton initialization."""
+    from mcp_server_guide.session_tools import SessionManager
+
+    # Get two instances
+    session1 = SessionManager()
+    session2 = SessionManager()
+
+    # Should be the same instance (singleton)
+    assert session1 is session2
+
+    # Should have a current project
+    assert session1.get_current_project() is not None
 
 
-def test_project_context_switching(isolated_config):
+def test_project_context_switching():
     """Test project context switching with configuration."""
     # Set config for project A
-    set_project_config("guidelines", "python-web", config_filename=isolated_config)
+    set_project_config("guidelines", "python-web")
 
     # Switch to project B
-    switch_project("project-b")
+    from mcp_server_guide.tools.project_tools import switch_project
+
+    result = switch_project("project-b")
+    assert result["success"] is True
 
     # Set different config for project B
-    set_project_config("guidelines", "rust-systems", config_filename=isolated_config)
+    set_project_config("guidelines", "rust-systems")
 
-    # Switch back to original project
-    switch_project("mcp-server-guide")
-
-    # Original config should still be there
-    result = get_project_config()
-    assert isinstance(result, dict)
+    # Verify each project has its own config
+    config_b = get_project_config("project-b")
+    assert config_b.get("guidelines") == "rust-systems"

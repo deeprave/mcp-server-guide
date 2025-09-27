@@ -9,14 +9,6 @@
         "example-tool",
         "another-tool"
       ]
-    },
-    "test_project": {
-      "test_key": "test_value",
-      "tools": [
-        "tool1",
-        "tool2"
-      ],
-      "language": "python"
     }
   }
 }

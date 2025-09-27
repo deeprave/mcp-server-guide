@@ -96,17 +96,38 @@ def test_file_accessor_read_file():
     """Test FileAccessor reads files."""
     accessor = FileAccessor()
 
-    # Local file reading
-    local_source = FileSource("local", ".")
-    content = accessor.read_file("README.md", local_source)
-    assert isinstance(content, str)
-    assert len(content) > 0
+    # Create a test file
+    import tempfile
 
-    # Server file reading
-    server_source = FileSource("server", ".")
-    content = accessor.read_file("README.md", server_source)
-    assert isinstance(content, str)
-    assert len(content) > 0
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write("# Test Content")
+        test_file = f.name
+
+    try:
+        # Local file reading
+        local_source = FileSource("local", ".")
+        content = accessor.read_file(test_file, local_source)
+        assert isinstance(content, str)
+        assert "Test Content" in content
+    finally:
+        import os
+
+        os.unlink(test_file)
+
+    # Server file reading - use the same test file
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f2:
+        f2.write("# Server Test Content")
+        test_file2 = f2.name
+
+    try:
+        server_source = FileSource("server", ".")
+        content = accessor.read_file(test_file2, server_source)
+        assert isinstance(content, str)
+        assert "Server Test Content" in content
+    finally:
+        import os
+
+        os.unlink(test_file2)
 
 
 def test_file_source_context_detection():
