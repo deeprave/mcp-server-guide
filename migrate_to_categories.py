@@ -3,6 +3,7 @@
 
 from src.mcp_server_guide.session_tools import SessionManager
 
+
 def migrate_config():
     """Migrate current config to categories format."""
     session = SessionManager()
@@ -19,24 +20,15 @@ def migrate_config():
 
     # Migrate guide
     if config.get("guide") and config.get("guidesdir"):
-        categories["guide"] = {
-            "dir": config["guidesdir"],
-            "patterns": [config["guide"]]
-        }
+        categories["guide"] = {"dir": config["guidesdir"], "patterns": [config["guide"]]}
 
     # Migrate lang
     if config.get("language") and config.get("langdir"):
-        categories["lang"] = {
-            "dir": config["langdir"],
-            "patterns": [config["language"]]
-        }
+        categories["lang"] = {"dir": config["langdir"], "patterns": [config["language"]]}
 
     # Migrate context
     if config.get("context") and config.get("contextdir"):
-        categories["context"] = {
-            "dir": config["contextdir"],
-            "patterns": [config["context"]]
-        }
+        categories["context"] = {"dir": config["contextdir"], "patterns": [config["context"]]}
 
     # Add categories to config
     config["categories"] = categories
@@ -55,6 +47,7 @@ def migrate_config():
     print("New categories:", categories)
     print("Set config result:", result)
     print("Migration complete!")
+
 
 if __name__ == "__main__":
     migrate_config()
