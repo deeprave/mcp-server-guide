@@ -21,6 +21,13 @@ from .content_tools import (
 )
 from .file_tools import list_files, file_exists, get_file_content
 from .session_management import save_session, load_session, reset_session
+from .category_tools import (
+    add_category,
+    remove_category,
+    update_category,
+    list_categories,
+    get_category_content,
+)
 
 __all__ = [
     # Project Management
@@ -51,4 +58,10 @@ __all__ = [
     "save_session",
     "load_session",
     "reset_session",
+    # Category Management
+    "add_category",
+    "remove_category",
+    "update_category",
+    "list_categories",
+    "get_category_content",
 ]

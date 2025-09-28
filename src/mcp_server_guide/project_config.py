@@ -20,6 +20,7 @@ class ProjectConfig:
     langdir: Optional[str] = None
     contextdir: Optional[str] = None
     tools: Optional[List[str]] = field(default_factory=list)
+    categories: Optional[Dict[str, Dict[str, Any]]] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary, excluding None values and empty lists."""

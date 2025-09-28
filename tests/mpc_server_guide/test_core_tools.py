@@ -1,5 +1,6 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
+from unittest.mock import patch
 from mcp_server_guide.tools import get_current_project, get_guide, get_project_config, switch_project
 
 
@@ -12,16 +13,20 @@ def test_get_current_project():
 
 def test_get_guide_default_project():
     """Test getting guide for default project."""
-    result = get_guide()
-    assert isinstance(result, str)
-    assert len(result) > 0
+    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category:
+        mock_category.return_value = {"success": True, "content": "# Test Guide Content"}
+        result = get_guide()
+        assert isinstance(result, str)
+        assert len(result) > 0
 
 
 def test_get_guide_specific_project():
     """Test getting guide for specific project."""
-    result = get_guide("mcp_server_guide")
-    assert isinstance(result, str)
-    assert len(result) > 0
+    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category:
+        mock_category.return_value = {"success": True, "content": "# Test Guide Content"}
+        result = get_guide("mcp_server_guide")
+        assert isinstance(result, str)
+        assert len(result) > 0
 
 
 def test_get_project_config_default():

@@ -1,16 +1,34 @@
 {
   "projects": {
     "mcp-server-guide": {
-      "guidesdir": "aidocs/guide/",
-      "langdir": "aidocs/lang/",
-      "projdir": "aidocs/context/",
-      "language": "python",
+      "docroot": "/Users/davidn/Code/mcp-server-guide",
       "tools": [
         "example-tool",
         "another-tool"
       ],
-      "contextdir": "aidocs/context",
-      "context": "freeform"
+      "categories": {
+        "guide": {
+          "dir": "guide/",
+          "patterns": [
+            "**/*.md"
+          ],
+          "description": "Development methodology, TDD approach, and SOLID/YAGNI guardrails"
+        },
+        "lang": {
+          "dir": "lang/",
+          "patterns": [
+            "python"
+          ],
+          "description": "Language-specific coding standards, best practices, required tools, and syntax guidelines"
+        },
+        "context": {
+          "dir": "context/",
+          "patterns": [
+            "freeform"
+          ],
+          "description": "Project-specific information, issue management, and product specifications"
+        }
+      }
     }
   }
 }

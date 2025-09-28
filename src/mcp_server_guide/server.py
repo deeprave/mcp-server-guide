@@ -181,6 +181,41 @@ def reset_session() -> Dict[str, Any]:
     return tools.reset_session()
 
 
+# Category Management Tools
+@guide.tool()
+def add_category(
+    name: str, dir: str, patterns: List[str], project: Optional[str] = None, description: str = ""
+) -> Dict[str, Any]:
+    """Add a new custom category."""
+    return tools.add_category(name, dir, patterns, project, description)
+
+
+@guide.tool()
+def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+    """Remove a custom category."""
+    return tools.remove_category(name, project)
+
+
+@guide.tool()
+def update_category(
+    name: str, dir: str, patterns: List[str], project: Optional[str] = None, description: str = ""
+) -> Dict[str, Any]:
+    """Update an existing category."""
+    return tools.update_category(name, dir, patterns, project, description)
+
+
+@guide.tool()
+def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
+    """List all categories (built-in and custom)."""
+    return tools.list_categories(project)
+
+
+@guide.tool()
+def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+    """Get content from a category using glob patterns."""
+    return tools.get_category_content(name, project)
+
+
 def create_server(
     docroot: str = ".",
     guidesdir: str = "aidocs/guide/",
@@ -272,7 +307,8 @@ def create_server(
 def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     """Create MCP server instance with session-aware configuration."""
     logger.debug("Creating server with session-aware configuration")
-    server = FastMCP(name="Developer Guide MCP")
+    # Use the global mcp instance where tools are registered
+    server = mcp
 
     # Get config filename (default or custom)
     config_filename = config.get("config_filename", ".mcp-server-guide.config.json")

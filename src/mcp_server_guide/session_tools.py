@@ -1,6 +1,7 @@
 """MCP tools for session-scoped project configuration."""
 
 from typing import Dict, Any, Optional
+from pathlib import Path
 from .session import SessionState
 from .logging_config import get_logger
 
@@ -25,6 +26,19 @@ class SessionManager:
             cls._instance.current_project = manager.get_current_project()
             logger.debug("Session manager initialized")
         return cls._instance
+
+    def cleanup_obsolete_config(self) -> None:
+        """Remove obsolete configuration fields that are now handled by categories."""
+        obsolete_fields = {"guidesdir", "guide", "langdir", "language", "contextdir", "context", "projdir"}
+
+        for project_name in self.session_state.projects:
+            project_config = self.session_state.projects[project_name]
+
+            # Remove obsolete fields
+            for field in obsolete_fields:
+                if field in project_config:
+                    del project_config[field]
+                    logger.debug(f"Removed obsolete field '{field}' from project '{project_name}'")
 
     def save_to_file(self, config_file_path: str) -> None:
         """Save session state to config file, preserving existing data."""
@@ -97,8 +111,16 @@ class SessionManager:
                     self.session_state.set_project_config(config.project, key, value)
 
     def get_effective_config(self, project_name: str) -> Dict[str, Any]:
-        """Get effective configuration combining file and session overrides."""
-        return self.session_state.get_project_config(project_name)
+        """Get effective configuration combining file and session overrides with resolved paths."""
+        config = self.session_state.get_project_config(project_name)
+
+        # Resolve docroot to absolute path
+        docroot = config.get("docroot", ".")
+        if not Path(docroot).is_absolute():
+            # Resolve relative paths to absolute
+            config["docroot"] = str(Path(docroot).resolve())
+
+        return config
 
 
 # Global session manager instance

@@ -1,85 +1,30 @@
 """Content retrieval tools."""
 
 from typing import Dict, Any, List, Optional
-from pathlib import Path
 from ..session_tools import SessionManager
+from .category_tools import get_category_content
 
 
 def get_guide(project: Optional[str] = None) -> str:
-    """Get project guidelines for AI injection."""
-    session = SessionManager()
-    if project is None:
-        project = session.get_current_project()
-
-    # Use the server's hybrid file access to read guide
-    try:
-        from ..server import create_server
-
-        server = create_server()
-        result = server.read_guide(project)  # type: ignore[attr-defined]
-        return str(result)
-    except Exception as e:
-        return f"Error reading guide for project {project}: {str(e)}"
+    """Get project guidelines using unified category system."""
+    result = get_category_content("guide", project)
+    return result.get("content", "") if result.get("success") else ""
 
 
 def get_language_guide(project: Optional[str] = None) -> str:
-    """Get language-specific guidelines for AI injection."""
-    session = SessionManager()
-    if project is None:
-        project = session.get_current_project()
-
-    # Use the server's hybrid file access to read language guide
-    try:
-        from ..server import create_server
-
-        server = create_server()
-        result = server.read_language(project)  # type: ignore[attr-defined]
-        return str(result)
-    except Exception as e:
-        return f"Error reading language guide for project {project}: {str(e)}"
+    """Get language-specific guidelines using unified category system."""
+    result = get_category_content("lang", project)
+    return result.get("content", "") if result.get("success") else ""
 
 
 def get_project_context(project: Optional[str] = None) -> str:
-    """Get project context document for AI injection."""
-    session = SessionManager()
-    if project is None:
-        project = session.get_current_project()
-
-    # Get project context from configuration
-    config = session.session_state.get_project_config(project)
-    context_path = config.get("contextdir", "./aidocs/context/")
-
-    # Try to read project context file
-    try:
-        if context_path.startswith(("http://", "https://")):
-            # Use server's HTTP access
-            from ..server import create_server
-
-            server = create_server()
-            from ..file_source import FileSource
-
-            source = FileSource("http", context_path)
-            result = server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
-            return str(result)
-        else:
-            # Read local file
-            context_file = Path(context_path)
-            if context_file.is_dir():
-                # Look for common project files
-                for filename in ["freeform.md", "context.md", "project.md", "README.md"]:
-                    file_path = context_file / filename
-                    if file_path.exists():
-                        return file_path.read_text()
-            elif context_file.exists():
-                return context_file.read_text()
-
-        return f"No project context found for {project}"
-    except Exception as e:
-        return f"Error reading project context for {project}: {str(e)}"
+    """Get project context using unified category system."""
+    result = get_category_content("context", project)
+    return result.get("content", "") if result.get("success") else ""
 
 
 def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
-    """Get all guide files for comprehensive AI context."""
+    """Get all guide content using unified category system."""
     result = {}
 
     try:
@@ -101,24 +46,27 @@ def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
 
 
 def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Search across project content."""
-    results = []
-    guides = get_all_guides(project)
+    """Search across all categories for content matching query."""
+    session = SessionManager()
+    if project is None:
+        project = session.get_current_project()
 
-    for guide_type, content in guides.items():
-        if query.lower() in content.lower():
-            # Find matching lines
-            lines = content.split("\n")
-            for i, line in enumerate(lines):
-                if query.lower() in line.lower():
-                    results.append(
-                        {
-                            "source": guide_type,
-                            "line_number": i + 1,
-                            "line": line.strip(),
-                            "context": "\n".join(lines[max(0, i - 2) : i + 3]),
-                        }
-                    )
+    results = []
+    categories = ["guide", "lang", "context"]
+
+    for category in categories:
+        result = get_category_content(category, project)
+        if result.get("success") and result.get("content"):
+            content = result["content"]
+            if query.lower() in content.lower():
+                results.append(
+                    {
+                        "category": category,
+                        "content": content,
+                        "matched_files": result.get("matched_files", []),
+                        "search_dir": result.get("search_dir", ""),
+                    }
+                )
 
     return results
 
@@ -126,45 +74,23 @@ def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, 
 def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display guide to user."""
     content = get_guide(project)
-    return {
-        "type": "user_display",
-        "title": f"Project Guide - {project or 'Current Project'}",
-        "content": content,
-        "format": "markdown",
-    }
+    return {"success": True, "content": content, "message": f"Guide content for project {project or 'current'}"}
 
 
 def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display language guide to user."""
     content = get_language_guide(project)
     return {
-        "type": "user_display",
-        "title": f"Language Guide - {project or 'Current Project'}",
+        "success": True,
         "content": content,
-        "format": "markdown",
+        "message": f"Language guide content for project {project or 'current'}",
     }
 
 
 def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
     """Display project overview to user."""
-    session = SessionManager()
-    if project is None:
-        project = session.get_current_project()
-
-    config = session.session_state.get_project_config(project)
-    guides = get_all_guides(project)
-
-    summary = f"# Project: {project}\n\n"
-    summary += "## Configuration\n"
-    for key, value in config.items():
-        summary += f"- **{key}**: {value}\n"
-
-    summary += "\n## Available Content\n"
-    for guide_type, content in guides.items():
-        if content and not content.startswith("Error"):
-            summary += f"- **{guide_type}**: {len(content)} characters\n"
-
-    return {"type": "user_display", "title": f"Project Summary - {project}", "content": summary, "format": "markdown"}
+    all_content = get_all_guides(project)
+    return {"success": True, "content": all_content, "message": f"Project summary for {project or 'current'}"}
 
 
 __all__ = [

@@ -6,6 +6,18 @@ from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager
 
 
+def cleanup_config(config_filename: str = ".mcp-server-guide.config.json") -> Dict[str, Any]:
+    """Clean up obsolete configuration fields."""
+    try:
+        session = SessionManager()
+        session.cleanup_obsolete_config()
+        session.save_to_file(config_filename)
+
+        return {"success": True, "message": "Configuration cleaned up - obsolete fields removed"}
+    except Exception as e:
+        return {"success": False, "error": str(e), "message": "Failed to clean up configuration"}
+
+
 def save_session(config_filename: str = ".mcp-server-guide.config.json") -> Dict[str, Any]:
     """Persist current session state."""
     try:

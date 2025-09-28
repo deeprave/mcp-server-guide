@@ -221,4 +221,10 @@ uv run mypy src
 
 # Run pre-commit on all files
 uv run pre-commit run --all-files
+
+# Refresh installed package after MCP development changes
+uv sync
 ```
+
+## MCP Development Notes
+When developing MCP servers with uv, you need to run `uv sync` to refresh the installed package after making changes. This ensures the MCP server picks up your latest code modifications.
