@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 from .session import SessionState
 from .logging_config import get_logger
+from .validation import validate_config_key, ConfigValidationError
 
 logger = get_logger(__name__)
 
@@ -117,6 +118,12 @@ _session_manager = SessionManager()
 def set_project_config(key: str, value: str) -> Dict[str, Any]:
     """Set configuration value for current project."""
     session_manager = SessionManager()
+
+    # Validate the key and value before setting
+    try:
+        validate_config_key(key, value)
+    except ConfigValidationError as e:
+        return {"success": False, "error": str(e), "errors": e.errors}
 
     session_manager.session_state.set_project_config(session_manager.get_current_project(), key, value)
 

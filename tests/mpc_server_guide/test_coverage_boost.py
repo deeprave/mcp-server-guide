@@ -74,7 +74,7 @@ def test_set_project_config_values_exception():
         mock_instance.save_to_file.side_effect = Exception("Save failed")
 
         # This should trigger the exception handling but still succeed
-        result = set_project_config_values({"language": "python"})
+        result = set_project_config_values({"docroot": "/test/path"})
         assert result["success"] is True
 
 

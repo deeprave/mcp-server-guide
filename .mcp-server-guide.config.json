@@ -12,23 +12,37 @@
           "patterns": [
             "**/*.md"
           ],
-          "description": "Development methodology, TDD approach, and SOLID/YAGNI guardrails"
+          "description": "Development methodology, TDD approach, and SOLID/YAGNI guardrails",
+          "auto_load": true
         },
         "lang": {
           "dir": "aidocs/lang/",
           "patterns": [
             "python.md"
           ],
-          "description": "Language-specific coding standards, best practices, required tools, and syntax guidelines"
+          "description": "Language-specific coding standards, best practices, required tools, and syntax guidelines",
+          "auto_load": true
         },
         "context": {
           "dir": "aidocs/context/",
           "patterns": [
             "freeform.md"
           ],
-          "description": "Project-specific information, issue management, and product specifications"
+          "description": "Project-specific information, issue management, and product specifications",
+          "auto_load": true
+        },
+        "scm": {
+          "dir": "aidocs/scm",
+          "patterns": [
+            "**/*.md"
+          ],
+          "description": "Source Code Management guidelines",
+          "auto_load": true
         }
-      }
+      },
+      "categories.scm.auto_load": true,
+      "project": "mcp-server-guide",
+      "invalid_key": "test"
     }
   }
 }

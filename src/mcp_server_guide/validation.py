@@ -1,9 +1,130 @@
-"""Input validation framework for MCP server guide."""
+"""Input validation framework and configuration schema validation for MCP server guide."""
 
+import json
 import re
+from importlib import resources
 from typing import Any, Callable, Dict, List, Union, Optional
 from functools import wraps
+
+from jsonschema import validate, ValidationError as JSONSchemaValidationError, Draft7Validator
+
 from .exceptions import ValidationError
+
+
+# ============================================================================
+# Configuration Schema Validation
+# ============================================================================
+
+# Load schema once at module import time
+try:
+    with resources.open_text("mcp_server_guide", "config-schema.json") as f:
+        CONFIG_SCHEMA = json.load(f)
+except Exception as e:
+    raise ImportError(f"Failed to load config schema: {e}")
+
+# Create validator instance for better error messages
+VALIDATOR = Draft7Validator(CONFIG_SCHEMA)
+
+
+class ConfigValidationError(Exception):
+    """Raised when configuration validation fails."""
+
+    def __init__(self, message: str, errors: Optional[List[str]] = None):
+        super().__init__(message)
+        self.errors = errors or []
+
+
+def validate_config(config_data: Dict[str, Any]) -> None:
+    """
+    Validate entire configuration against schema.
+
+    Args:
+        config_data: Configuration dictionary to validate
+
+    Raises:
+        ConfigValidationError: If validation fails
+    """
+    try:
+        validate(config_data, CONFIG_SCHEMA)
+    except JSONSchemaValidationError as e:
+        errors = [error.message for error in VALIDATOR.iter_errors(config_data)]
+        raise ConfigValidationError(f"Configuration validation failed: {e.message}", errors)
+
+
+def validate_config_key(key: str, value: Any) -> None:
+    """
+    Validate a single configuration key-value pair.
+
+    Args:
+        key: Configuration key to validate
+        value: Value to validate
+
+    Raises:
+        ConfigValidationError: If key is invalid or value doesn't match schema
+    """
+    # Reject dotted keys to prevent nested key pollution
+    if "." in key:
+        raise ConfigValidationError(f"Invalid configuration key '{key}'. Dotted keys are not allowed.")
+
+    # If key is in schema, validate against it
+    if key in CONFIG_SCHEMA.get("properties", {}):
+        key_schema = CONFIG_SCHEMA["properties"][key]
+        try:
+            validate(value, key_schema)
+        except JSONSchemaValidationError as e:
+            raise ConfigValidationError(f"Invalid value for key '{key}': {e.message}")
+    # Allow arbitrary keys for flexibility - just ensure value is JSON serializable
+    else:
+        try:
+            import json
+
+            json.dumps(value)
+        except (TypeError, ValueError) as e:
+            raise ConfigValidationError(f"Value for key '{key}' must be JSON serializable: {str(e)}")
+
+
+def validate_category(category_name: str, category_data: Dict[str, Any]) -> None:
+    """
+    Validate a category definition.
+
+    Args:
+        category_name: Name of the category
+        category_data: Category configuration dictionary
+
+    Raises:
+        ConfigValidationError: If category validation fails
+    """
+    # Validate category name pattern
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", category_name):
+        raise ConfigValidationError(
+            f"Invalid category name '{category_name}'. Must start with letter and contain only letters, numbers, underscores, and hyphens."
+        )
+
+    # Validate category data against schema
+    category_schema = CONFIG_SCHEMA["properties"]["categories"]["patternProperties"]["^[a-zA-Z][a-zA-Z0-9_-]*$"]
+    try:
+        validate(category_data, category_schema)
+    except JSONSchemaValidationError as e:
+        raise ConfigValidationError(f"Invalid category '{category_name}': {e.message}")
+
+
+def is_valid_config_key(key: str) -> bool:
+    """
+    Check if a key is valid for configuration.
+
+    Args:
+        key: Configuration key to check
+
+    Returns:
+        True if key is valid, False otherwise
+    """
+    valid_keys = set(CONFIG_SCHEMA.get("properties", {}).keys())
+    return key in valid_keys
+
+
+# ============================================================================
+# Original Input Validation Framework
+# ============================================================================
 
 
 class ValidationRule:

@@ -10,7 +10,7 @@ from mcp_server_guide.tools.config_tools import (
 def test_set_project_config_values_tool():
     """Test batch project config setting tool."""
     # Test batch setting multiple values
-    config_dict = {"guidesdir": "test_guides/", "langdir": "test_lang/", "language": "python"}
+    config_dict = {"docroot": "/test/path", "project": "test-project", "tools": ["tool1", "tool2"]}
 
     result = set_project_config_values(config_dict)
 
@@ -20,19 +20,18 @@ def test_set_project_config_values_tool():
 
     # Verify the values were set
     config = get_project_config()
-    assert config["guidesdir"] == "test_guides/"
-    assert config["langdir"] == "test_lang/"
-    assert config["language"] == "python"
+    assert config["docroot"] == "/test/path"
+    assert config["project"] == "test-project"
+    assert config["tools"] == ["tool1", "tool2"]
 
 
 def test_set_project_config_values_partial_failure():
     """Test batch config setting with some failures."""
     # Mix valid and invalid keys - all keys should succeed in our implementation
     config_dict = {
-        "guidesdir": "test_guides/",
-        "langdir": "test_lang/",
-        "language": "python",
-        "custom_field": "custom_value",  # Should work fine
+        "docroot": "/test/guides",
+        "project": "test-lang",
+        "tools": ["python"],
     }
 
     result = set_project_config_values(config_dict)
@@ -43,33 +42,33 @@ def test_set_project_config_values_partial_failure():
 def test_set_project_config_tool():
     """Test set_project_config MCP tool."""
     # Should set configuration for current project
-    result = set_project_config("guidelines", "python-web")
+    result = set_project_config("docroot", "/test/path")
     assert result["success"] is True
-    assert "python-web" in result["message"]
+    assert "/test/path" in result["message"]
 
 
 def test_get_project_config_tool():
     """Test get_project_config MCP tool."""
     # Set some config first
-    set_project_config("guidelines", "python-web")
-    set_project_config("language", "python")
+    set_project_config("docroot", "/test/path")
+    set_project_config("project", "test-project")
 
     # Get config
     config = get_project_config()
-    assert config["guidelines"] == "python-web"
-    assert config["language"] == "python"
+    assert config["docroot"] == "/test/path"
+    assert config["project"] == "test-project"
 
 
 def test_list_project_configs_tool():
     """Test list_project_configs MCP tool."""
     # Set config for multiple projects
-    set_project_config("guidelines", "python-web")
+    set_project_config("docroot", "/test/path")
 
-    set_project_config("guidelines", "rust-systems")
+    set_project_config("project", "test-project")
 
     # List all configs
     config = get_project_config()
-    assert "guidelines" in config
+    assert "docroot" in config
 
 
 def test_reset_project_config_tool():
@@ -107,7 +106,7 @@ def test_session_manager_initialization():
 def test_project_context_switching():
     """Test project context switching with configuration."""
     # Set config for project A
-    set_project_config("guidelines", "python-web")
+    set_project_config("docroot", "/project-a")
 
     # Switch to project B
     from mcp_server_guide.tools.project_tools import switch_project
@@ -116,8 +115,8 @@ def test_project_context_switching():
     assert result["success"] is True
 
     # Set different config for project B
-    set_project_config("guidelines", "rust-systems")
+    set_project_config("docroot", "/project-b")
 
     # Verify each project has its own config
     config_b = get_project_config("project-b")
-    assert config_b.get("guidelines") == "rust-systems"
+    assert config_b.get("docroot") == "/project-b"

@@ -2,6 +2,7 @@
 
 from typing import Dict, Any, List, Optional
 from ..session_tools import SessionManager
+from ..validation import validate_config, ConfigValidationError
 
 
 def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
@@ -11,7 +12,9 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
         project = session.get_current_project()
 
     config = session.session_state.get_project_config(project)
-    config["project"] = project  # Ensure project name is included
+    # Only set project name if not already explicitly set in config
+    if "project" not in config:
+        config["project"] = project
     return config
 
 
@@ -32,6 +35,20 @@ def set_project_config_values(
 
     if project is None:
         project = session.get_current_project()
+
+    # Validate entire configuration before setting any values
+    try:
+        # Get current config and merge with new values for validation
+        current_config = get_project_config(project)
+        merged_config = {**current_config, **config_dict}
+        validate_config(merged_config)
+    except ConfigValidationError as e:
+        return {
+            "success": False,
+            "error": f"Configuration validation failed: {str(e)}",
+            "errors": e.errors,
+            "project": project,
+        }
 
     results = []
     success_count = 0
@@ -66,9 +83,29 @@ def set_project_config(
     key: str, value: Any, project: Optional[str] = None, config_filename: str = ".mcp-server-guide.config.json"
 ) -> Dict[str, Any]:
     """Update project settings."""
+
+    # Validate the key and value before setting
+    try:
+        from ..validation import validate_config_key, ConfigValidationError
+
+        validate_config_key(key, value)
+    except ConfigValidationError as e:
+        return {"success": False, "error": str(e), "errors": e.errors, "key": key, "value": value}
+
     session = SessionManager()
     if project is None:
         project = session.get_current_project()
+
+    # Check if trying to change an immutable project key
+    if key == "project":
+        current_config = session.session_state.get_project_config(project)
+        if "project" in current_config and current_config["project"] != value:
+            return {
+                "success": False,
+                "error": f"Project key is immutable. Cannot change from '{current_config['project']}' to '{value}'. Create a new project instead.",
+                "key": key,
+                "value": value,
+            }
 
     session.session_state.set_project_config(project, key, value)
 

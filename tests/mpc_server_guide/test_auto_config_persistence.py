@@ -9,11 +9,11 @@ class TestAutoConfigPersistence:
     def test_config_changes_trigger_save(self):
         """Test that configuration changes work properly."""
         # Set a configuration value
-        result = set_project_config("language", "javascript")
+        result = set_project_config("project", "test-project")
 
         assert result["success"] is True
-        assert result["key"] == "language"
-        assert result["value"] == "javascript"
+        assert result["key"] == "project"
+        assert result["value"] == "test-project"
 
     def test_project_changes_work(self):
         """Test that project changes work properly."""
@@ -28,8 +28,8 @@ class TestAutoConfigPersistence:
         """Test that multiple configuration changes work."""
         # Make multiple configuration changes
         result1 = set_project_config("language", "python")
-        result2 = set_project_config("guidesdir", "custom/guides/")
-        result3 = set_project_config("langdir", "custom/lang/")
+        result2 = set_project_config("docroot", "/custom/guides")
+        result3 = set_project_config("tools", ["tool1", "tool2"])
 
         assert result1["success"] is True
         assert result2["success"] is True

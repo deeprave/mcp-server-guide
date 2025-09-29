@@ -328,6 +328,7 @@ version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
+    { name = "jsonschema" },
     { name = "mcp", extra = ["cli"] },
     { name = "pytest-cov" },
     { name = "requests" },
@@ -349,12 +350,14 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "types-jsonschema" },
     { name = "types-requests" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.3.0" },
+    { name = "jsonschema", specifier = ">=4.0.0" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.14.1" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pre-commit", marker = "extra == 'dev'" },
@@ -373,6 +376,7 @@ dev = [
     { name = "mypy", specifier = ">=1.18.2" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "ruff", specifier = ">=0.13.1" },
+    { name = "types-jsonschema", specifier = ">=4.25.1.20250822" },
     { name = "types-requests", specifier = ">=2.32.4.20250913" },
 ]
 
@@ -813,6 +817,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/21/ca/950278884e2ca20547ff3eb109478c6baf6b8cf219318e6bc4f666fad8e8/typer-0.19.2.tar.gz", hash = "sha256:9ad824308ded0ad06cc716434705f691d4ee0bfd0fb081839d2e426860e7fdca", size = 104755, upload-time = "2025-09-23T09:47:48.256Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/22/35617eee79080a5d071d0f14ad698d325ee6b3bf824fc0467c03b30e7fa8/typer-0.19.2-py3-none-any.whl", hash = "sha256:755e7e19670ffad8283db353267cb81ef252f595aa6834a0d1ca9312d9326cb9", size = 46748, upload-time = "2025-09-23T09:47:46.777Z" },
+]
+
+[[package]]
+name = "types-jsonschema"
+version = "4.25.1.20250822"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "referencing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/64/7f/369b54dad6eb6b5adc1fb1c53edbed18e6c32cbc600357135308902fdbdc/types_jsonschema-4.25.1.20250822.tar.gz", hash = "sha256:aac69ed4b23f49aaceb7fcb834141d61b9e4e6a7f6008cb2f0d3b831dfa8464a", size = 15628, upload-time = "2025-08-22T03:04:18.293Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b1/3d/bc1d171f032fcf63cedd4ade241f3f4e66d7e3bb53ee1da3c8f2f043eb0b/types_jsonschema-4.25.1.20250822-py3-none-any.whl", hash = "sha256:f82c2d7fa1ce1c0b84ba1de4ed6798469768188884db04e66421913a4e181294", size = 15923, upload-time = "2025-08-22T03:04:17.346Z" },
 ]
 
 [[package]]

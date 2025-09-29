@@ -26,10 +26,10 @@ def test_tools_return_expected_types():
 def test_tools_with_parameters():
     """Test tools accept and handle parameters correctly."""
     # Test config tool with parameters
-    result = set_project_config("test_key", "test_value")
+    result = set_project_config("docroot", "/test/path")
     assert result["success"] is True
-    assert result["key"] == "test_key"
-    assert result["value"] == "test_value"
+    assert result["key"] == "docroot"
+    assert result["value"] == "/test/path"
 
 
 def test_session_management_comprehensive():
@@ -50,11 +50,11 @@ def test_session_management_comprehensive():
 def test_config_tools_comprehensive():
     """Test comprehensive configuration tools functionality."""
     # Set config
-    result = set_project_config("test_key", "test_value", "test_project")
+    result = set_project_config("docroot", "/test/path", "test_project")
     assert result["success"] is True
     assert result["project"] == "test_project"
 
     # Get config
     config = get_project_config("test_project")
     assert isinstance(config, dict)
-    assert config["test_key"] == "test_value"
+    assert config["docroot"] == "/test/path"

@@ -5,6 +5,7 @@ from pathlib import Path
 import glob
 from ..session_tools import SessionManager
 from ..logging_config import get_logger
+from ..validation import validate_category, ConfigValidationError
 
 logger = get_logger(__name__)
 
@@ -101,6 +102,14 @@ def add_category(
             "error": f"Cannot add built-in category '{name}'. Built-in categories are: {', '.join(BUILTIN_CATEGORIES)}",
         }
 
+    # Validate category data before adding
+    category_data = {"dir": dir, "patterns": patterns, "description": description, "auto_load": auto_load}
+
+    try:
+        validate_category(name, category_data)
+    except ConfigValidationError as e:
+        return {"success": False, "error": str(e), "errors": e.errors}
+
     session = SessionManager()
     if project is None:
         project = session.get_current_project()
@@ -175,6 +184,17 @@ def update_category(
     auto_load: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Update an existing category (built-in or custom)."""
+
+    # Validate category data before updating
+    category_data: Dict[str, Any] = {"dir": dir, "patterns": patterns, "description": description}
+    if auto_load is not None:
+        category_data["auto_load"] = auto_load
+
+    try:
+        validate_category(name, category_data)
+    except ConfigValidationError as e:
+        return {"success": False, "error": str(e), "errors": e.errors}
+
     session = SessionManager()
     if project is None:
         project = session.get_current_project()
