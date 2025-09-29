@@ -75,9 +75,7 @@ def test_project_config_manager_load_config_with_projects():
         config_file = Path(temp_dir) / ".mcp-server-guide.config.json"
 
         # Create config with projects structure
-        config_data = {
-            "projects": {"test-project": {"project": "test-project", "docroot": "/test/path"}}
-        }
+        config_data = {"projects": {"test-project": {"project": "test-project", "docroot": "/test/path"}}}
         config_file.write_text(json.dumps(config_data))
 
         manager = ProjectConfigManager()

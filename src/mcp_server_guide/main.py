@@ -1,7 +1,6 @@
 """Main CLI entry point for MCP server."""
 
 import os
-import re
 from typing import Any, Dict
 import click
 from .config import Config
@@ -16,7 +15,6 @@ def validate_mode(mode: str) -> tuple[str, str]:
     Returns:
         tuple: (mode_type, mode_config)
         - stdio: ("stdio", "")
-        - sse=url: ("sse", "http://localhost:8080/sse")
     """
     logger.debug(f"Validating mode: {mode}")
 
@@ -24,18 +22,8 @@ def validate_mode(mode: str) -> tuple[str, str]:
         logger.debug("Using stdio mode")
         return ("stdio", "")
 
-    if mode.startswith("sse="):
-        sse_url = mode[4:]  # Remove "sse=" prefix
-        logger.debug(f"Parsing SSE URL: {sse_url}")
-        # Basic URL validation
-        if not re.match(r"^https?://.+", sse_url):
-            logger.warning(f"Invalid SSE URL format: {sse_url}")
-            raise click.BadParameter(f"Invalid SSE URL format: {sse_url}")
-        logger.debug(f"Using SSE mode with URL: {sse_url}")
-        return ("sse", sse_url)
-
     logger.warning(f"Invalid mode specified: {mode}")
-    raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio' or 'sse=http://host/path'")
+    raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio'")
 
 
 def apply_legacy_cli_to_categories(resolved_config: Dict[str, Any]) -> None:
@@ -110,41 +98,6 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
             # Graceful shutdown on pipe close or Ctrl+C
             pass
         return "MCP server started in stdio mode"
-    elif mode == "sse":
-        # Start MCP server in SSE mode
-        sse_url = config.get("mode_config", "http://localhost:8080/sse")
-        logger.info(f"Starting MCP server in SSE mode at {sse_url}")
-
-        # Parse URL for host and port
-        import urllib.parse
-
-        parsed = urllib.parse.urlparse(sse_url)
-        host = parsed.hostname or "localhost"
-
-        # Determine port: explicit port > default for protocol > 8080 fallback
-        if parsed.port:
-            port = parsed.port
-        elif parsed.scheme == "https":
-            port = 443
-        elif parsed.scheme == "http":
-            port = 80
-        else:
-            port = 8080  # Fallback for development
-
-        logger.debug(f"Binding to {host}:{port}")
-
-        try:
-            # Use uvicorn to run the FastMCP server
-            import uvicorn
-            from typing import cast, Any
-
-            # FastMCP is an ASGI app but not properly typed, so cast it
-            uvicorn.run(cast(Any, mcp), host=host, port=port)
-        except KeyboardInterrupt:
-            logger.debug("SSE server shutdown (interrupted)")
-            # Graceful shutdown on Ctrl+C
-            pass
-        return f"MCP server started in sse mode at {sse_url}"
     else:
         logger.warning(f"Unsupported server mode: {mode}")
         raise ValueError(f"Unsupported mode: {mode}")
@@ -167,7 +120,7 @@ def main() -> click.Command:
     def cli_main(mode: str, **kwargs: Any) -> None:
         """MCP server with configurable paths.
 
-        MODE: Server mode - 'stdio' (default) or 'sse=http://host/path'
+        MODE: Server mode - 'stdio' (default)
         """
         # Validate and parse mode
         try:

@@ -22,21 +22,6 @@ def test_stdio_mode_starts_mcp_server():
             assert "MCP server started in stdio mode" in result
 
 
-def test_sse_mode_starts_uvicorn():
-    """Test that SSE mode starts uvicorn server."""
-    config = {"docroot": ".", "project": "test", "mode_config": "http://localhost:8080/sse"}
-
-    with patch("uvicorn.run") as mock_uvicorn:
-        result = start_mcp_server("sse", config)
-
-        # Should call uvicorn.run for SSE mode
-        mock_uvicorn.assert_called_once()
-        call_args = mock_uvicorn.call_args
-        assert call_args[1]["host"] == "localhost"
-        assert call_args[1]["port"] == 8080
-        assert "MCP server started in sse mode" in result
-
-
 def test_stdio_mode_handles_keyboard_interrupt():
     """Test that stdio mode handles KeyboardInterrupt gracefully."""
     config = {"docroot": ".", "project": "test"}
@@ -61,19 +46,6 @@ def test_stdio_mode_handles_broken_pipe():
 
         # Should still return success message
         assert "MCP server started in stdio mode" in result
-
-
-def test_sse_mode_handles_keyboard_interrupt():
-    """Test that SSE mode handles KeyboardInterrupt gracefully."""
-    config = {"docroot": ".", "project": "test", "mode_config": "http://localhost:8080/sse"}
-
-    with patch("uvicorn.run") as mock_uvicorn:
-        mock_uvicorn.side_effect = KeyboardInterrupt()
-
-        result = start_mcp_server("sse", config)
-
-        # Should still return success message
-        assert "MCP server started in sse mode" in result
 
 
 def test_server_startup_with_config():
