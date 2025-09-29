@@ -13,12 +13,7 @@ class ProjectConfig:
     """Project configuration data."""
 
     project: str
-    guide: Optional[str] = None
-    language: Optional[str] = None
     docroot: Optional[str] = None
-    guidesdir: Optional[str] = None
-    langdir: Optional[str] = None
-    contextdir: Optional[str] = None
     tools: Optional[List[str]] = field(default_factory=list)
     categories: Optional[Dict[str, Dict[str, Any]]] = field(default_factory=dict)
 
@@ -29,8 +24,11 @@ class ProjectConfig:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ProjectConfig":
-        """Create from dictionary."""
-        return cls(**data)
+        """Create from dictionary, filtering out legacy fields."""
+        # Filter out legacy fields that are no longer supported
+        legacy_fields = {"guide", "language", "guidesdir", "langdir", "contextdir", "projdir"}
+        filtered_data = {k: v for k, v in data.items() if k not in legacy_fields}
+        return cls(**filtered_data)
 
 
 class ConfigFileWatcher:
@@ -94,9 +92,6 @@ class ProjectConfigManager:
                 # Handle corrupted files
                 existing_data = {"projects": {}}
 
-        # Remove current_project field if it exists (Issue 012)
-        existing_data.pop("current_project", None)
-
         # Update the specific project
         project_dict = config.to_dict()
         project_name = project_dict.pop("project")  # Remove project name from data
@@ -107,7 +102,7 @@ class ProjectConfigManager:
             json.dump(existing_data, f, indent=2)
 
     def load_config(self, project_path: Path, project_name: Optional[str] = None) -> Optional[ProjectConfig]:
-        """Load project configuration from file with migration support."""
+        """Load project configuration from file."""
         config_file = project_path / self.CONFIG_FILENAME
 
         if not config_file.exists():
@@ -117,25 +112,11 @@ class ProjectConfigManager:
             with open(config_file) as f:
                 data = json.load(f)
 
-            # Handle migration from old format
+            # Load from projects structure
             if project_name and "projects" in data and project_name in data["projects"]:
                 project_data = data["projects"][project_name].copy()
-
-                # Migrate projdir to contextdir
-                if "projdir" in project_data and "contextdir" not in project_data:
-                    project_data["contextdir"] = project_data.pop("projdir")
-
-                # Ensure project name is set
                 project_data["project"] = project_name
-
                 return ProjectConfig.from_dict(project_data)
-
-            # Handle direct project config (legacy single-project format)
-            if "project" in data:
-                # Migrate projdir to contextdir
-                if "projdir" in data and "contextdir" not in data:
-                    data["contextdir"] = data.pop("projdir")
-                return ProjectConfig.from_dict(data)
 
             return None
 

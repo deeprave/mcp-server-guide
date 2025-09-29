@@ -27,19 +27,6 @@ class SessionManager:
             logger.debug("Session manager initialized")
         return cls._instance
 
-    def cleanup_obsolete_config(self) -> None:
-        """Remove obsolete configuration fields that are now handled by categories."""
-        obsolete_fields = {"guidesdir", "guide", "langdir", "language", "contextdir", "context", "projdir"}
-
-        for project_name in self.session_state.projects:
-            project_config = self.session_state.projects[project_name]
-
-            # Remove obsolete fields
-            for field in obsolete_fields:
-                if field in project_config:
-                    del project_config[field]
-                    logger.debug(f"Removed obsolete field '{field}' from project '{project_name}'")
-
     def save_to_file(self, config_file_path: str) -> None:
         """Save session state to config file, preserving existing data."""
         import json

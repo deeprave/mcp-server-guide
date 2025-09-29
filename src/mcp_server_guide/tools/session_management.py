@@ -10,12 +10,11 @@ def cleanup_config(config_filename: str = ".mcp-server-guide.config.json") -> Di
     """Clean up obsolete configuration fields."""
     try:
         session = SessionManager()
-        session.cleanup_obsolete_config()
         session.save_to_file(config_filename)
 
-        return {"success": True, "message": "Configuration cleaned up - obsolete fields removed"}
+        return {"success": True, "message": "Configuration saved"}
     except Exception as e:
-        return {"success": False, "error": str(e), "message": "Failed to clean up configuration"}
+        return {"success": False, "error": str(e), "message": "Failed to save configuration"}
 
 
 def save_session(config_filename: str = ".mcp-server-guide.config.json") -> Dict[str, Any]:

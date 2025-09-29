@@ -18,9 +18,12 @@ Every AI client has its own idea of where to source instructions by default, and
 
 ### The Implementation
 
-Documents are split into three types:
-- **Guidelines**: General developer guidelines. I love TDD nd doing things quickly in small iterations - even if I dislike doing it without AI assistance). It is great for keeping an AI bounded and restricted to doing stuff that's actually useful and to have some assurance that what it is implementing is actually what you want. Your guidelines most likely differ considerably from mine.
-- **Language**: Programming languages each have their naunces. I develop in several, and
+Documents are organized using a **unified categories system** with three built-in categories:
+- **guide**: General developer guidelines (TDD methodology, coding standards, workflow requirements)
+- **lang**: Programming language-specific guidelines (syntax, best practices, tooling, project structure)
+- **context**: Project-specific information (issue management, specifications, workflow details)
+
+The legacy CLI arguments (`--guidesdir`, `--guide`, `--langsdir`, `--lang`, `--contextdir`, `--context`) are maintained for backward compatibility and convenience - they configure the appropriate built-in categories under the hood.
 
 ## Installation
 
@@ -54,14 +57,14 @@ mcp-server-guide -d /docs -g guides/ -l langs/ -L python -c contexts/
 | Short | Long           | Environment Variable | Default              | Description                           |
 | ----- | -------------- | -------------------- | -------------------- | ------------------------------------- |
 | `-d`  | `--docroot`    | `MG_DOCROOT`         | `.`                  | Document root directory               |
-| `-g`  | `--guidesdir`  | `MG_GUIDEDIR`        | `guide/`             | Guidelines directory                  |
-| `-G`  | `--guide`      | `MG_GUIDE`           | `guidelines`         | Guidelines file (also --guidelines)   |
-| `-l`  | `--langsdir`   | `MG_LANGDIR`         | `lang/`              | Languages directory                   |
-| `-L`  | `--lang`       | `MG_LANGUAGE`        | `none` (auto-detect) | Language file (also --language)       |
-| `-c`  | `--contextdir` | `MG_CONTEXTDIR`      | `context/`           | Context directory                     |
-| `-C`  | `--context`    | `MG_CONTEXT`         | `project-context`    | Project context file                  |
-|       | `--config`     | `MG_CONFIG`          | `.mcp-server-guide.config.json` | Configuration file path |
+| `-c`  | `--config`     | `MG_CONFIG`          | `.mcp-server-guide.config.json` | Configuration file path |
 |       | `--global`     | `MG_CONFIG_GLOBAL`   | `false`              | Use global configuration file         |
+| `-g`  | `--guidesdir`  | `MG_GUIDEDIR`        | `guide/`             | Guidelines directory (configures 'guide' category) |
+| `-G`  | `--guide`      | `MG_GUIDE`           | `guidelines`         | Guidelines file (configures 'guide' category) |
+| `-l`  | `--langsdir`   | `MG_LANGDIR`         | `lang/`              | Languages directory (configures 'lang' category) |
+| `-L`  | `--lang`       | `MG_LANGUAGE`        | `none` (auto-detect) | Language file (configures 'lang' category) |
+|       | `--contextdir` | `MG_CONTEXTDIR`      | `context/`           | Context directory (configures 'context' category) |
+| `-C`  | `--context`    | `MG_CONTEXT`         | `project-context`    | Project context file (configures 'context' category) |
 
 ### Language Auto-Detection
 
@@ -141,13 +144,15 @@ mcp-server-guide
 # Custom documentation root
 mcp-server-guide --docroot /path/to/docs
 
-# Multiple custom paths
+# Configure built-in categories using legacy CLI arguments
 mcp-server-guide \
   --docroot /docs \
   --guidesdir team_guides/ \
   --guide coding_standards \
   --langsdir programming_languages/ \
-  --lang python
+  --lang python \
+  --contextdir projects/ \
+  --context my_project
 ```
 
 ### Environment-Based Configuration
@@ -176,10 +181,11 @@ export MG_GUIDEDIR="./docs/dev-guides"
 # Start development server
 mcp-server-guide
 
-# Production environment
+# Production environment with legacy CLI args
 mcp-server-guide \
   --docroot /prod/docs \
-  --guidesdir /prod/docs/guidelines
+  --guidesdir /prod/docs/guidelines \
+  --contextdir /prod/docs/projects
 ```
 
 ## Troubleshooting

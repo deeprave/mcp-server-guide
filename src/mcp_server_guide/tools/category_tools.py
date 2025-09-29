@@ -17,9 +17,8 @@ MAX_DOCUMENTS_PER_GLOB = 100
 
 
 def _auto_save_session(session: SessionManager, config_filename: str = ".mcp-server-guide.config.json") -> None:
-    """Auto-save session state with error handling and config cleanup."""
+    """Auto-save session state with error handling."""
     try:
-        session.cleanup_obsolete_config()  # Clean up obsolete fields
         session.save_to_file(config_filename)
         logger.debug(f"Auto-saved session to {config_filename}")
     except Exception as e:

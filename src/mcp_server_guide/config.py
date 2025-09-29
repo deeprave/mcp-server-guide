@@ -58,13 +58,14 @@ class Config:
             description="Document root directory",
         )
 
+        # Legacy CLI arguments for built-in categories
         self.guidesdir = ConfigOption(
             name="guidesdir",
             cli_short="-g",
             cli_long="--guidesdir",
             env_var="MG_GUIDEDIR",
             default="guide/",
-            description="Guidelines directory",
+            description="Guidelines directory (configures 'guide' category)",
         )
 
         self.guide = ConfigOption(
@@ -73,7 +74,7 @@ class Config:
             cli_long="--guide",
             env_var="MG_GUIDE",
             default="guidelines",
-            description="Guidelines file (also --guidelines)",
+            description="Guidelines file (configures 'guide' category)",
         )
 
         self.langsdir = ConfigOption(
@@ -82,7 +83,7 @@ class Config:
             cli_long="--langsdir",
             env_var="MG_LANGDIR",
             default="lang/",
-            description="Languages directory",
+            description="Languages directory (configures 'lang' category)",
         )
 
         self.lang = ConfigOption(
@@ -91,25 +92,25 @@ class Config:
             cli_long="--lang",
             env_var="MG_LANGUAGE",
             default="none",
-            description="Language file (also --language)",
+            description="Language file (configures 'lang' category)",
         )
 
         self.contextdir = ConfigOption(
             name="contextdir",
-            cli_short="-x",
+            cli_short="",
             cli_long="--contextdir",
             env_var="MG_CONTEXTDIR",
             default="context/",
-            description="Context directory",
+            description="Context directory (configures 'context' category)",
         )
 
         self.context = ConfigOption(
             name="context",
-            cli_short="-X",
+            cli_short="-C",
             cli_long="--context",
             env_var="MG_CONTEXT",
             default="project-context",
-            description="Project context file",
+            description="Project context file (configures 'context' category)",
         )
 
         # Logging configuration

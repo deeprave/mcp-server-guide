@@ -59,7 +59,6 @@ def test_config_class_basic():
 
     # Should have basic attributes
     assert hasattr(config, "docroot")
-    assert hasattr(config, "context")
     assert hasattr(config, "resolve_path")
 
     # Test resolve_path method

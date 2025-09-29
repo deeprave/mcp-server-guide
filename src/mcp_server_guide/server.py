@@ -218,9 +218,6 @@ def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, 
 
 def create_server(
     docroot: str = ".",
-    guidesdir: str = "aidocs/guide/",
-    langsdir: str = "aidocs/lang/",
-    contextdir: str = "aidocs/context/",
     cache_dir: Optional[str] = None,
 ) -> FastMCP:
     """Create MCP server instance with hybrid file access."""
@@ -233,9 +230,6 @@ def create_server(
     # Store config
     server.config = {  # type: ignore[attr-defined]
         "docroot": docroot,
-        "guidesdir": guidesdir,
-        "langsdir": langsdir,
-        "contextdir": contextdir,
     }
 
     # Add file source resolution method
@@ -250,38 +244,24 @@ def create_server(
             session_manager = SessionManager()
             config = session_manager.session_state.get_project_config(project_context)
 
-        # Map config_key to directory and filename keys
-        if config_key == "guide":
-            dir_key, file_key = "guidesdir", "guide"
-        elif config_key == "language":
-            dir_key, file_key = "langdir", "language"
-        else:
-            # Fallback for unknown keys
-            session_path = config.get(config_key)
-            if session_path:
-                return FileSource.from_session_path(session_path, project_context)
-            default_path = server.config.get(config_key, "./")  # type: ignore[attr-defined]
-            return FileSource("server", default_path)
+        # Map config_key to category names for unified system
+        category_mapping = {"guide": "guide", "language": "lang", "context": "context"}
 
-        # Get the filename value from config
-        filename = config.get(file_key, "")
+        category = category_mapping.get(config_key)
+        if category:
+            # Use category system to get content
+            from .tools.category_tools import get_category_content
 
-        # If filename has a session path prefix, use it directly
-        if filename and (":" in filename and filename.split(":", 1)[0] in ["local", "server", "http", "https", "file"]):
-            return FileSource.from_session_path(filename, project_context)
+            result = get_category_content(category, project_context)
+            if result.get("success") and result.get("search_dir"):
+                return FileSource("server", result["search_dir"])
 
-        # Otherwise, construct path from directory and filename
-        directory = config.get(dir_key, "")
-        if directory and filename:
-            # Construct full path: directory + filename + .md
-            if not filename.endswith(".md"):
-                filename += ".md"
-            full_path = f"{directory.rstrip('/')}/{filename}"
-            return FileSource.from_session_path(full_path, project_context)
-        else:
-            # Fallback to server default
-            default_path = server.config.get(dir_key, "./")  # type: ignore[attr-defined]
-            return FileSource("server", default_path)
+        # Fallback for unknown keys
+        session_path = config.get(config_key)
+        if session_path:
+            return FileSource.from_session_path(session_path, project_context)
+        default_path = server.config.get(config_key, "./")  # type: ignore[attr-defined]
+        return FileSource("server", default_path)
 
     server._get_file_source = _get_file_source  # type: ignore[attr-defined]
 

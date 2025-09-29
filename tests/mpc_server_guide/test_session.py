@@ -24,8 +24,6 @@ def test_session_config_get_default():
 
     # Should return default values
     assert config["docroot"] == "."
-    assert config["guidesdir"] == "guide/"
-    assert config["guide"] == "guidelines"
 
 
 def test_session_config_set_and_get():
@@ -70,7 +68,6 @@ def test_session_config_precedence():
     # Should override default
     config = session.get_project_config("test-project")
     assert config["docroot"] == "/custom/path"
-    assert config["guidesdir"] == "guide/"  # Default unchanged
 
 
 def test_resolve_session_path_default():

@@ -8,23 +8,23 @@
       ],
       "categories": {
         "guide": {
-          "dir": "guide/",
+          "dir": "aidocs/guide/",
           "patterns": [
             "**/*.md"
           ],
           "description": "Development methodology, TDD approach, and SOLID/YAGNI guardrails"
         },
         "lang": {
-          "dir": "lang/",
+          "dir": "aidocs/lang/",
           "patterns": [
-            "python"
+            "python.md"
           ],
           "description": "Language-specific coding standards, best practices, required tools, and syntax guidelines"
         },
         "context": {
-          "dir": "context/",
+          "dir": "aidocs/context/",
           "patterns": [
-            "freeform"
+            "freeform.md"
           ],
           "description": "Project-specific information, issue management, and product specifications"
         }

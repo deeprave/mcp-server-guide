@@ -159,7 +159,6 @@ def test_main_cli_with_all_options():
                 "--log-file",
                 "/tmp/test.log",
                 "--log-console",
-                "stdio",
             ],
         )
 

@@ -12,13 +12,12 @@ def test_project_config_dataclass():
 
     # Should be a dataclass with expected attributes
     assert hasattr(config, "project")
-    assert hasattr(config, "guide")
-    assert hasattr(config, "language")
     assert hasattr(config, "docroot")
+    assert hasattr(config, "tools")
+    assert hasattr(config, "categories")
 
     assert config.project == "test_project"
-    assert config.guide is None  # default
-    assert config.language is None  # default
+    assert config.docroot is None  # default
 
 
 def test_project_config_manager_initialization():
@@ -56,7 +55,7 @@ def test_project_config_manager_edge_cases():
             assert result is None
 
     # Test save config
-    config = ProjectConfig(project="test", guide="test_guide", language="python")
+    config = ProjectConfig(project="test", docroot="/test/path")
     with patch("builtins.open", mock_open()) as mock_file:
         manager.save_config(project_path, config)
         mock_file.assert_called()
@@ -67,44 +66,40 @@ def test_project_config_manager_all_methods():
     manager = ProjectConfigManager()
     project_path = Path("/test/project")
 
-    # Test with valid config file
-    config_data = '{"project": "test", "guide": "test_guide", "language": "python"}'
+    # Test with valid config file using projects structure
+    config_data = '{"projects": {"test": {"project": "test", "docroot": "/test/path"}}}'
     with patch("pathlib.Path.exists", return_value=True):
         with patch("builtins.open", mock_open(read_data=config_data)):
-            result = manager.load_config(project_path)
+            result = manager.load_config(project_path, "test")
             assert isinstance(result, ProjectConfig)
             assert result.project == "test"
-            assert result.guide == "test_guide"
-            assert result.language == "python"
+            assert result.docroot == "/test/path"
 
 
 def test_project_config_to_dict():
     """Test ProjectConfig.to_dict method."""
-    config = ProjectConfig(project="test", guide="test_guide", language="python", docroot="/docs")
+    config = ProjectConfig(project="test", docroot="/docs", tools=["tool1"])
 
     result = config.to_dict()
     assert isinstance(result, dict)
     assert result["project"] == "test"
-    assert result["guide"] == "test_guide"
-    assert result["language"] == "python"
     assert result["docroot"] == "/docs"
+    assert result["tools"] == ["tool1"]
 
 
 def test_project_config_from_dict():
     """Test ProjectConfig.from_dict method."""
-    # Test with valid data
-    data = {"project": "test", "guide": "test_guide", "language": "python", "docroot": "/docs"}
+    # Test with valid data (legacy fields should be filtered out)
+    data = {"project": "test", "guide": "test_guide", "language": "python", "docroot": "/docs", "tools": ["tool1"]}
     config = ProjectConfig.from_dict(data)
     assert config.project == "test"
-    assert config.guide == "test_guide"
-    assert config.language == "python"
     assert config.docroot == "/docs"
+    assert config.tools == ["tool1"]
 
     # Test with minimal data
     minimal_data = {"project": "minimal"}
     config = ProjectConfig.from_dict(minimal_data)
     assert config.project == "minimal"
-    assert config.guide is None
 
 
 def test_project_config_manager_basic():

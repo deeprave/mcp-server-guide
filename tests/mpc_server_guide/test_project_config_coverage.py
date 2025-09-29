@@ -15,7 +15,7 @@ def test_project_config_manager_save_config_corrupted_file():
         config_file.write_text("invalid json content")
 
         manager = ProjectConfigManager()
-        config = ProjectConfig(project="test-project", language="python")
+        config = ProjectConfig(project="test-project", docroot="/test/path")
 
         # Should handle corrupted file and create new one
         manager.save_config(Path(temp_dir), config)
@@ -48,15 +48,14 @@ def test_project_config_to_dict_excludes_empty():
     """Test ProjectConfig.to_dict excludes None and empty values."""
     config = ProjectConfig(
         project="test-project",
-        language="python",
         docroot=None,  # Should be excluded
-        guidesdir="",  # Should be excluded if empty
+        tools=[],  # Should be excluded if empty
     )
 
     data = config.to_dict()
     assert data["project"] == "test-project"
-    assert data["language"] == "python"
     assert "docroot" not in data  # None values excluded
+    assert "tools" not in data  # Empty lists excluded
 
 
 def test_project_config_manager_load_config_default():
@@ -76,7 +75,9 @@ def test_project_config_manager_load_config_with_projects():
         config_file = Path(temp_dir) / ".mcp-server-guide.config.json"
 
         # Create config with projects structure
-        config_data = {"projects": {"test-project": {"project": "test-project", "language": "python", "docroot": "."}}}
+        config_data = {
+            "projects": {"test-project": {"project": "test-project", "docroot": "/test/path"}}
+        }
         config_file.write_text(json.dumps(config_data))
 
         manager = ProjectConfigManager()
@@ -84,21 +85,19 @@ def test_project_config_manager_load_config_with_projects():
 
         assert config is not None
         assert config.project == "test-project"
-        assert config.language == "python"
+        assert config.docroot == "/test/path"
 
 
-def test_project_config_manager_load_config_legacy_format():
-    """Test ProjectConfigManager.load_config with legacy direct format."""
+def test_project_config_manager_load_config_nonexistent():
+    """Test ProjectConfigManager.load_config with nonexistent project."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / ".mcp-server-guide.config.json"
 
-        # Create legacy format config (direct project config, not nested)
-        legacy_data = {"project": "legacy-project", "language": "python", "docroot": "."}
-        config_file.write_text(json.dumps(legacy_data))
+        # Create config with projects structure but different project
+        config_data = {"projects": {"other-project": {"project": "other-project", "docroot": "/other/path"}}}
+        config_file.write_text(json.dumps(config_data))
 
         manager = ProjectConfigManager()
-        config = manager.load_config(Path(temp_dir), "legacy-project")
+        config = manager.load_config(Path(temp_dir), "test-project")
 
-        assert config is not None
-        assert config.project == "legacy-project"
-        assert config.language == "python"
+        assert config is None

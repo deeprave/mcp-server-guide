@@ -38,6 +38,60 @@ def validate_mode(mode: str) -> tuple[str, str]:
     raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio' or 'sse=http://host/path'")
 
 
+def apply_legacy_cli_to_categories(resolved_config: Dict[str, Any]) -> None:
+    """Apply legacy CLI arguments to built-in categories."""
+    from .tools.category_tools import update_category
+
+    # Map legacy CLI args to built-in categories
+    legacy_mappings = [
+        ("guidesdir", "guide", "guide"),
+        ("langsdir", "lang", "lang"),
+        ("contextdir", "context", "context"),
+    ]
+
+    for dir_key, file_key, category_name in legacy_mappings:
+        dir_value = resolved_config.get(dir_key)
+        file_value = resolved_config.get(file_key)
+
+        if dir_value or file_value:
+            # Get current category or use defaults
+            try:
+                from .tools.category_tools import list_categories
+
+                categories_result = list_categories()
+
+                # Find existing built-in category
+                existing_category = None
+                for cat in categories_result.get("builtin_categories", []):
+                    if cat["name"] == category_name:
+                        existing_category = cat
+                        break
+
+                if existing_category:
+                    # Update the built-in category with CLI values
+                    new_dir = dir_value if dir_value else existing_category["dir"]
+
+                    # Handle file patterns
+                    if file_value and file_value != "none":
+                        if category_name == "lang":
+                            new_patterns = [f"{file_value}.md"]
+                        else:
+                            new_patterns = [f"{file_value}.md"]
+                    else:
+                        new_patterns = existing_category["patterns"]
+
+                    # Update the category
+                    update_category(
+                        name=category_name,
+                        dir=new_dir,
+                        patterns=new_patterns,
+                        description=existing_category["description"],
+                    )
+
+            except Exception as e:
+                logger.warning(f"Failed to apply legacy CLI arg to category {category_name}: {e}")
+
+
 def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
     from .server import mcp, create_server_with_config
@@ -196,6 +250,9 @@ def main() -> click.Command:
             log_console = False
 
         setup_logging(log_level or "INFO", log_file or "", bool(log_console))
+
+        # Apply legacy CLI arguments to built-in categories
+        apply_legacy_cli_to_categories(resolved_config)
 
         # Log startup information
         logger.info(f"Starting MCP server in {mode_type} mode")

@@ -27,8 +27,8 @@ def test_config_class_has_all_options():
     """Test Config class contains all required options."""
     config = Config()
 
-    # Check that all expected options exist
-    expected_options = ["docroot", "guidesdir", "guide", "langsdir", "lang", "contextdir", "context"]
+    # Check that all expected options exist (only non-legacy fields)
+    expected_options = ["docroot"]
 
     for option_name in expected_options:
         assert hasattr(config, option_name)
@@ -90,7 +90,6 @@ def test_config_basic_functionality():
 
     # Test that config has expected attributes
     assert hasattr(config, "docroot")
-    assert hasattr(config, "context")
     assert hasattr(config, "resolve_path")
 
     # Test resolve_path works

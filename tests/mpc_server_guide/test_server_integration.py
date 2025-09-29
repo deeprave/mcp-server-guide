@@ -11,9 +11,7 @@ def test_server_uses_hybrid_file_access():
     """Test that server uses hybrid file access system."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create server with cache directory
-        server = create_server(
-            docroot=".", guidesdir="guide/", langsdir="lang/", contextdir="context/", cache_dir=temp_dir
-        )
+        server = create_server(docroot=".", cache_dir=temp_dir)
 
         # Server should have file accessor with cache
         assert hasattr(server, "file_accessor")
