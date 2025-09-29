@@ -216,6 +216,58 @@ def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, 
     return tools.get_category_content(name, project)
 
 
+# MCP Resource Handlers
+def list_resources() -> List[Dict[str, Any]]:
+    """List resources for auto_load categories."""
+    session = SessionManager()
+    current_project = session.get_current_project()
+
+    # Get project config to find categories with auto_load: true
+    config = session.session_state.get_project_config(current_project)
+    categories = config.get("categories", {})
+
+    # Filter categories with auto_load: true
+    auto_load_categories = [
+        (name, category_config)
+        for name, category_config in categories.items()
+        if category_config.get("auto_load", False)
+    ]
+
+    # Generate resources for each auto_load category
+    resources = []
+    for category_name, category_config in auto_load_categories:
+        resource = {
+            "uri": f"guide://{category_name}",
+            "name": category_config.get("description", category_name),
+            "mimeType": "text/markdown",
+        }
+        resources.append(resource)
+
+    return resources
+
+
+def read_resource(uri: str) -> str:
+    """Read resource content by URI."""
+    # Parse guide://category_name URIs
+    if not uri.startswith("guide://"):
+        raise ValueError(f"Invalid URI scheme: {uri}")
+
+    category_name = uri[8:]  # Remove "guide://" prefix
+
+    # Use existing get_category_content function
+    result = tools.get_category_content(category_name, None)
+
+    if result.get("success"):
+        return str(result.get("content", ""))
+    else:
+        raise Exception(f"Failed to load category '{category_name}': {result.get('error', 'Unknown error')}")
+
+
+# Register resource handlers with MCP server (type: ignore for method assignment)
+mcp.list_resources = list_resources  # type: ignore[method-assign,assignment]
+mcp.read_resource = read_resource  # type: ignore[method-assign,assignment]
+
+
 def create_server(
     docroot: str = ".",
     cache_dir: Optional[str] = None,

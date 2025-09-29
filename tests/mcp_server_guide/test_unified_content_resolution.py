@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from src.mcp_server_guide.tools.content_tools import (
+from mcp_server_guide.tools.content_tools import (
     get_guide,
     get_language_guide,
     get_project_context,
@@ -13,7 +13,7 @@ from src.mcp_server_guide.tools.content_tools import (
 @pytest.fixture
 def mock_category_content():
     """Mock get_category_content function."""
-    with patch("src.mcp_server_guide.tools.content_tools.get_category_content") as mock:
+    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock:
         yield mock
 
 
@@ -76,25 +76,43 @@ def test_content_functions_use_current_project_when_none_provided(mock_category_
         mock_category_content.assert_called_once_with("guide", None)
 
 
-def test_get_all_guides_uses_unified_system(mock_category_content):
-    """Test that get_all_guides() uses unified category system."""
+def test_get_all_guides_uses_unified_system():
+    """Test that get_all_guides() uses unified category system with auto_load."""
 
-    # Mock responses for each category
-    def mock_category_response(category, project):
-        content_map = {"guide": "# Guidelines content", "lang": "# Language content", "context": "# Context content"}
-        return {"success": True, "content": content_map.get(category, "")}
+    with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
+        # Set up mock session with auto_load categories
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+        mock_session.get_current_project.return_value = "test-project"
+        mock_session.session_state.get_project_config.return_value = {
+            "categories": {
+                "guide": {"dir": "guide/", "patterns": ["*.md"], "auto_load": True},
+                "lang": {"dir": "lang/", "patterns": ["*.md"], "auto_load": True},
+                "context": {"dir": "context/", "patterns": ["*.md"], "auto_load": True},
+            }
+        }
 
-    mock_category_content.side_effect = mock_category_response
+        with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category_content:
+            # Mock responses for each category
+            def mock_category_response(category, project):
+                content_map = {
+                    "guide": "# Guidelines content",
+                    "lang": "# Language content",
+                    "context": "# Context content",
+                }
+                return {"success": True, "content": content_map.get(category, "")}
 
-    result = get_all_guides("test-project")
+            mock_category_content.side_effect = mock_category_response
 
-    # Should call get_category_content for each built-in category
-    assert mock_category_content.call_count == 3
+            result = get_all_guides("test-project")
 
-    # Should return dict with all content
-    assert "guide" in result
-    assert "language_guide" in result
-    assert "project_context" in result
-    assert result["guide"] == "# Guidelines content"
-    assert result["language_guide"] == "# Language content"
-    assert result["project_context"] == "# Context content"
+            # Should call get_category_content for each auto_load category
+            assert mock_category_content.call_count == 3
+
+            # Should return dict with all content
+            assert "guide" in result
+            assert "lang" in result
+            assert "context" in result
+            assert result["guide"] == "# Guidelines content"
+            assert result["lang"] == "# Language content"
+            assert result["context"] == "# Context content"

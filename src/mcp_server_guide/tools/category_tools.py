@@ -87,7 +87,12 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
 
 
 def add_category(
-    name: str, dir: str, patterns: List[str], project: Optional[str] = None, description: str = ""
+    name: str,
+    dir: str,
+    patterns: List[str],
+    project: Optional[str] = None,
+    description: str = "",
+    auto_load: bool = False,
 ) -> Dict[str, Any]:
     """Add a new custom category."""
     if name in BUILTIN_CATEGORIES:
@@ -112,7 +117,10 @@ def add_category(
         return {"success": False, "error": f"Category '{name}' already exists. Use update_category to modify it."}
 
     # Add new category
-    config["categories"][name] = {"dir": dir, "patterns": patterns, "description": description}
+    category_config: Dict[str, Any] = {"dir": dir, "patterns": patterns, "description": description}
+    if auto_load:
+        category_config["auto_load"] = auto_load
+    config["categories"][name] = category_config
 
     # Save config
     session.session_state.set_project_config(project, "categories", config["categories"])
@@ -159,7 +167,12 @@ def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
 
 
 def update_category(
-    name: str, dir: str, patterns: List[str], project: Optional[str] = None, description: str = ""
+    name: str,
+    dir: str,
+    patterns: List[str],
+    project: Optional[str] = None,
+    description: str = "",
+    auto_load: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Update an existing category (built-in or custom)."""
     session = SessionManager()
@@ -179,7 +192,19 @@ def update_category(
 
     # Update category
     old_category = config["categories"][name].copy()
-    config["categories"][name] = {"dir": dir, "patterns": patterns, "description": description}
+    updated_category: Dict[str, Any] = {"dir": dir, "patterns": patterns, "description": description}
+
+    # Handle auto_load field
+    if auto_load is not None:
+        if auto_load:
+            updated_category["auto_load"] = auto_load
+        # If auto_load is False, we don't store it (missing = False)
+    else:
+        # Preserve existing auto_load setting if not specified
+        if old_category.get("auto_load", False):
+            updated_category["auto_load"] = True
+
+    config["categories"][name] = updated_category
 
     # Save config
     session.session_state.set_project_config(project, "categories", config["categories"])

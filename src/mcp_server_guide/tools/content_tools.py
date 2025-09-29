@@ -26,21 +26,31 @@ def get_project_context(project: Optional[str] = None) -> str:
 def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     """Get all guide content using unified category system."""
     result = {}
+    session = SessionManager()
+    if project is None:
+        project = session.get_current_project()
 
-    try:
-        result["guide"] = get_guide(project)
-    except Exception as e:
-        result["guide"] = f"Error: {str(e)}"
+    # Get project config to find categories with auto_load: true
+    config = session.session_state.get_project_config(project)
+    categories = config.get("categories", {})
 
-    try:
-        result["language_guide"] = get_language_guide(project)
-    except Exception as e:
-        result["language_guide"] = f"Error: {str(e)}"
+    # Filter categories with auto_load: true
+    auto_load_categories = [
+        name for name, category_config in categories.items() if category_config.get("auto_load", False)
+    ]
 
-    try:
-        result["project_context"] = get_project_context(project)
-    except Exception as e:
-        result["project_context"] = f"Error: {str(e)}"
+    # Load content for each auto_load category
+    for category_name in auto_load_categories:
+        try:
+            category_result = get_category_content(category_name, project)
+            if category_result.get("success"):
+                result[category_name] = category_result.get("content", "")
+            else:
+                result[category_name] = f"Error: {category_result.get('error', 'Unknown error')}"
+        except Exception as e:
+            result[category_name] = f"Error: {str(e)}"
+
+    return result
 
     return result
 
