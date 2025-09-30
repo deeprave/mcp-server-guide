@@ -6,6 +6,7 @@ from .session import resolve_session_path
 from .session_tools import SessionManager
 from .file_source import FileSource, FileAccessor
 from .logging_config import get_logger
+from .naming import config_filename
 from . import tools
 
 logger = get_logger(__name__)
@@ -343,7 +344,7 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     server = mcp
 
     # Get config filename (default or custom)
-    config_filename = config.get("config_filename", ".mcp-server-guide.config.json")
+    config_file = config.get("config_filename", config_filename())
 
     # Auto-load session configuration if it exists
     try:
@@ -354,7 +355,7 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
         manager = ProjectConfigManager()
 
         # Try to load full session state
-        if manager.load_full_session_state(Path("."), session_manager, config_filename):
+        if manager.load_full_session_state(Path("."), session_manager, config_file):
             logger.info("Auto-loaded saved session configuration")
         else:
             logger.debug("No saved session found, using defaults")

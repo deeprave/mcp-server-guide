@@ -5,6 +5,7 @@ from typing import Any, Dict
 import click
 from .config import Config
 from .logging_config import get_logger
+from .naming import config_filename
 
 logger = get_logger(__name__)
 
@@ -154,7 +155,7 @@ def main() -> click.Command:
             config_file_path = os.environ.get("MG_CONFIG")
         elif not global_config:
             # Use default config file
-            config_file_path = ".mcp-server-guide.config.json"
+            config_file_path = config_filename()
 
         # Handle directory vs file logic
         if config_file_path and not global_config:

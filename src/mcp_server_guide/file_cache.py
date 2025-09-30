@@ -71,9 +71,23 @@ class FileCache:
         if cache_dir:
             self.cache_dir = Path(cache_dir)
         else:
-            self.cache_dir = Path.home() / ".mcp-server-guide" / "cache"
+            from .naming import cache_directory_name
+            import os
 
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+            xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
+            if xdg_cache_home:
+                self.cache_dir = Path(xdg_cache_home) / cache_directory_name()
+            else:
+                self.cache_dir = Path.home() / ".cache" / cache_directory_name()
+
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            # Fallback to temp directory if cache creation fails
+            import tempfile
+
+            self.cache_dir = Path(tempfile.gettempdir()) / cache_directory_name()
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_size_mb = max_size_mb
 
     def _generate_key(self, url: str) -> str:

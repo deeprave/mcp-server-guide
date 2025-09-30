@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
+from .naming import current_filename
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class CurrentProjectManager:
     current project, stored in a .mcp-server-guide.current file.
     """
 
-    CURRENT_FILE_NAME = ".mcp-server-guide.current"
+    CURRENT_FILE_NAME = current_filename()
 
     def __init__(self, directory: Optional[Path] = None):
         """Initialize manager for specified directory.

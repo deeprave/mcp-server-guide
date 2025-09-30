@@ -3,6 +3,7 @@
 from typing import Dict, Any, List, Optional
 from ..session_tools import SessionManager
 from ..validation import validate_config, ConfigValidationError
+from ..naming import config_filename
 
 
 def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
@@ -19,18 +20,20 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 def set_project_config_values(
-    config_dict: Dict[str, Any], project: Optional[str] = None, config_filename: str = ".mcp-server-guide.config.json"
+    config_dict: Dict[str, Any], project: Optional[str] = None, config_filename_param: Optional[str] = None
 ) -> Dict[str, Any]:
     """Set multiple project configuration values at once.
 
     Args:
         config_dict: Dictionary of key-value pairs to set
         project: Project name (uses current if None)
-        config_filename: Configuration file name
+        config_filename_param: Config filename (uses default if None)
 
     Returns:
-        Dictionary with operation results
+        Dictionary with success status and updated configuration
     """
+    if config_filename_param is None:
+        config_filename_param = config_filename()
     session = SessionManager()
 
     if project is None:
@@ -55,7 +58,7 @@ def set_project_config_values(
 
     for key, value in config_dict.items():
         try:
-            result = set_project_config(key, value, project, config_filename)
+            result = set_project_config(key, value, project, config_filename_param)
             if result.get("success"):
                 success_count += 1
             results.append(
@@ -80,9 +83,11 @@ def set_project_config_values(
 
 
 def set_project_config(
-    key: str, value: Any, project: Optional[str] = None, config_filename: str = ".mcp-server-guide.config.json"
+    key: str, value: Any, project: Optional[str] = None, config_filename_param: Optional[str] = None
 ) -> Dict[str, Any]:
     """Update project settings."""
+    if config_filename_param is None:
+        config_filename_param = config_filename()
 
     # Validate the key and value before setting
     try:
@@ -114,7 +119,7 @@ def set_project_config(
         try:
             from .session_management import save_session
 
-            save_session(config_filename)
+            save_session(config_filename_param)
         except Exception as e:
             # Log error but don't fail the config change
             from ..logging_config import get_logger

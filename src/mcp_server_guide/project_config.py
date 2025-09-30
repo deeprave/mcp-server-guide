@@ -7,6 +7,8 @@ from typing import Dict, Any, Optional, List, Callable
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+from .naming import config_filename, CONFIG_FILENAME
+
 
 @dataclass
 class ProjectConfig:
@@ -74,7 +76,8 @@ class ConfigChangeHandler(FileSystemEventHandler):
 class ProjectConfigManager:
     """Manager for persistent project configuration."""
 
-    CONFIG_FILENAME = ".mcp-server-guide.config.json"
+    def __init__(self) -> None:
+        self.CONFIG_FILENAME = CONFIG_FILENAME
 
     def save_config(self, project_path: Path, config: ProjectConfig) -> None:
         """Save project configuration to file, preserving existing projects."""
@@ -158,7 +161,7 @@ class ProjectConfigManager:
         self.save_config(project_path, config)
 
     def save_full_session_state(
-        self, project_path: Path, session: Any, config_filename: str = ".mcp-server-guide.config.json"
+        self, project_path: Path, session: Any, config_filename: str = config_filename()
     ) -> None:
         """Save complete session state including all projects."""
         config_file = project_path / config_filename
@@ -171,7 +174,7 @@ class ProjectConfigManager:
             json.dump(session_data, f, indent=2)
 
     def load_full_session_state(
-        self, project_path: Path, session: Any, config_filename: str = ".mcp-server-guide.config.json"
+        self, project_path: Path, session: Any, config_filename: str = config_filename()
     ) -> bool:
         """Load complete session state including all projects."""
         config_file = project_path / config_filename

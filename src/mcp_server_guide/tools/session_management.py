@@ -1,12 +1,13 @@
 """Session management tools."""
 
+from ..naming import config_filename
 from typing import Optional, Dict, Any
 from pathlib import Path
 from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager
 
 
-def cleanup_config(config_filename: str = ".mcp-server-guide.config.json") -> Dict[str, Any]:
+def cleanup_config(config_filename: str = config_filename()) -> Dict[str, Any]:
     """Clean up obsolete configuration fields."""
     try:
         session = SessionManager()
@@ -17,7 +18,7 @@ def cleanup_config(config_filename: str = ".mcp-server-guide.config.json") -> Di
         return {"success": False, "error": str(e), "message": "Failed to save configuration"}
 
 
-def save_session(config_filename: str = ".mcp-server-guide.config.json") -> Dict[str, Any]:
+def save_session(config_filename: str = config_filename()) -> Dict[str, Any]:
     """Persist current session state."""
     try:
         session = SessionManager()
@@ -31,9 +32,7 @@ def save_session(config_filename: str = ".mcp-server-guide.config.json") -> Dict
         return {"success": False, "error": str(e), "message": "Failed to save session"}
 
 
-def load_session(
-    project_path: Optional[Path] = None, config_filename: str = ".mcp-server-guide.config.json"
-) -> Dict[str, Any]:
+def load_session(project_path: Optional[Path] = None, config_filename: str = config_filename()) -> Dict[str, Any]:
     """Load session from project."""
     try:
         if project_path is None:

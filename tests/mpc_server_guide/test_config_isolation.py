@@ -32,7 +32,7 @@ class TestConfigIsolation:
                 custom_filename = "test-config.json"
 
                 # Set config with custom filename to avoid auto-save to default file
-                set_project_config("language", "python", config_filename=custom_filename)
+                set_project_config("language", "python", config_filename_param=custom_filename)
 
                 # Also explicitly save with custom filename
                 result = save_session(config_filename=custom_filename)
@@ -171,7 +171,7 @@ class TestConfigIsolation:
                 session.set_current_project("auto-save-test")
 
                 # This should trigger auto-save with custom filename
-                set_project_config("language", "go", config_filename=custom_filename)
+                set_project_config("language", "go", config_filename_param=custom_filename)
 
                 # Custom file should exist
                 custom_file = Path(temp_dir) / custom_filename

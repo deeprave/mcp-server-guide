@@ -1,5 +1,6 @@
 """Category management tools for custom document categories."""
 
+from ..naming import config_filename
 from typing import Dict, Any, List, Optional, Set
 from pathlib import Path
 import glob
@@ -17,7 +18,7 @@ MAX_GLOB_DEPTH = 8
 MAX_DOCUMENTS_PER_GLOB = 100
 
 
-def _auto_save_session(session: SessionManager, config_filename: str = ".mcp-server-guide.config.json") -> None:
+def _auto_save_session(session: SessionManager, config_filename: str = config_filename()) -> None:
     """Auto-save session state with error handling."""
     try:
         session.save_to_file(config_filename)

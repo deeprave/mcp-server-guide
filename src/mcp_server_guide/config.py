@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from typing import Callable, Union
 
+from .naming import config_filename
+
 
 @dataclass
 class ConfigOption:
@@ -27,7 +29,7 @@ class Config:
             cli_short="-c",
             cli_long="--config",
             env_var="MG_CONFIG",
-            default=".mcp-server-guide.config.json",
+            default=config_filename(),
             description="Configuration file path",
         )
 
