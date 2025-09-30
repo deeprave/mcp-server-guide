@@ -39,10 +39,35 @@
           "description": "Source Code Management guidelines",
           "auto_load": true
         }
-      },
-      "categories.scm.auto_load": true,
-      "project": "mcp-server-guide",
-      "invalid_key": "test"
+      }
+    },
+    "guide": {
+      "categories": {
+        "guide": {
+          "dir": "aidocs/guide/",
+          "patterns": [
+            "guidelines"
+          ],
+          "description": "Development methodology, TDD approach, and SOLID/YAGNI guardrails",
+          "auto_load": true
+        },
+        "lang": {
+          "dir": "aidocs/lang/",
+          "patterns": [
+            "none"
+          ],
+          "description": "Language-specific coding standards, best practices, required tools, and syntax guidelines",
+          "auto_load": true
+        },
+        "context": {
+          "dir": "aidocs/context/",
+          "patterns": [
+            "context"
+          ],
+          "description": "Project-specific information, issue management, and product specifications",
+          "auto_load": true
+        }
+      }
     }
   }
 }

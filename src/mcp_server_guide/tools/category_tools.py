@@ -28,7 +28,7 @@ def _auto_save_session(session: SessionManager, config_filename: str = ".mcp-ser
 
 
 def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
-    """Safely search for files using glob patterns with safety limits."""
+    """Safely search for files using glob patterns with safety limits and smart .md extension."""
     matched_files: List[Path] = []
     seen_files: Set[Path] = set()
 
@@ -39,9 +39,12 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
 
         pattern_path = search_dir / pattern
 
+        # Try original pattern first
+        matches_found = False
         try:
             # Use iglob for memory efficiency
             for match_str in glob.iglob(str(pattern_path), recursive=True):
+                matches_found = True
                 if len(matched_files) >= MAX_DOCUMENTS_PER_GLOB:
                     break
 
@@ -83,6 +86,55 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
         except (OSError, RuntimeError) as e:
             logger.warning(f"Error during glob search for pattern '{pattern}': {e}")
             continue
+
+        # If no matches found and pattern has no extension, try with .md
+        if not matches_found and '.' not in Path(pattern).name:
+            md_pattern = f"{pattern}.md"
+            md_pattern_path = search_dir / md_pattern
+
+            try:
+                for match_str in glob.iglob(str(md_pattern_path), recursive=True):
+                    if len(matched_files) >= MAX_DOCUMENTS_PER_GLOB:
+                        break
+
+                    match_path = Path(match_str)
+
+                    # Skip if already processed (deduplication)
+                    if match_path in seen_files:
+                        continue
+
+                    # Check if it's a file (not directory)
+                    if not match_path.is_file():
+                        continue
+
+                    # Symlink detection and circular prevention
+                    try:
+                        resolved_path = match_path.resolve()
+                        if resolved_path in seen_files:
+                            logger.debug(f"Skipping potential circular symlink: {match_path}")
+                            continue
+                        seen_files.add(resolved_path)
+                    except (OSError, RuntimeError) as e:
+                        logger.warning(f"Error resolving path {match_path}: {e}")
+                        continue
+
+                    # Depth limit check for recursive patterns
+                    try:
+                        relative_path = resolved_path.relative_to(search_dir.resolve())
+                        depth = len(relative_path.parts) - 1
+                        if depth > MAX_GLOB_DEPTH:
+                            logger.debug(f"Skipping file beyond depth limit ({MAX_GLOB_DEPTH}): {resolved_path}")
+                            continue
+                    except ValueError:
+                        # File is outside search directory - skip
+                        logger.debug(f"Skipping file outside search directory: {resolved_path}")
+                        continue
+
+                    matched_files.append(resolved_path)
+
+            except (OSError, RuntimeError) as e:
+                logger.warning(f"Error during glob search for pattern '{md_pattern}': {e}")
+                continue
 
     return matched_files
 

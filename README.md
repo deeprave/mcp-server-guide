@@ -23,7 +23,7 @@ Documents are organized using a **unified categories system** with three built-i
 - **lang**: Programming language-specific guidelines (syntax, best practices, tooling, project structure)
 - **context**: Project-specific information (issue management, specifications, workflow details)
 
-The legacy CLI arguments (`--guidesdir`, `--guide`, `--langsdir`, `--lang`, `--contextdir`, `--context`) are maintained for backward compatibility and convenience - they configure the appropriate built-in categories under the hood.
+The CLI arguments (`--guidesdir`, `--guide`, `--langsdir`, `--lang`, `--contextdir`, `--context`) configure the appropriate built-in categories.
 
 ## Installation
 
