@@ -38,20 +38,6 @@ def test_server_tool_functions():
     result = server.get_effective_config("test_project")
     assert isinstance(result, dict)
 
-    # Test get_tools
-    result = server.get_tools()
-    assert isinstance(result, list)
-
-    result = server.get_tools("test_project")
-    assert isinstance(result, list)
-
-    # Test set_tools
-    result = server.set_tools(["tool1", "tool2"])
-    assert isinstance(result, dict)
-
-    result = server.set_tools(["tool1", "tool2"], "test_project")
-    assert isinstance(result, dict)
-
 
 def test_server_content_functions():
     """Test server content-related functions."""

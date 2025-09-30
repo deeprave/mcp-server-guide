@@ -84,18 +84,6 @@ def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @guide.tool()
-def get_tools(project: Optional[str] = None) -> List[str]:
-    """Get project-specific tools list."""
-    return tools.get_tools(project)
-
-
-@guide.tool()
-def set_tools(tools_array: List[str], project: Optional[str] = None) -> Dict[str, Any]:
-    """Set tools for project."""
-    return tools.set_tools(tools_array, project)
-
-
-@guide.tool()
 def get_guide(project: Optional[str] = None) -> str:
     """Get project guidelines for AI injection."""
     return tools.get_guide(project)

@@ -1,6 +1,6 @@
 """Configuration access tools."""
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from ..session_tools import SessionManager
 from ..validation import validate_config, ConfigValidationError
 from ..naming import config_filename
@@ -83,7 +83,7 @@ def set_project_config_values(
 
 
 def set_project_config(
-    key: str, value: Any, project: Optional[str] = None, config_filename_param: Optional[str] = None
+    config_key: str, value: Any, project: Optional[str] = None, config_filename_param: Optional[str] = None
 ) -> Dict[str, Any]:
     """Update project settings."""
     if config_filename_param is None:
@@ -93,29 +93,29 @@ def set_project_config(
     try:
         from ..validation import validate_config_key, ConfigValidationError
 
-        validate_config_key(key, value)
+        validate_config_key(config_key, value)
     except ConfigValidationError as e:
-        return {"success": False, "error": str(e), "errors": e.errors, "key": key, "value": value}
+        return {"success": False, "error": str(e), "errors": e.errors, "key": config_key, "value": value}
 
     session = SessionManager()
     if project is None:
         project = session.get_current_project()
 
     # Check if trying to change an immutable project key
-    if key == "project":
+    if config_key == "project":
         current_config = session.session_state.get_project_config(project)
         if "project" in current_config and current_config["project"] != value:
             return {
                 "success": False,
                 "error": f"Project key is immutable. Cannot change from '{current_config['project']}' to '{value}'. Create a new project instead.",
-                "key": key,
+                "key": config_key,
                 "value": value,
             }
 
-    session.session_state.set_project_config(project, key, value)
+    session.session_state.set_project_config(project, config_key, value)
 
     # Auto-save configuration changes (except project changes)
-    if key != "project":
+    if config_key != "project":
         try:
             from .session_management import save_session
 
@@ -130,9 +130,9 @@ def set_project_config(
     return {
         "success": True,
         "project": project,
-        "key": key,
+        "key": config_key,
         "value": value,
-        "message": f"Set {key} = {value} for project {project}",
+        "message": f"Set {config_key} = {value} for project {project}",
     }
 
 
@@ -145,23 +145,9 @@ def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
     return session.get_effective_config(project)
 
 
-def get_tools(project: Optional[str] = None) -> List[str]:
-    """Get project-specific tools list."""
-    config = get_project_config(project)
-    result = config.get("tools", [])
-    return list(result) if result else []
-
-
-def set_tools(tools_array: List[str], project: Optional[str] = None) -> Dict[str, Any]:
-    """Set tools for project."""
-    return set_project_config("tools", tools_array, project)
-
-
 __all__ = [
     "get_project_config",
     "set_project_config",
     "set_project_config_values",
     "get_effective_config",
-    "get_tools",
-    "set_tools",
 ]

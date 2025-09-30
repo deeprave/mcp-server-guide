@@ -125,8 +125,6 @@ def test_all_tools_have_guide_prefix():
         "guide_set_project_config_values",
         "guide_set_project_config",
         "guide_get_effective_config",
-        "guide_get_tools",
-        "guide_set_tools",
         "guide_get_guide",
         "guide_get_language_guide",
         "guide_get_project_context",
@@ -144,4 +142,4 @@ def test_all_tools_have_guide_prefix():
     ]
 
     # This test will initially fail until we implement the decorator
-    assert len(expected_tools) == 23  # Verify we have all tools listed
+    assert len(expected_tools) == 21  # Verify we have all tools listed (removed 2 tools functions)

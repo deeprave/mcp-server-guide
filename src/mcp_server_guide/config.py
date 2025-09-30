@@ -145,12 +145,15 @@ class Config:
 
     def get_global_config_path(self) -> str:
         """Get platform-specific global config path."""
+        from .naming import config_filename
+
+        filename = config_filename()
         if os.name == "nt":  # Windows
             appdata = os.environ.get("APPDATA", "")
-            return os.path.join(appdata, "mcp-server-guide", "config.json")
+            return os.path.join(appdata, "mcp-server-guide", filename)
         else:  # Unix-like systems
             home = os.environ.get("HOME", "")
-            return os.path.join(home, ".config", "mcp-server-guide", "config.json")
+            return os.path.join(home, ".config", "mcp-server-guide", filename)
 
     def resolve_path(self, path: str, relative_to: str = ".") -> str:
         """Resolve a path relative to a base directory."""

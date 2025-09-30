@@ -23,7 +23,7 @@ def test_lock_update_creates_lock_file():
 
         assert result == "success"
         # Lock file should be cleaned up after execution
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
         assert not lock_file.exists()
 
 
@@ -31,20 +31,20 @@ def test_lock_file_contains_hostname_and_pid():
     """Test that lock file contains hostname:pid format."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         def check_lock_content(file_path):
             # Check lock file content while it exists
-            with open(lock_file, 'r') as f:
+            with open(lock_file, "r") as f:
                 content = f.read().strip()
 
-            parts = content.split(':')
+            parts = content.split(":")
             assert len(parts) == 2
             hostname, pid_str = parts
 
             # Verify hostname is not empty and matches expected format
             assert hostname != ""
-            assert '.' not in hostname  # Should be short hostname
+            assert "." not in hostname  # Should be short hostname
 
             # Verify pid is current process
             assert pid_str == str(os.getpid())
@@ -61,23 +61,11 @@ def test_lock_update_executes_function_with_args():
         config_file = Path(temp_dir) / "config.json"
 
         def test_func(file_path, arg1, arg2, kwarg1=None, kwarg2=None):
-            return {
-                'file_path': str(file_path),
-                'arg1': arg1,
-                'arg2': arg2,
-                'kwarg1': kwarg1,
-                'kwarg2': kwarg2
-            }
+            return {"file_path": str(file_path), "arg1": arg1, "arg2": arg2, "kwarg1": kwarg1, "kwarg2": kwarg2}
 
         result = lock_update(config_file, test_func, "value1", "value2", kwarg1="kw1", kwarg2="kw2")
 
-        expected = {
-            'file_path': str(config_file),
-            'arg1': "value1",
-            'arg2': "value2",
-            'kwarg1': "kw1",
-            'kwarg2': "kw2"
-        }
+        expected = {"file_path": str(config_file), "arg1": "value1", "arg2": "value2", "kwarg1": "kw1", "kwarg2": "kw2"}
         assert result == expected
 
 
@@ -85,7 +73,7 @@ def test_lock_file_removed_after_successful_execution():
     """Test that lock file is removed after successful execution."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         lock_existed_during_execution = False
 
@@ -107,7 +95,7 @@ def test_lock_file_removed_after_exception():
     """Test that lock file is removed even when function raises exception."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         def failing_func(file_path):
             # Verify lock exists during execution
@@ -139,10 +127,10 @@ def test_stale_lock_different_hostname_dead_process():
     """Test that stale lock is detected for different hostname with dead process."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         # Create a stale lock file with different hostname and dead PID
-        with open(lock_file, 'w') as f:
+        with open(lock_file, "w") as f:
             f.write("different-host:999999")
 
         def dummy_func(file_path):
@@ -171,22 +159,23 @@ def test_project_config_save_uses_locking():
         assert config_file.exists()
 
         # Verify no lock file remains
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
         assert not lock_file.exists()
     """Test that stale lock is detected for old mtime."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         # Create a lock file with current hostname and PID but old mtime
-        current_hostname = os.uname().nodename.split('.')[0]
+        current_hostname = os.uname().nodename.split(".")[0]
         current_pid = os.getpid()
-        with open(lock_file, 'w') as f:
+        with open(lock_file, "w") as f:
             f.write(f"{current_hostname}:{current_pid}")
 
         # Mock the mtime to be old (>10 minutes)
         old_time = time.time() - 700  # 11+ minutes ago
-        with patch('os.path.getmtime', return_value=old_time):
+        with patch("os.path.getmtime", return_value=old_time):
+
             def dummy_func(file_path):
                 return "success"
 
@@ -231,7 +220,7 @@ def test_concurrent_config_updates_prevented():
         assert config_file.exists()
 
         # No lock file should remain
-        lock_file = config_file.with_suffix(config_file.suffix + '.lock')
+        lock_file = config_file.with_suffix(config_file.suffix + ".lock")
         assert not lock_file.exists()
 
 
