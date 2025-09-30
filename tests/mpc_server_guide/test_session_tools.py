@@ -10,19 +10,19 @@ from mcp_server_guide.tools.config_tools import (
 def test_set_project_config_values_tool():
     """Test batch project config setting tool."""
     # Test batch setting multiple values
-    config_dict = {"docroot": "/test/path", "project": "test-project", "tools": ["tool1", "tool2"]}
+    config_dict = {"docroot": "/test/path", "project": "test-project"}
 
     result = set_project_config_values(config_dict)
 
     assert result["success"] is True
     assert result["project"] is not None
-    assert "3/3" in result["message"]  # Should show successful count
+    assert "2/2" in result["message"]  # Should show successful count
 
     # Verify the values were set
     config = get_project_config()
     assert config["docroot"] == "/test/path"
     assert config["project"] == "test-project"
-    assert config["tools"] == ["tool1", "tool2"]
+    assert config["project"] == "test-project"
 
 
 def test_set_project_config_values_partial_failure():
@@ -31,7 +31,6 @@ def test_set_project_config_values_partial_failure():
     config_dict = {
         "docroot": "/test/guides",
         "project": "test-lang",
-        "tools": ["python"],
     }
 
     result = set_project_config_values(config_dict)

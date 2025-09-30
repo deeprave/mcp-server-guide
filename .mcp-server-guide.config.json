@@ -2,10 +2,6 @@
   "projects": {
     "mcp-server-guide": {
       "docroot": "/Users/davidn/Code/mcp-server-guide",
-      "tools": [
-        "example-tool",
-        "another-tool"
-      ],
       "categories": {
         "guide": {
           "dir": "aidocs/guide/",

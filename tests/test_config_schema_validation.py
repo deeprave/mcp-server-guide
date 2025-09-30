@@ -18,7 +18,6 @@ class TestConfigSchemaValidation:
         config = {
             "project": "test-project",
             "docroot": "/path/to/docs",
-            "tools": ["tool1", "tool2"],
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guidelines", "auto_load": True}
             },
@@ -36,7 +35,6 @@ class TestConfigSchemaValidation:
         """Test that valid configuration keys are accepted."""
         validate_config_key("project", "test-project")
         validate_config_key("docroot", "/path/to/docs")
-        validate_config_key("tools", ["tool1", "tool2"])
         validate_config_key(
             "categories", {"guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guidelines"}}
         )
@@ -55,7 +53,7 @@ class TestConfigSchemaValidation:
             validate_config_key("project", 123)  # Should be string
 
         with pytest.raises(ConfigValidationError):
-            validate_config_key("tools", "not_an_array")  # Should be array
+            validate_config_key("docroot", 123)  # Should be string
 
     def test_validate_category_valid(self):
         """Test that valid category definitions are accepted."""
@@ -104,9 +102,9 @@ class TestConfigSchemaValidation:
         """Test the is_valid_config_key utility function."""
         assert is_valid_config_key("project") is True
         assert is_valid_config_key("docroot") is True
-        assert is_valid_config_key("tools") is True
         assert is_valid_config_key("categories") is True
 
+        assert is_valid_config_key("tools") is False  # tools removed
         assert is_valid_config_key("invalid_key") is False
         assert is_valid_config_key("categories.scm.auto_load") is False
 
@@ -134,7 +132,6 @@ class TestConfigSchemaIntegration:
         config = {
             "project": "mcp-server-guide",
             "docroot": "/Users/user/Code/project",
-            "tools": ["example-tool", "another-tool"],
             "categories": {
                 "guide": {
                     "dir": "aidocs/guide/",
