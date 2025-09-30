@@ -42,6 +42,8 @@ def test_auto_save_actually_writes_to_file():
             original_save = session_instance.save_to_file
 
             def mock_save(filename=None):
+                # Ensure directory exists
+                config_file.parent.mkdir(parents=True, exist_ok=True)
                 return original_save(str(config_file))
 
             session_instance.save_to_file = mock_save

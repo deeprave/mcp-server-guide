@@ -88,7 +88,7 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
             continue
 
         # If no matches found and pattern has no extension, try with .md
-        if not matches_found and '.' not in Path(pattern).name:
+        if not matches_found and "." not in Path(pattern).name:
             md_pattern = f"{pattern}.md"
             md_pattern_path = search_dir / md_pattern
 

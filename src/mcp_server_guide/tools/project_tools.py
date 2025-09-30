@@ -2,6 +2,7 @@
 
 from typing import List, Dict, Any
 from ..session_tools import SessionManager
+from .session_management import save_session
 
 
 def get_current_project() -> str:
@@ -24,6 +25,9 @@ def switch_project(name: str) -> Dict[str, Any]:
         # Auto-create built-in categories for new project
         _create_builtin_categories(session, name)
 
+    # Save session state after switching
+    save_session()
+
     return {"success": True, "project": name, "message": f"Switched to project: {name}"}
 
 
@@ -33,21 +37,21 @@ def _create_builtin_categories(session: SessionManager, project_name: str) -> No
         "guide": {
             "dir": "guide/",
             "patterns": ["guidelines"],
-            "description": "Development methodology, TDD approach, and SOLID/YAGNI guardrails",
-            "auto_load": True
+            "description": "Development guidelines",
+            "auto_load": True,
         },
         "lang": {
             "dir": "lang/",
             "patterns": ["none"],
-            "description": "Language-specific coding standards, best practices, required tools, and syntax guidelines",
-            "auto_load": True
+            "description": "Language-specific guidelines",
+            "auto_load": True,
         },
         "context": {
             "dir": "context/",
             "patterns": ["project-context"],
-            "description": "Project-specific information, issue management, and product specifications",
-            "auto_load": True
-        }
+            "description": "Project-specific guidelines",
+            "auto_load": True,
+        },
     }
 
     # Create categories config

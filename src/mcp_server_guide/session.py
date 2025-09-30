@@ -95,7 +95,7 @@ class SessionState:
 
         return config
 
-    def set_project_config(self, project_name: str, key: str, value: Any) -> None:
+    def set_project_config(self, project_name: str, key: str, value: str | Dict[str, Any]) -> None:
         """Set configuration value for a project."""
         if project_name not in self.projects:
             self.projects[project_name] = {}

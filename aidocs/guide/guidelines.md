@@ -36,10 +36,9 @@
 ### Definition of Done
  - At the completion of each phase or cycle (user's preference) ensure that:
    - All tests pass, no exceptions, no excuses
-   - Resolve all mypy typing issues. Do not use mypy directives to "gloss over
-     issues (such as ignoring them) unless with specific user consent
-   - run `ruff format` to ensure that code is correctly formatted
-   - ensure that any text file file touched has a terminating newline
+   - Resolve all linting and type checking issues, and resolve means RESOLVE, not suppress unless with specific user consent.
+   - Ensure that code is formatting accordig to project standard, which may involve using a language specific formatter tool.
+   - Ensure that any text file file touched has a terminating newline
 
 ### Version Control
 - **NEVER** `git add` or `git push` without explicit request
