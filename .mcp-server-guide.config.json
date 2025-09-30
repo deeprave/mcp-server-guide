@@ -38,13 +38,20 @@
           ],
           "description": "Source Code Management guidelines",
           "auto_load": true
+        },
+        "daic": {
+          "dir": "aidocs/daic",
+          "patterns": [
+            "daic"
+          ],
+          "description": "Discussion Alignment Implementation Check"
         }
       }
     },
     "guide": {
       "categories": {
         "guide": {
-          "dir": "aidocs/guide/",
+          "dir": "guide/",
           "patterns": [
             "guidelines"
           ],
@@ -52,7 +59,7 @@
           "auto_load": true
         },
         "lang": {
-          "dir": "aidocs/lang/",
+          "dir": "lang/",
           "patterns": [
             "none"
           ],
@@ -60,9 +67,9 @@
           "auto_load": true
         },
         "context": {
-          "dir": "aidocs/context/",
+          "dir": "context/",
           "patterns": [
-            "context"
+            "project-context"
           ],
           "description": "Project-specific information, issue management, and product specifications",
           "auto_load": true
