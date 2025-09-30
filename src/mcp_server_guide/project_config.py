@@ -8,6 +8,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from .naming import config_filename, CONFIG_FILENAME
+from .file_lock import lock_update
 
 
 @dataclass
@@ -82,7 +83,10 @@ class ProjectConfigManager:
     def save_config(self, project_path: Path, config: ProjectConfig) -> None:
         """Save project configuration to file, preserving existing projects."""
         config_file = project_path / self.CONFIG_FILENAME
+        lock_update(config_file, self._save_config_locked, config)
 
+    def _save_config_locked(self, config_file: Path, config: ProjectConfig) -> None:
+        """Internal method to save config while holding file lock."""
         # Load existing config structure
         existing_data: Dict[str, Any] = {"projects": {}}
         if config_file.exists():
