@@ -5,7 +5,7 @@ from src.mcp_server_guide.session_tools import set_project_config
 from src.mcp_server_guide.validation import ConfigValidationError
 
 
-def test_set_project_config_validation_error():
+async def test_set_project_config_validation_error():
     """Test set_project_config with validation error."""
     with patch("src.mcp_server_guide.session_tools.validate_config_key") as mock_validate:
         mock_validate.side_effect = ConfigValidationError("Invalid key", errors=["test error"])

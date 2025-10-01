@@ -4,7 +4,7 @@ from unittest.mock import patch
 from mcp_server_guide.config import Config, ConfigOption
 
 
-def test_config_option_creation():
+async def test_config_option_creation():
     """Test ConfigOption dataclass creation."""
     option = ConfigOption(
         name="docroot",
@@ -23,7 +23,7 @@ def test_config_option_creation():
     assert option.description == "Document root directory"
 
 
-def test_config_class_has_all_options():
+async def test_config_class_has_all_options():
     """Test Config class contains all required options."""
     config = Config()
 
@@ -37,7 +37,7 @@ def test_config_class_has_all_options():
         assert hasattr(option, "env_var")
 
 
-def test_config_has_logging_options():
+async def test_config_has_logging_options():
     """Test Config class has logging options."""
     config = Config()
 
@@ -52,7 +52,7 @@ def test_config_has_logging_options():
     assert config.log_console.default() == "true"
 
 
-def test_resolve_path():
+async def test_resolve_path():
     """Test path resolution logic."""
     config = Config()
 
@@ -67,7 +67,7 @@ def test_resolve_path():
     assert resolved == "/base/relative/path"
 
 
-def test_config_resolve_path_edge_cases():
+async def test_config_resolve_path_edge_cases():
     """Test Config.resolve_path edge cases."""
     config = Config()
 
@@ -84,7 +84,7 @@ def test_config_resolve_path_edge_cases():
     assert result == "/absolute/path"
 
 
-def test_config_basic_functionality():
+async def test_config_basic_functionality():
     """Test basic Config functionality."""
     config = Config()
 
@@ -97,7 +97,7 @@ def test_config_basic_functionality():
     assert isinstance(result, str)
 
 
-def test_config_all_options_have_required_attributes():
+async def test_config_all_options_have_required_attributes():
     """Test that all config options have required attributes."""
     config = Config()
 
@@ -125,7 +125,7 @@ def test_config_all_options_have_required_attributes():
         assert isinstance(option.description, str)
 
 
-def test_config_add_md_extension():
+async def test_config_add_md_extension():
     """Test Config.add_md_extension method."""
     config = Config()
 
@@ -142,7 +142,7 @@ def test_config_add_md_extension():
     assert result == "test.md"
 
 
-def test_config_validate_path():
+async def test_config_validate_path():
     """Test Config.validate_path method."""
     config = Config()
 

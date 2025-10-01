@@ -7,7 +7,7 @@ from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 class TestConfigFormatUpdates:
     """Test config format updates and structure."""
 
-    def test_project_config_dataclass_structure(self):
+    async def test_project_config_dataclass_structure(self):
         """Test that ProjectConfig has expected structure."""
         config = ProjectConfig(project="test-project")
 
@@ -17,10 +17,10 @@ class TestConfigFormatUpdates:
         # Should have expected fields
         assert hasattr(config, "project")
         assert hasattr(config, "docroot")
-        assert hasattr(config, "tools")
+        assert hasattr(config, "categories")
         assert hasattr(config, "categories")
 
-    def test_config_serialization_structure(self):
+    async def test_config_serialization_structure(self):
         """Test that config serialization has correct structure."""
         config = ProjectConfig(project="test-project", docroot="/test/path")
 
@@ -33,11 +33,11 @@ class TestConfigFormatUpdates:
         assert config_dict["project"] == "test-project"
         assert config_dict["docroot"] == "/test/path"
 
-    def test_config_save_format(self, tmp_path):
+    async def test_config_save_format(self, tmp_path):
         """Test that saving config uses correct format."""
         manager = ProjectConfigManager()
 
-        config = ProjectConfig(project="new-project", docroot="/new/path", tools=["tool1"])
+        config = ProjectConfig(project="new-project", docroot="/new/path")
         manager.save_config(tmp_path, config)
 
         # Read saved file
@@ -54,4 +54,4 @@ class TestConfigFormatUpdates:
         # Should use correct field names
         project_data = saved_data["projects"]["new-project"]
         assert project_data["docroot"] == "/new/path"
-        assert project_data["tools"] == ["tool1"]
+        assert project_data["docroot"] == "/new/path"

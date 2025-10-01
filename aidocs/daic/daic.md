@@ -16,10 +16,11 @@ Enforce Discussion-Alignment-Implementation-Check workflow
 - ALWAYS wait for explicit confirmation before generating any code changes (ID: DAIC_CONFIRMATION)
 - When asked to implement, first ask: "Have we discussed and aligned on this approach?" (ID: DAIC_CHECK)
 
-## After Implemetation
+## After Implementation
 
-- After an implementation step, summarize the changes made
-- At this point you are prohibited from making further changes until the user cconsents (ID: DAIC_APPROVAL)
+- When you complete an implementation and return to the user prompt:
+  - Summarize the changes made
+  - Enter DAIC mode - NOT MORE CHANGES WITHOUT APPROVAL (ID: DAIC_APPROVAL)
 
 ## Priority
 

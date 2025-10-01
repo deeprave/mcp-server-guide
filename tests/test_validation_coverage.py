@@ -5,7 +5,7 @@ from unittest.mock import patch
 from src.mcp_server_guide.validation import validate_config_key, ConfigValidationError
 
 
-def test_json_serialization_error():
+async def test_json_serialization_error():
     """Test that non-JSON-serializable values are rejected."""
 
     # Create a non-serializable object
@@ -18,7 +18,7 @@ def test_json_serialization_error():
     assert "must be JSON serializable" in str(exc_info.value)
 
 
-def test_schema_loading_error():
+async def test_schema_loading_error():
     """Test schema loading error handling."""
     with patch("src.mcp_server_guide.validation.resources.open_text") as mock_open_text:
         mock_open_text.side_effect = FileNotFoundError("Schema not found")

@@ -3,21 +3,21 @@
 from mcp_server_guide.session import SessionState, ProjectContext
 
 
-def test_session_state_creation():
+async def test_session_state_creation():
     """Test creating session state."""
     session = SessionState()
     assert session is not None
     assert isinstance(session.projects, dict)
 
 
-def test_project_context_detection():
+async def test_project_context_detection():
     """Test project context detection from directory."""
     context = ProjectContext.detect("/path/to/project")
     assert context.name == "project"
     assert context.path == "/path/to/project"
 
 
-def test_session_config_get_default():
+async def test_session_config_get_default():
     """Test getting default configuration for project."""
     session = SessionState()
     config = session.get_project_config("test-project")
@@ -26,7 +26,7 @@ def test_session_config_get_default():
     assert config["docroot"] == "."
 
 
-def test_session_config_set_and_get():
+async def test_session_config_set_and_get():
     """Test setting and getting project configuration."""
     session = SessionState()
 
@@ -42,7 +42,7 @@ def test_session_config_set_and_get():
     assert config["docroot"] == "."
 
 
-def test_session_config_project_isolation():
+async def test_session_config_project_isolation():
     """Test that projects have isolated configurations."""
     session = SessionState()
 
@@ -58,7 +58,7 @@ def test_session_config_project_isolation():
     assert configB["guidelines"] == "rust-systems"
 
 
-def test_session_config_precedence():
+async def test_session_config_precedence():
     """Test that session config takes precedence over defaults."""
     session = SessionState()
 
@@ -70,7 +70,7 @@ def test_session_config_precedence():
     assert config["docroot"] == "/custom/path"
 
 
-def test_resolve_session_path_default():
+async def test_resolve_session_path_default():
     """Test resolving paths with default behavior."""
     from mcp_server_guide.session import resolve_session_path
 
@@ -80,7 +80,7 @@ def test_resolve_session_path_default():
     assert not result.startswith("local:")
 
 
-def test_resolve_session_path_local_prefix():
+async def test_resolve_session_path_local_prefix():
     """Test resolving paths with local: prefix."""
     from mcp_server_guide.session import resolve_session_path
 
@@ -90,7 +90,7 @@ def test_resolve_session_path_local_prefix():
     # Should be resolved to client path (implementation dependent)
 
 
-def test_resolve_session_path_file_urls():
+async def test_resolve_session_path_file_urls():
     """Test resolving file:// URLs."""
     from mcp_server_guide.session import resolve_session_path
 
@@ -104,7 +104,7 @@ def test_resolve_session_path_file_urls():
     assert result == "/etc/guide.md"
 
 
-def test_session_config_with_local_paths():
+async def test_session_config_with_local_paths():
     """Test session configuration with local file paths."""
     session = SessionState()
 
@@ -117,7 +117,7 @@ def test_session_config_with_local_paths():
     assert config["language"] == "file://./python.md"
 
 
-def test_validate_session_path():
+async def test_validate_session_path():
     """Test path validation for session paths."""
     from mcp_server_guide.session import validate_session_path
 

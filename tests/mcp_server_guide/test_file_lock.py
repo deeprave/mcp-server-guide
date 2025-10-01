@@ -11,7 +11,7 @@ import pytest
 from mcp_server_guide.file_lock import lock_update, is_process_running
 
 
-def test_lock_update_creates_lock_file():
+async def test_lock_update_creates_lock_file():
     """Test that lock_update creates a lock file."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
@@ -27,7 +27,7 @@ def test_lock_update_creates_lock_file():
         assert not lock_file.exists()
 
 
-def test_lock_file_contains_hostname_and_pid():
+async def test_lock_file_contains_hostname_and_pid():
     """Test that lock file contains hostname:pid format."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
@@ -55,7 +55,7 @@ def test_lock_file_contains_hostname_and_pid():
         assert result == "success"
 
 
-def test_lock_update_executes_function_with_args():
+async def test_lock_update_executes_function_with_args():
     """Test that lock_update executes function with args and kwargs."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
@@ -69,7 +69,7 @@ def test_lock_update_executes_function_with_args():
         assert result == expected
 
 
-def test_lock_file_removed_after_successful_execution():
+async def test_lock_file_removed_after_successful_execution():
     """Test that lock file is removed after successful execution."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
@@ -91,7 +91,7 @@ def test_lock_file_removed_after_successful_execution():
         assert result == "completed"
 
 
-def test_lock_file_removed_after_exception():
+async def test_lock_file_removed_after_exception():
     """Test that lock file is removed even when function raises exception."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
@@ -109,21 +109,21 @@ def test_lock_file_removed_after_exception():
         assert not lock_file.exists()
 
 
-def test_is_process_running_detects_live_process():
+async def test_is_process_running_detects_live_process():
     """Test that is_process_running detects live process."""
     # Current process should be running
     current_pid = os.getpid()
     assert is_process_running(current_pid) is True
 
 
-def test_is_process_running_detects_dead_process():
+async def test_is_process_running_detects_dead_process():
     """Test that is_process_running detects dead process."""
     # Use a very high PID that's unlikely to exist
     fake_pid = 999999
     assert is_process_running(fake_pid) is False
 
 
-def test_stale_lock_different_hostname_dead_process():
+async def test_stale_lock_different_hostname_dead_process():
     """Test that stale lock is detected for different hostname with dead process."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.json"
@@ -141,7 +141,7 @@ def test_stale_lock_different_hostname_dead_process():
         assert result == "success"
 
 
-def test_project_config_save_uses_locking():
+async def test_project_config_save_uses_locking():
     """Test that ProjectConfigManager.save_config uses locking."""
     from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
 
@@ -184,7 +184,7 @@ def test_project_config_save_uses_locking():
             assert result == "success"
 
 
-def test_concurrent_config_updates_prevented():
+async def test_concurrent_config_updates_prevented():
     """Test that concurrent configuration updates are prevented by locking."""
     import threading
     from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
@@ -224,7 +224,7 @@ def test_concurrent_config_updates_prevented():
         assert not lock_file.exists()
 
 
-def test_invalid_lock_file_format_handled(tmp_path):
+async def test_invalid_lock_file_format_handled(tmp_path):
     """Test that invalid lock file format is handled gracefully."""
     config_file = tmp_path / "config.json"
     lock_file = tmp_path / "config.json.lock"
@@ -242,7 +242,7 @@ def test_invalid_lock_file_format_handled(tmp_path):
     assert not lock_file.exists()
 
 
-def test_lock_file_read_errors_handled(tmp_path, monkeypatch):
+async def test_lock_file_read_errors_handled(tmp_path, monkeypatch):
     """Test that lock file read errors are handled gracefully."""
     config_file = tmp_path / "config.json"
     lock_file = tmp_path / "config.json.lock"

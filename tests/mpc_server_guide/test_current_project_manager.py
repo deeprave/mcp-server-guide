@@ -9,12 +9,12 @@ from mcp_server_guide.current_project_manager import CurrentProjectManager
 class TestCurrentProjectManager:
     """Test CurrentProjectManager functionality."""
 
-    def test_current_project_manager_creation(self):
+    async def test_current_project_manager_creation(self):
         """Test CurrentProjectManager can be created."""
         manager = CurrentProjectManager()
         assert manager is not None
 
-    def test_get_current_project_with_current_file(self, tmp_path):
+    async def test_get_current_project_with_current_file(self, tmp_path):
         """Test reading project from .mcp-server-guide.current file."""
         # Create .current file with project name
         current_file = tmp_path / ".mcp-server-guide.current"
@@ -30,7 +30,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_get_current_project_fallback_to_directory_name(self, tmp_path):
+    async def test_get_current_project_fallback_to_directory_name(self, tmp_path):
         """Test fallback to directory name when no .current file exists."""
         # Create directory with specific name
         project_dir = tmp_path / "my-awesome-project"
@@ -45,7 +45,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_set_current_project_creates_current_file(self, tmp_path):
+    async def test_set_current_project_creates_current_file(self, tmp_path):
         """Test setting project creates .mcp-server-guide.current file."""
         original_cwd = os.getcwd()
         try:
@@ -59,7 +59,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_set_current_project_updates_existing_file(self, tmp_path):
+    async def test_set_current_project_updates_existing_file(self, tmp_path):
         """Test setting project updates existing .current file."""
         current_file = tmp_path / ".mcp-server-guide.current"
         current_file.write_text("old-project")
@@ -74,7 +74,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_concurrent_access_safety(self, tmp_path):
+    async def test_concurrent_access_safety(self, tmp_path):
         """Test that concurrent access doesn't corrupt .current file."""
         original_cwd = os.getcwd()
         try:
@@ -97,12 +97,12 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_handles_missing_permissions(self, tmp_path):
+    async def test_handles_missing_permissions(self, tmp_path):
         """Test graceful handling when .current file can't be written."""
         # This test will be platform-specific, skip for now
         pytest.skip("Permission testing requires platform-specific setup")
 
-    def test_clear_current_project(self, tmp_path):
+    async def test_clear_current_project(self, tmp_path):
         """Test clearing current project removes .current file."""
         current_file = tmp_path / ".mcp-server-guide.current"
         current_file.write_text("test-project")
@@ -119,7 +119,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_has_current_file(self, tmp_path):
+    async def test_has_current_file(self, tmp_path):
         """Test checking if .current file exists."""
         original_cwd = os.getcwd()
         try:
@@ -136,7 +136,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_set_current_project_validates_input(self, tmp_path):
+    async def test_set_current_project_validates_input(self, tmp_path):
         """Test that empty project names are rejected."""
         original_cwd = os.getcwd()
         try:
@@ -151,7 +151,7 @@ class TestCurrentProjectManager:
         finally:
             os.chdir(original_cwd)
 
-    def test_handles_invalid_current_file_content(self, tmp_path):
+    async def test_handles_invalid_current_file_content(self, tmp_path):
         """Test handling of corrupted .current file."""
         current_file = tmp_path / ".mcp-server-guide.current"
         current_file.write_text("")  # Empty file

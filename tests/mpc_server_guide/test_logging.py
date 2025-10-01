@@ -6,7 +6,7 @@ from mcp_server_guide.config import Config
 from mcp_server_guide.logging_config import setup_logging
 
 
-def test_config_has_logging_options():
+async def test_config_has_logging_options():
     """Test that Config class has logging options."""
     config = Config()
 
@@ -21,7 +21,7 @@ def test_config_has_logging_options():
     assert config.log_console.default() == "true"
 
 
-def test_setup_logging_console_only():
+async def test_setup_logging_console_only():
     """Test logging setup with console output only."""
     setup_logging("INFO", "", True)
 
@@ -32,7 +32,7 @@ def test_setup_logging_console_only():
     assert logger.level == logging.INFO
 
 
-def test_setup_logging_off_level():
+async def test_setup_logging_off_level():
     """Test logging setup with OFF level."""
     setup_logging("OFF", "", False)
 
@@ -43,7 +43,7 @@ def test_setup_logging_off_level():
     assert logger.level >= logging.CRITICAL
 
 
-def test_setup_logging_file_directory_creation():
+async def test_setup_logging_file_directory_creation():
     """Test logging setup with file path."""
     # Just test that the function works with a file path
     logger = setup_logging("INFO", "/tmp/test.log", True)
@@ -51,7 +51,7 @@ def test_setup_logging_file_directory_creation():
     assert logger.name == "mcp-server-guide"
 
 
-def test_setup_logging_all_levels():
+async def test_setup_logging_all_levels():
     """Test logging setup with all valid levels."""
     levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
@@ -65,7 +65,7 @@ def test_setup_logging_all_levels():
         assert logger.level == expected_level
 
 
-def test_setup_logging_edge_cases():
+async def test_setup_logging_edge_cases():
     """Test logging setup edge cases to hit all branches."""
     # Test OFF level
     logger = setup_logging("OFF", "", False)
@@ -86,7 +86,7 @@ def test_setup_logging_edge_cases():
     assert isinstance(logger, logging.Logger)
 
 
-def test_setup_logging_file_error_handling():
+async def test_setup_logging_file_error_handling():
     """Test logging setup with file errors."""
     # Test file logging error with console fallback
     with patch("logging.FileHandler", side_effect=OSError("Permission denied")):
@@ -101,7 +101,7 @@ def test_setup_logging_file_error_handling():
         assert isinstance(logger, logging.Logger)
 
 
-def test_get_logger():
+async def test_get_logger():
     """Test get_logger function."""
     from mcp_server_guide.logging_config import get_logger
 

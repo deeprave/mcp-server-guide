@@ -5,7 +5,7 @@ from pathlib import Path
 from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
 
-def test_project_config_dataclass():
+async def test_project_config_dataclass():
     """Test ProjectConfig dataclass."""
     # Test with required project parameter
     config = ProjectConfig(project="test_project")
@@ -13,14 +13,14 @@ def test_project_config_dataclass():
     # Should be a dataclass with expected attributes
     assert hasattr(config, "project")
     assert hasattr(config, "docroot")
-    assert hasattr(config, "tools")
+    assert hasattr(config, "categories")
     assert hasattr(config, "categories")
 
     assert config.project == "test_project"
     assert config.docroot is None  # default
 
 
-def test_project_config_manager_initialization():
+async def test_project_config_manager_initialization():
     """Test ProjectConfigManager initialization."""
     # Test initialization - no arguments needed
     manager = ProjectConfigManager()
@@ -32,7 +32,7 @@ def test_project_config_manager_initialization():
     assert hasattr(manager, "load_config")
 
 
-def test_project_config_manager_edge_cases():
+async def test_project_config_manager_edge_cases():
     """Test project config manager edge cases to hit all branches."""
     manager = ProjectConfigManager()
     project_path = Path("/test/project")
@@ -61,7 +61,7 @@ def test_project_config_manager_edge_cases():
         mock_file.assert_called()
 
 
-def test_project_config_manager_all_methods():
+async def test_project_config_manager_all_methods():
     """Test all project config manager methods."""
     manager = ProjectConfigManager()
     project_path = Path("/test/project")
@@ -76,25 +76,25 @@ def test_project_config_manager_all_methods():
             assert result.docroot == "/test/path"
 
 
-def test_project_config_to_dict():
+async def test_project_config_to_dict():
     """Test ProjectConfig.to_dict method."""
-    config = ProjectConfig(project="test", docroot="/docs", tools=["tool1"])
+    config = ProjectConfig(project="test", docroot="/docs")
 
     result = config.to_dict()
     assert isinstance(result, dict)
     assert result["project"] == "test"
     assert result["docroot"] == "/docs"
-    assert result["tools"] == ["tool1"]
+    assert result["docroot"] == "/docs"
 
 
-def test_project_config_from_dict():
+async def test_project_config_from_dict():
     """Test ProjectConfig.from_dict method."""
     # Test with valid data (legacy fields should be filtered out)
-    data = {"project": "test", "guide": "test_guide", "language": "python", "docroot": "/docs", "tools": ["tool1"]}
+    data = {"project": "test", "guide": "test_guide", "language": "python", "docroot": "/docs"}
     config = ProjectConfig.from_dict(data)
     assert config.project == "test"
     assert config.docroot == "/docs"
-    assert config.tools == ["tool1"]
+    assert config.categories == {}
 
     # Test with minimal data
     minimal_data = {"project": "minimal"}
@@ -102,7 +102,7 @@ def test_project_config_from_dict():
     assert config.project == "minimal"
 
 
-def test_project_config_manager_basic():
+async def test_project_config_manager_basic():
     """Test basic ProjectConfigManager functionality."""
     manager = ProjectConfigManager()
 
@@ -128,7 +128,7 @@ def test_project_config_manager_basic():
         pass  # Expected to fail in test environment
 
 
-def test_config_file_watcher_complete():
+async def test_config_file_watcher_complete():
     """Test ConfigFileWatcher complete functionality."""
     from mcp_server_guide.project_config import ConfigFileWatcher
 
@@ -157,7 +157,7 @@ def test_config_file_watcher_complete():
             mock_join.assert_called_once()
 
 
-def test_config_change_handler_complete():
+async def test_config_change_handler_complete():
     """Test ConfigChangeHandler complete functionality."""
     from mcp_server_guide.project_config import ConfigChangeHandler
 
@@ -205,7 +205,7 @@ def test_config_change_handler_complete():
     callback.assert_not_called()
 
 
-def test_project_config_manager_detect_project_root_complete():
+async def test_project_config_manager_detect_project_root_complete():
     """Test ProjectConfigManager.detect_project_root complete functionality."""
     manager = ProjectConfigManager()
 

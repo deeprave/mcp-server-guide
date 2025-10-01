@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from mcp_server_guide.tools.content_tools import get_all_guides
 
 
-def test_get_all_guides_returns_only_auto_load_true_categories():
+async def test_get_all_guides_returns_only_auto_load_true_categories():
     """Test that get_all_guides returns only categories with auto_load: true."""
     with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
         # Set up mock session
@@ -23,7 +23,7 @@ def test_get_all_guides_returns_only_auto_load_true_categories():
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
             mock_get_content.return_value = {"success": True, "content": "Test content"}
 
-            result = get_all_guides()
+            result = await get_all_guides()
 
             # Should only call get_category_content for categories with auto_load: true
             actual_calls = [call[0] for call in mock_get_content.call_args_list]
@@ -41,7 +41,7 @@ def test_get_all_guides_returns_only_auto_load_true_categories():
             assert "custom" not in result
 
 
-def test_get_all_guides_returns_empty_dict_when_no_auto_load_true_categories():
+async def test_get_all_guides_returns_empty_dict_when_no_auto_load_true_categories():
     """Test that get_all_guides returns empty dict when no auto_load: true categories."""
     with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
         # Set up mock session
@@ -56,7 +56,7 @@ def test_get_all_guides_returns_empty_dict_when_no_auto_load_true_categories():
         }
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
-            result = get_all_guides()
+            result = await get_all_guides()
 
             # Should not call get_category_content for any categories
             mock_get_content.assert_not_called()
@@ -65,7 +65,7 @@ def test_get_all_guides_returns_empty_dict_when_no_auto_load_true_categories():
             assert result == {}
 
 
-def test_get_all_guides_error_handling_when_category_loading_fails():
+async def test_get_all_guides_error_handling_when_category_loading_fails():
     """Test error handling when category loading fails."""
     with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
         # Set up mock session
@@ -89,7 +89,7 @@ def test_get_all_guides_error_handling_when_category_loading_fails():
 
             mock_get_content.side_effect = side_effect
 
-            result = get_all_guides()
+            result = await get_all_guides()
 
             # Should have guide content and error for context
             assert "guide" in result

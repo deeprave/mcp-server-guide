@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Callable
+from typing import Dict, Any, Optional, Callable
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -17,20 +17,18 @@ class ProjectConfig:
 
     project: str
     docroot: Optional[str] = None
-    tools: Optional[List[str]] = field(default_factory=list)
     categories: Optional[Dict[str, Dict[str, Any]]] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary, excluding None values and empty lists."""
         data = asdict(self)
-        return {k: v for k, v in data.items() if v is not None and v != []}
+        return {k: v for k, v in data.items() if v is not None and v != [] and v != {}}
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ProjectConfig":
-        """Create from dictionary, filtering out legacy fields."""
-        # Filter out legacy fields that are no longer supported
-        legacy_fields = {"guide", "language", "guidesdir", "langdir", "contextdir", "projdir"}
-        filtered_data = {k: v for k, v in data.items() if k not in legacy_fields}
+        # Only use fields that exist in ProjectConfig
+        valid_fields = {"project", "docroot", "categories"}
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
         return cls(**filtered_data)
 
 

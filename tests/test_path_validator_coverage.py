@@ -6,7 +6,7 @@ from pathlib import Path
 from src.mcp_server_guide.security.path_validator import PathValidator, SecurityError
 
 
-def test_path_resolution_error():
+async def test_path_resolution_error():
     """Test path resolution error handling."""
     validator = PathValidator([Path("/allowed")])
 
@@ -19,7 +19,7 @@ def test_path_resolution_error():
         assert "Invalid path" in str(exc_info.value)
 
 
-def test_path_value_error():
+async def test_path_value_error():
     """Test path value error handling."""
     validator = PathValidator([Path("/allowed")])
 

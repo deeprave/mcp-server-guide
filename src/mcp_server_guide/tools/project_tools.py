@@ -11,7 +11,7 @@ def get_current_project() -> str:
     return session.get_current_project()
 
 
-def switch_project(name: str) -> Dict[str, Any]:
+async def switch_project(name: str) -> Dict[str, Any]:
     """Switch to a different project."""
     session = SessionManager()
 
@@ -26,7 +26,7 @@ def switch_project(name: str) -> Dict[str, Any]:
         _create_builtin_categories(session, name)
 
     # Save session state after switching
-    save_session()
+    await save_session()
 
     return {"success": True, "project": name, "message": f"Switched to project: {name}"}
 

@@ -7,20 +7,20 @@ import click.exceptions
 from mcp_server_guide.main import main, validate_mode, start_mcp_server
 
 
-def test_validate_mode_stdio():
+async def test_validate_mode_stdio():
     """Test validate_mode with stdio mode."""
     mode_type, config = validate_mode("stdio")
     assert mode_type == "stdio"
     assert config == ""  # Returns empty string, not None
 
 
-def test_validate_mode_invalid():
+async def test_validate_mode_invalid():
     """Test validate_mode with invalid modes."""
     with pytest.raises(click.exceptions.BadParameter):
         validate_mode("invalid_mode")
 
 
-def test_start_mcp_server_stdio():
+async def test_start_mcp_server_stdio():
     """Test start_mcp_server with stdio mode."""
     config = {"docroot": ".", "project": "test"}
 
@@ -32,7 +32,7 @@ def test_start_mcp_server_stdio():
         mock_mcp.run.assert_called_once()
 
 
-def test_start_mcp_server_stdio_keyboard_interrupt():
+async def test_start_mcp_server_stdio_keyboard_interrupt():
     """Test start_mcp_server stdio mode with KeyboardInterrupt."""
     config = {"docroot": ".", "project": "test"}
 
@@ -42,7 +42,7 @@ def test_start_mcp_server_stdio_keyboard_interrupt():
         assert "stdio mode" in result
 
 
-def test_start_mcp_server_stdio_broken_pipe():
+async def test_start_mcp_server_stdio_broken_pipe():
     """Test start_mcp_server stdio mode with BrokenPipeError."""
     config = {"docroot": ".", "project": "test"}
 
@@ -52,7 +52,7 @@ def test_start_mcp_server_stdio_broken_pipe():
         assert "stdio mode" in result
 
 
-def test_main_cli_help():
+async def test_main_cli_help():
     """Test main CLI help."""
     command = main()
     runner = CliRunner()
@@ -62,7 +62,7 @@ def test_main_cli_help():
     assert "Usage" in result.output
 
 
-def test_main_cli_invalid_option():
+async def test_main_cli_invalid_option():
     """Test main CLI with invalid option."""
     command = main()
     runner = CliRunner()
@@ -71,7 +71,7 @@ def test_main_cli_invalid_option():
     assert result.exit_code != 0
 
 
-def test_main_cli_with_all_options():
+async def test_main_cli_with_all_options():
     """Test main CLI with all options."""
     command = main()
     runner = CliRunner()

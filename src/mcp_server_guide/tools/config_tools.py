@@ -19,7 +19,7 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     return config
 
 
-def set_project_config_values(
+async def set_project_config_values(
     config_dict: Dict[str, Any], project: Optional[str] = None, config_filename_param: Optional[str] = None
 ) -> Dict[str, Any]:
     """Set multiple project configuration values at once.
@@ -58,7 +58,7 @@ def set_project_config_values(
 
     for key, value in config_dict.items():
         try:
-            result = set_project_config(key, value, project, config_filename_param)
+            result = await set_project_config(key, value, project, config_filename_param)
             if result.get("success"):
                 success_count += 1
             results.append(
@@ -82,7 +82,7 @@ def set_project_config_values(
     }
 
 
-def set_project_config(
+async def set_project_config(
     config_key: str, value: Any, project: Optional[str] = None, config_filename_param: Optional[str] = None
 ) -> Dict[str, Any]:
     """Update project settings."""
@@ -119,7 +119,7 @@ def set_project_config(
         try:
             from .session_management import save_session
 
-            save_session(config_filename_param)
+            await save_session(config_filename_param)
         except Exception as e:
             # Log error but don't fail the config change
             from ..logging_config import get_logger

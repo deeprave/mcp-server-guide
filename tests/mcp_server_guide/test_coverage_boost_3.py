@@ -7,7 +7,7 @@ from src.mcp_server_guide.tools.content_tools import search_content
 from src.mcp_server_guide.tools.category_tools import get_category_content
 
 
-def test_search_content_with_matches():
+async def test_search_content_with_matches():
     """Test search_content finds matching content."""
     # Mock get_category_content to return content with search term
     mock_results = {
@@ -23,7 +23,7 @@ def test_search_content_with_matches():
 
         mock_get.side_effect = side_effect
 
-        results = search_content("search term", "test-project")
+        results = await search_content("search term", "test-project")
 
         # Should find matches in guide and context categories
         assert len(results) == 2
@@ -31,7 +31,7 @@ def test_search_content_with_matches():
         assert any("context" in str(result) for result in results)
 
 
-def test_search_content_no_matches():
+async def test_search_content_no_matches():
     """Test search_content with no matches."""
     # Mock get_category_content to return content without search term
     mock_results = {
@@ -47,25 +47,25 @@ def test_search_content_no_matches():
 
         mock_get.side_effect = side_effect
 
-        results = search_content("nonexistent", "test-project")
+        results = await search_content("nonexistent", "test-project")
 
         # Should find no matches
         assert len(results) == 0
 
 
-def test_search_content_failed_category():
+async def test_search_content_failed_category():
     """Test search_content handles failed category retrieval."""
     # Mock get_category_content to return failures
     with patch("src.mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
         mock_get.return_value = {"success": False, "error": "Category not found"}
 
-        results = search_content("test", "test-project")
+        results = await search_content("test", "test-project")
 
         # Should handle failures gracefully
         assert len(results) == 0
 
 
-def test_category_content_directory_not_exists():
+async def test_category_content_directory_not_exists():
     """Test get_category_content when directory doesn't exist."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Set up session with non-existent directory
@@ -75,13 +75,13 @@ def test_category_content_directory_not_exists():
                 "categories": {"test": {"dir": "nonexistent/", "patterns": ["*.md"], "description": "Test category"}},
             }
 
-            result = get_category_content("test", "test-project")
+            result = await get_category_content("test", "test-project")
 
             assert result["success"] is False
             assert "does not exist" in result["error"]
 
 
-def test_safe_glob_outside_search_directory():
+async def test_safe_glob_outside_search_directory():
     """Test safe glob handles files outside search directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -105,7 +105,7 @@ def test_safe_glob_outside_search_directory():
                 mock_logger.debug.assert_called()
 
 
-def test_safe_glob_depth_limit():
+async def test_safe_glob_depth_limit():
     """Test safe glob respects depth limit."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)

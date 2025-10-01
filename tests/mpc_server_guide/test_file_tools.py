@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from mcp_server_guide.tools.file_tools import list_files, file_exists, get_file_content
 
 
-def test_list_files_error_handling():
+async def test_list_files_error_handling():
     """Test list_files with various error conditions."""
     # Test with non-existent directory
     with patch("pathlib.Path.exists", return_value=False):
@@ -25,7 +25,7 @@ def test_list_files_error_handling():
                 assert result == []
 
 
-def test_file_exists_error_handling():
+async def test_file_exists_error_handling():
     """Test file_exists with error conditions."""
     # Test with exception
     with patch("pathlib.Path.exists", side_effect=Exception("Path error")):
@@ -42,35 +42,44 @@ def test_file_exists_error_handling():
         assert result is False
 
 
-def test_get_file_content_error_handling():
+async def test_get_file_content_error_handling():
     """Test get_file_content with various error conditions."""
     # Test with non-existent file
     with patch("pathlib.Path.exists", return_value=False):
-        result = get_file_content("nonexistent.txt")
+        result = await get_file_content("nonexistent.txt")
         assert "File not found" in result
 
     # Test with path that exists but is not a file
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_file", return_value=False):
-            result = get_file_content("directory")
+            result = await get_file_content("directory")
             assert "File not found" in result
 
     # Test with read error
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_file", return_value=True):
-            with patch("pathlib.Path.read_text", side_effect=Exception("Permission denied")):
-                result = get_file_content("error.txt")
+            with patch("aiofiles.open", side_effect=Exception("Permission denied")):
+                result = await get_file_content("error.txt")
                 assert "Error reading file" in result
 
     # Test successful read
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_file", return_value=True):
-            with patch("pathlib.Path.read_text", return_value="file content"):
-                result = get_file_content("test.txt")
+            # Mock aiofiles.open context manager properly
+            from unittest.mock import AsyncMock, MagicMock
+
+            mock_file = AsyncMock()
+            mock_file.read = AsyncMock(return_value="file content")
+            mock_context = MagicMock()
+            mock_context.__aenter__ = AsyncMock(return_value=mock_file)
+            mock_context.__aexit__ = AsyncMock(return_value=None)
+
+            with patch("aiofiles.open", return_value=mock_context):
+                result = await get_file_content("test.txt")
                 assert result == "file content"
 
 
-def test_list_files_successful_operation():
+async def test_list_files_successful_operation():
     """Test list_files successful operation."""
     # Mock successful directory listing
     mock_file1 = Mock()

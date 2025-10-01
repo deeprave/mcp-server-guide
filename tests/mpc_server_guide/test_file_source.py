@@ -3,7 +3,7 @@
 from mcp_server_guide.file_source import FileSource, FileAccessor
 
 
-def test_file_source_creation():
+async def test_file_source_creation():
     """Test creating file sources."""
     # Local file source
     local_source = FileSource("local", "/client/path")
@@ -23,7 +23,7 @@ def test_file_source_creation():
     assert http_source.base_path == "https://example.com/docs/"
 
 
-def test_file_source_from_url_integration():
+async def test_file_source_from_url_integration():
     """Test FileSource.from_url() integrates with Issue 002 URLs."""
     # Local prefix (Issue 002)
     source = FileSource.from_url("local:./docs/guide.md")
@@ -52,7 +52,7 @@ def test_file_source_from_url_integration():
     assert source.type in ["local", "server"]  # Context-aware
 
 
-def test_file_accessor_resolve_path():
+async def test_file_accessor_resolve_path():
     """Test FileAccessor resolves paths correctly."""
     accessor = FileAccessor()
 
@@ -72,7 +72,7 @@ def test_file_accessor_resolve_path():
     assert resolved == "https://example.com/docs/guide.md"
 
 
-def test_file_accessor_file_exists():
+async def test_file_accessor_file_exists():
     """Test FileAccessor checks file existence."""
     accessor = FileAccessor()
 
@@ -92,7 +92,7 @@ def test_file_accessor_file_exists():
     assert isinstance(exists, bool)  # Should return boolean (likely False for non-existent URL)
 
 
-def test_file_accessor_read_file():
+async def test_file_accessor_read_file():
     """Test FileAccessor reads files."""
     accessor = FileAccessor()
 
@@ -106,7 +106,7 @@ def test_file_accessor_read_file():
     try:
         # Local file reading
         local_source = FileSource("local", ".")
-        content = accessor.read_file(test_file, local_source)
+        content = await accessor.read_file(test_file, local_source)
         assert isinstance(content, str)
         assert "Test Content" in content
     finally:
@@ -121,7 +121,7 @@ def test_file_accessor_read_file():
 
     try:
         server_source = FileSource("server", ".")
-        content = accessor.read_file(test_file2, server_source)
+        content = await accessor.read_file(test_file2, server_source)
         assert isinstance(content, str)
         assert "Server Test Content" in content
     finally:
@@ -130,7 +130,7 @@ def test_file_accessor_read_file():
         os.unlink(test_file2)
 
 
-def test_file_source_context_detection():
+async def test_file_source_context_detection():
     """Test context detection for deployment mode."""
     # Should detect local vs server deployment
     context = FileSource.detect_deployment_context()
@@ -141,7 +141,7 @@ def test_file_source_context_detection():
     assert default_source.type in ["local", "server"]
 
 
-def test_integration_with_issue_002_session():
+async def test_integration_with_issue_002_session():
     """Test integration with Issue 002 session system."""
     from mcp_server_guide.session import resolve_session_path
 
@@ -154,7 +154,7 @@ def test_integration_with_issue_002_session():
     assert source.type == "local"
 
 
-def test_file_source_initialization():
+async def test_file_source_initialization():
     """Test file source initialization."""
     # Test with required parameters
     source1 = FileSource(type="local", base_path="/test/path")
@@ -177,7 +177,7 @@ def test_file_source_initialization():
     assert source2.auth_headers == {"Authorization": "Bearer token"}
 
 
-def test_file_source_from_url():
+async def test_file_source_from_url():
     """Test FileSource.from_url class method."""
     # Test HTTP URL
     source1 = FileSource.from_url("https://example.com/docs")
@@ -190,7 +190,7 @@ def test_file_source_from_url():
     assert source2.base_path == "/local/path"
 
 
-def test_file_source_comprehensive():
+async def test_file_source_comprehensive():
     """Test file source comprehensive functionality."""
     # Test different source types
     local_source = FileSource(type="local", base_path="/docs")

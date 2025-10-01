@@ -9,16 +9,14 @@ dependencies = [
     "click>=8.3.0",
     "jsonschema>=4.0.0",
     "mcp[cli]>=1.14.1",
-    "pytest-cov>=7.0.0",
     "requests>=2.25.0",
     "watchdog>=3.0.0",
+    "aiohttp>=3.9.0",
+    "aiofiles>=23.2.1",
 ]
 
 [project.scripts]
 mcp-server-guide = "mcp_server_guide.main:cli_main"
-
-[project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff", "mypy", "pre-commit"]
 
 [build-system]
 requires = ["hatchling"]
@@ -30,6 +28,7 @@ packages = ["src/mcp_server_guide"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+asyncio_mode = "auto"
 addopts = [
     "--strict-markers",
     "--strict-config",
@@ -53,7 +52,10 @@ dev = [
     "coverage>=7.10.7",
     "mypy>=1.18.2",
     "pytest>=8.4.2",
-    "ruff>=0.13.1",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.13.2",
+    "types-aiofiles>=24.1.0.20250822",
     "types-jsonschema>=4.25.1.20250822",
     "types-requests>=2.32.4.20250913",
 ]

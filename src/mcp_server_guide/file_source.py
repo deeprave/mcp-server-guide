@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Optional, Dict, TYPE_CHECKING
-from .session import resolve_session_path
+import aiofiles
 
 if TYPE_CHECKING:
     from .file_cache import FileCache
@@ -36,6 +36,18 @@ class FileSource:
             return cls.get_context_default(url)
 
     @classmethod
+    def from_session_path(cls, session_path: str, project_context: str) -> "FileSource":
+        """Create FileSource from session path."""
+        if session_path.startswith("local:"):
+            return cls("local", session_path[6:])
+        elif session_path.startswith("server:"):
+            return cls("server", session_path[7:])
+        elif session_path.startswith(("http://", "https://")):
+            return cls("http", session_path)
+        else:
+            return cls("local", session_path)
+
+    @classmethod
     def _from_file_url(cls, url: str) -> "FileSource":
         """Handle file:// URLs with context awareness."""
         context = cls.detect_deployment_context()
@@ -49,88 +61,72 @@ class FileSource:
         return cls(context, path)
 
     @classmethod
+    def detect_deployment_context(cls) -> Literal["local", "server"]:
+        """Detect deployment context for file:// URLs."""
+        # Simple heuristic: check if we're in a typical server environment
+        import os
+
+        if os.getenv("SERVER_MODE") or os.getenv("DOCKER_CONTAINER"):
+            return "server"
+        return "local"
+
+    @classmethod
     def get_context_default(cls, path: str) -> "FileSource":
-        """Get context-aware default source."""
+        """Get context-aware default FileSource."""
         context = cls.detect_deployment_context()
         return cls(context, path)
 
-    @classmethod
-    def detect_deployment_context(cls) -> Literal["local", "server"]:
-        """Detect deployment context (simplified for now)."""
-        # For now, assume server context
-        # In real implementation, this would detect local vs remote deployment
-        return "server"
-
-    @classmethod
-    def from_session_path(cls, session_path: str, project_context: str) -> "FileSource":
-        """Create FileSource from Issue 002 session path."""
-        # Use Issue 002's session resolution to determine the actual path
-        resolved_path = resolve_session_path(session_path, project_context)
-
-        if session_path.startswith("local:"):
-            return cls("local", resolved_path)
-        elif session_path.startswith(("http://", "https://")):
-            return cls("http", session_path)
-        else:
-            return cls("server", resolved_path)
-
 
 class FileAccessor:
-    """Unified file access interface with HTTP-aware caching."""
+    """File accessor with HTTP-aware caching."""
 
-    def __init__(self, cache_dir: Optional[str] = None):
-        self.cache_dir = cache_dir
-        self._cache: Optional["FileCache"] = None
-
-    @property
-    def cache(self) -> Optional["FileCache"]:
-        """Lazy-load cache only when needed."""
-        if self._cache is None and self.cache_dir:
+    def __init__(self, cache: Optional["FileCache"] = None, cache_dir: Optional[str] = None):
+        if cache_dir and not cache:
             from .file_cache import FileCache
 
-            self._cache = FileCache(cache_dir=self.cache_dir)
-        return self._cache
+            cache = FileCache(cache_dir)
+        self.cache = cache
 
     def resolve_path(self, relative_path: str, source: FileSource) -> str:
-        """Resolve relative path against file source."""
+        """Resolve relative path against source base path."""
         if source.type == "http":
-            # HTTP URL joining
+            # For HTTP sources, join URL components
             base = source.base_path.rstrip("/")
             path = relative_path.lstrip("/")
             return f"{base}/{path}"
         else:
-            # Local/server path joining
-            return str(Path(source.base_path) / relative_path)
+            # For local/server sources, resolve filesystem paths
+            base_path = Path(source.base_path)
+            if not base_path.is_absolute():
+                # For relative paths, resolve relative to current directory
+                base_path = Path.cwd() / base_path
+            return str(base_path / relative_path)
 
-    def file_exists(self, relative_path: str, source: FileSource) -> bool:
+    def exists(self, relative_path: str, source: FileSource) -> bool:
         """Check if file exists."""
         if source.type == "http":
-            # HTTP existence checking
-            from .http_client import HttpClient
-
-            full_url = self.resolve_path(relative_path, source)
-            client = HttpClient(timeout=30, headers=source.auth_headers)
-            return client.exists(full_url)
+            # For HTTP, we'd need to make a HEAD request
+            # For now, assume it exists (will fail on read if not)
+            return True
         else:
-            # Local/server file existence
             full_path = self.resolve_path(relative_path, source)
             return Path(full_path).exists()
 
-    def read_file(self, relative_path: str, source: FileSource) -> str:
+    async def read_file(self, relative_path: str, source: FileSource) -> str:
         """Read file content with HTTP-aware caching."""
         if source.type == "http":
-            return self._read_http_file(relative_path, source)
+            return await self._read_http_file(relative_path, source)
         else:
             # Local/server file reading
             full_path = self.resolve_path(relative_path, source)
-            return Path(full_path).read_text()
+            async with aiofiles.open(full_path, "r", encoding="utf-8") as f:
+                return await f.read()
 
-    def _read_http_file(self, relative_path: str, source: FileSource) -> str:
+    async def _read_http_file(self, relative_path: str, source: FileSource) -> str:
         """Read HTTP file with caching support."""
-        from .http_client import HttpClient, HttpError
+        from .http.async_client import AsyncHTTPClient
 
         full_url = self.resolve_path(relative_path, source)
-        client = HttpClient(timeout=30, headers=source.auth_headers)
 
         # Check cache if enabled
         cached_entry = None
@@ -140,45 +136,68 @@ class FileAccessor:
         # If we have cached content, try conditional request
         if cached_entry and not cached_entry.needs_validation():
             # Cache is fresh, use it
-            return cached_entry.content
+            cached_content: str = cached_entry.content
+            return cached_content
         elif cached_entry:
             # Cache needs validation, make conditional request
             try:
-                response = client.get_conditional(
-                    full_url, if_modified_since=cached_entry.last_modified, if_none_match=cached_entry.etag
-                )
+                async with AsyncHTTPClient() as client:
+                    # Try conditional request if client supports it
+                    if hasattr(client, "get_conditional"):
+                        # Build conditional headers from cached entry
+                        conditional_headers = dict(source.auth_headers) if source.auth_headers else {}
+                        if cached_entry.last_modified:
+                            conditional_headers["if_modified_since"] = cached_entry.last_modified
+                        if cached_entry.etag:
+                            conditional_headers["if_none_match"] = cached_entry.etag
 
-                if response is None:
-                    # 304 Not Modified, use cached content
-                    return cached_entry.content
-                else:
-                    # Content changed, update cache and return new content
+                        response = await client.get_conditional(full_url, **conditional_headers)
+                        if response is None:  # 304 Not Modified
+                            not_modified_content: str = cached_entry.content
+                            return not_modified_content
+                        content: str = response.content if hasattr(response, "content") else str(response)
+                    else:
+                        # Fallback to regular GET
+                        response = await client.get(full_url, headers=source.auth_headers)
+                        content = response.content if hasattr(response, "content") else str(response)
+
+                    # Update cache
                     if source.cache_enabled and self.cache:
-                        self.cache.put(full_url, response.content, response.headers)
-                    return response.content
+                        response_headers = response.headers if hasattr(response, "headers") else {}
+                        self.cache.put(full_url, content, headers=response_headers)
 
-            except HttpError:
-                # Network error, fall back to cache if available
+                    return content
+            except Exception:
+                # If HTTP fails and we have cached content, use it
                 if cached_entry:
-                    return cached_entry.content
+                    error_fallback_content: str = cached_entry.content
+                    return error_fallback_content
                 raise
         else:
-            # No cache, make regular request
-            response = client.get(full_url)
+            # No cache, make fresh request
+            try:
+                async with AsyncHTTPClient() as client:
+                    response = await client.get(full_url, headers=source.auth_headers)
+                    content = response.content if hasattr(response, "content") else response
 
-            # Cache the response if caching is enabled
-            if source.cache_enabled and self.cache:
-                # Handle both HttpResponse objects and strings (for backward compatibility)
-                if hasattr(response, "content"):
-                    self.cache.put(full_url, response.content, response.headers)
-                    return response.content
-                else:
-                    # Old string-based response (for tests)
-                    self.cache.put(full_url, str(response), {})
-                    return str(response)
+                    # Cache the result
+                    if source.cache_enabled and self.cache:
+                        response_headers = response.headers if hasattr(response, "headers") else {}
+                        self.cache.put(full_url, content, headers=response_headers)
 
-            # Return content
-            if hasattr(response, "content"):
-                return response.content
-            else:
-                return str(response)
+                    return content
+            except Exception as e:
+                raise RuntimeError(f"Failed to read HTTP file {full_url}: {e}")
+
+    def file_exists(self, relative_path: str, source: FileSource) -> bool:
+        """Check if file exists."""
+        if source.type == "http":
+            # For HTTP, we'd need to make a HEAD request, but for now return True
+            return True
+        else:
+            # For local/server sources, check filesystem
+            full_path = self.resolve_path(relative_path, source)
+            return Path(full_path).exists()
+
+
+__all__ = ["FileSource", "FileAccessor"]

@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 from mcp_server_guide.main import start_mcp_server
 
 
-def test_stdio_mode_starts_mcp_server():
+async def test_stdio_mode_starts_mcp_server():
     """Test that stdio mode starts actual MCP server."""
     config = {"docroot": ".", "project": "test"}
 
@@ -22,7 +22,7 @@ def test_stdio_mode_starts_mcp_server():
             assert "MCP server started in stdio mode" in result
 
 
-def test_stdio_mode_handles_keyboard_interrupt():
+async def test_stdio_mode_handles_keyboard_interrupt():
     """Test that stdio mode handles KeyboardInterrupt gracefully."""
     config = {"docroot": ".", "project": "test"}
 
@@ -35,7 +35,7 @@ def test_stdio_mode_handles_keyboard_interrupt():
         assert "MCP server started in stdio mode" in result
 
 
-def test_stdio_mode_handles_broken_pipe():
+async def test_stdio_mode_handles_broken_pipe():
     """Test that stdio mode handles BrokenPipeError gracefully."""
     config = {"docroot": ".", "project": "test"}
 
@@ -48,7 +48,7 @@ def test_stdio_mode_handles_broken_pipe():
         assert "MCP server started in stdio mode" in result
 
 
-def test_server_startup_with_config():
+async def test_server_startup_with_config():
     """Test server startup uses provided configuration."""
     config = {"docroot": "/custom/path", "project": "test_project", "guide": "custom_guide", "lang": "python"}
 

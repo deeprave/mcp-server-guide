@@ -46,10 +46,10 @@ def get_current_project() -> str:
 
 
 @guide.tool()
-def switch_project(name: str) -> Dict[str, Any]:
+async def switch_project(name: str) -> Dict[str, Any]:
     """Switch to a different project."""
     logger.info(f"Switching to project: {name}")
-    return tools.switch_project(name)
+    return await tools.switch_project(name)
 
 
 @guide.tool()
@@ -66,15 +66,15 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @guide.tool()
-def set_project_config_values(config_dict: Dict[str, Any], project: Optional[str] = None) -> Dict[str, Any]:
+async def set_project_config_values(config_dict: Dict[str, Any], project: Optional[str] = None) -> Dict[str, Any]:
     """Set multiple project configuration values at once."""
-    return tools.set_project_config_values(config_dict, project)
+    return await tools.set_project_config_values(config_dict, project)
 
 
 @guide.tool()
-def set_project_config(key: str, value: Any, project: Optional[str] = None) -> Dict[str, Any]:
+async def set_project_config(key: str, value: Any, project: Optional[str] = None) -> Dict[str, Any]:
     """Update project settings."""
-    return tools.set_project_config(key, value, project)
+    return await tools.set_project_config(key, value, project)
 
 
 @guide.tool()
@@ -84,51 +84,51 @@ def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @guide.tool()
-def get_guide(project: Optional[str] = None) -> str:
+async def get_guide(project: Optional[str] = None) -> str:
     """Get project guidelines for AI injection."""
-    return tools.get_guide(project)
+    return await tools.get_guide(project)
 
 
 @guide.tool()
-def get_language_guide(project: Optional[str] = None) -> str:
+async def get_language_guide(project: Optional[str] = None) -> str:
     """Get language-specific guidelines for AI injection."""
-    return tools.get_language_guide(project)
+    return await tools.get_language_guide(project)
 
 
 @guide.tool()
-def get_project_context(project: Optional[str] = None) -> str:
+async def get_project_context(project: Optional[str] = None) -> str:
     """Get project context document for AI injection."""
-    return tools.get_project_context(project)
+    return await tools.get_project_context(project)
 
 
 @guide.tool()
-def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
+async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     """Get all guide files for comprehensive AI context."""
-    return tools.get_all_guides(project)
+    return await tools.get_all_guides(project)
 
 
 @guide.tool()
-def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
+async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across project content."""
-    return tools.search_content(query, project)
+    return await tools.search_content(query, project)
 
 
 @guide.tool()
-def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
+async def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display guide to user."""
-    return tools.show_guide(project)
+    return await tools.show_guide(project)
 
 
 @guide.tool()
-def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
+async def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display language guide to user."""
-    return tools.show_language_guide(project)
+    return await tools.show_language_guide(project)
 
 
 @guide.tool()
-def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
+async def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
     """Display project overview to user."""
-    return tools.show_project_summary(project)
+    return await tools.show_project_summary(project)
 
 
 @guide.tool()
@@ -144,15 +144,15 @@ def file_exists(path: str, project: Optional[str] = None) -> bool:
 
 
 @guide.tool()
-def get_file_content(path: str, project: Optional[str] = None) -> str:
+async def get_file_content(path: str, project: Optional[str] = None) -> str:
     """Get raw file content."""
-    return tools.get_file_content(path, project)
+    return await tools.get_file_content(path, project)
 
 
 @guide.tool()
-def save_session() -> Dict[str, Any]:
+async def save_session() -> Dict[str, Any]:
     """Persist current session state."""
-    return tools.save_session()
+    return await tools.save_session()
 
 
 @guide.tool()
@@ -172,25 +172,35 @@ def reset_session() -> Dict[str, Any]:
 
 # Category Management Tools
 @guide.tool()
-def add_category(
-    name: str, dir: str, patterns: List[str], project: Optional[str] = None, description: str = ""
+async def add_category(
+    name: str,
+    dir: str,
+    patterns: List[str],
+    project: Optional[str] = None,
+    description: str = "",
+    auto_load: bool = False,
 ) -> Dict[str, Any]:
     """Add a new custom category."""
-    return tools.add_category(name, dir, patterns, project, description)
+    return await tools.add_category(name, dir, patterns, description, project, auto_load)
 
 
 @guide.tool()
-def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+async def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Remove a custom category."""
-    return tools.remove_category(name, project)
+    return await tools.remove_category(name, project)
 
 
 @guide.tool()
-def update_category(
-    name: str, dir: str, patterns: List[str], project: Optional[str] = None, description: str = ""
+async def update_category(
+    name: str,
+    dir: str,
+    patterns: List[str],
+    project: Optional[str] = None,
+    description: str = "",
+    auto_load: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Update an existing category."""
-    return tools.update_category(name, dir, patterns, project, description)
+    return await tools.update_category(name, dir, patterns, description, project, auto_load)
 
 
 @guide.tool()
@@ -200,9 +210,9 @@ def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @guide.tool()
-def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Get content from a category using glob patterns."""
-    return tools.get_category_content(name, project)
+    return await tools.get_category_content(name, project)
 
 
 # MCP Resource Handlers
@@ -235,7 +245,7 @@ def list_resources() -> List[Dict[str, Any]]:
     return resources
 
 
-def read_resource(uri: str) -> str:
+async def read_resource(uri: str) -> str:
     """Read resource content by URI."""
     # Parse guide://category_name URIs
     if not uri.startswith("guide://"):
@@ -244,7 +254,7 @@ def read_resource(uri: str) -> str:
     category_name = uri[8:]  # Remove "guide://" prefix
 
     # Use existing get_category_content function
-    result = tools.get_category_content(category_name, None)
+    result = await tools.get_category_content(category_name, None)
 
     if result.get("success"):
         return str(result.get("content", ""))
@@ -264,8 +274,9 @@ def create_server(
     """Create MCP server instance with hybrid file access."""
     server = FastMCP(name="Developer Guide MCP")
 
-    # Initialize hybrid file access
+    # Initialize hybrid file access with cache if provided
     server.file_accessor = FileAccessor(cache_dir=cache_dir)  # type: ignore[attr-defined]
+
     server._session_manager = SessionManager()  # type: ignore[assignment]
 
     # Store config
@@ -274,7 +285,7 @@ def create_server(
     }
 
     # Add file source resolution method
-    def _get_file_source(config_key: str, project_context: str) -> FileSource:
+    async def _get_file_source(config_key: str, project_context: str) -> FileSource:
         """Get file source for a configuration key."""
         if hasattr(server, "_session_manager") and server._session_manager is not None:
             config = server._session_manager.session_state.get_project_config(project_context)  # type: ignore[attr-defined]
@@ -293,7 +304,7 @@ def create_server(
             # Use category system to get content
             from .tools.category_tools import get_category_content
 
-            result = get_category_content(category, project_context)
+            result = await get_category_content(category, project_context)
             if result.get("success") and result.get("search_dir"):
                 return FileSource("server", result["search_dir"])
 
@@ -307,16 +318,16 @@ def create_server(
     server._get_file_source = _get_file_source  # type: ignore[attr-defined]
 
     # Add content reading methods
-    def read_guide(project_context: str) -> str:
+    async def read_guide(project_context: str) -> str:
         """Read guide content using hybrid file access."""
-        source = _get_file_source("guide", project_context)
-        result = server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+        source = await _get_file_source("guide", project_context)
+        result = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
         return str(result)
 
-    def read_language(project_context: str) -> str:
+    async def read_language(project_context: str) -> str:
         """Read language content using hybrid file access."""
-        source = _get_file_source("language", project_context)
-        result = server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+        source = await _get_file_source("language", project_context)
+        result = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
         return str(result)
 
     server.read_guide = read_guide  # type: ignore[attr-defined]

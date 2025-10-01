@@ -7,7 +7,7 @@ from unittest.mock import patch
 from src.mcp_server_guide.tools.category_tools import _safe_glob_search, MAX_GLOB_DEPTH, MAX_DOCUMENTS_PER_GLOB
 
 
-def test_safe_glob_depth_limit():
+async def test_safe_glob_depth_limit():
     """Test that safe glob respects maximum depth limit."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -33,7 +33,7 @@ def test_safe_glob_depth_limit():
         assert "deep.md" not in result_names
 
 
-def test_safe_glob_document_count_limit():
+async def test_safe_glob_document_count_limit():
     """Test that safe glob respects maximum document count limit."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -49,7 +49,7 @@ def test_safe_glob_document_count_limit():
         assert len(results) == MAX_DOCUMENTS_PER_GLOB
 
 
-def test_safe_glob_symlink_detection():
+async def test_safe_glob_symlink_detection():
     """Test that safe glob detects and handles symlinks safely."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -75,7 +75,7 @@ def test_safe_glob_symlink_detection():
         assert "original.md" in result_names
 
 
-def test_safe_glob_circular_symlink_prevention():
+async def test_safe_glob_circular_symlink_prevention():
     """Test that safe glob prevents circular symlink issues."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -108,7 +108,7 @@ def test_safe_glob_circular_symlink_prevention():
         assert "file2.md" in result_names
 
 
-def test_safe_glob_deduplication():
+async def test_safe_glob_deduplication():
     """Test that safe glob removes duplicate files."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -124,7 +124,7 @@ def test_safe_glob_deduplication():
         assert results[0].name == "test.md"
 
 
-def test_safe_glob_memory_efficiency():
+async def test_safe_glob_memory_efficiency():
     """Test that safe glob uses iglob for memory efficiency."""
     with patch("src.mcp_server_guide.tools.category_tools.glob.iglob") as mock_iglob:
         mock_iglob.return_value = []
@@ -137,7 +137,7 @@ def test_safe_glob_memory_efficiency():
         mock_iglob.assert_called()
 
 
-def test_safe_glob_error_handling():
+async def test_safe_glob_error_handling():
     """Test that safe glob handles errors gracefully."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -153,7 +153,7 @@ def test_safe_glob_error_handling():
         assert results[0].name == "good.md"
 
 
-def test_safe_glob_outside_search_directory():
+async def test_safe_glob_outside_search_directory():
     """Test that safe glob skips files outside search directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)

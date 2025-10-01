@@ -6,7 +6,7 @@ from pathlib import Path
 from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
 
 
-def test_project_config_manager_save_config_corrupted_file():
+async def test_project_config_manager_save_config_corrupted_file():
     """Test ProjectConfigManager.save_config with corrupted existing file."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / ".mcp-server-guide.config.json"
@@ -26,7 +26,7 @@ def test_project_config_manager_save_config_corrupted_file():
         assert "test-project" in data["projects"]
 
 
-def test_project_config_manager_watch_config():
+async def test_project_config_manager_watch_config():
     """Test ProjectConfigManager.watch_config method."""
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = ProjectConfigManager()
@@ -44,21 +44,21 @@ def test_project_config_manager_watch_config():
         watcher.stop()
 
 
-def test_project_config_to_dict_excludes_empty():
+async def test_project_config_to_dict_excludes_empty():
     """Test ProjectConfig.to_dict excludes None and empty values."""
     config = ProjectConfig(
         project="test-project",
         docroot=None,  # Should be excluded
-        tools=[],  # Should be excluded if empty
+        categories={},  # Should be excluded if empty
     )
 
     data = config.to_dict()
     assert data["project"] == "test-project"
     assert "docroot" not in data  # None values excluded
-    assert "tools" not in data  # Empty lists excluded
+    assert "categories" not in data  # Empty dicts excluded
 
 
-def test_project_config_manager_load_config_default():
+async def test_project_config_manager_load_config_default():
     """Test ProjectConfigManager.load_config returns default when no file exists."""
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = ProjectConfigManager()
@@ -69,7 +69,7 @@ def test_project_config_manager_load_config_default():
         assert config is None
 
 
-def test_project_config_manager_load_config_with_projects():
+async def test_project_config_manager_load_config_with_projects():
     """Test ProjectConfigManager.load_config with projects structure."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / ".mcp-server-guide.config.json"
@@ -86,7 +86,7 @@ def test_project_config_manager_load_config_with_projects():
         assert config.docroot == "/test/path"
 
 
-def test_project_config_manager_load_config_nonexistent():
+async def test_project_config_manager_load_config_nonexistent():
     """Test ProjectConfigManager.load_config with nonexistent project."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / ".mcp-server-guide.config.json"

@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from mcp_server_guide.main import main
 
 
-def test_default_mode_is_stdio():
+async def test_default_mode_is_stdio():
     """Test that default mode is stdio when no mode specified."""
     command = main()
     runner = CliRunner()
@@ -19,7 +19,7 @@ def test_default_mode_is_stdio():
     # stdio mode produces no output (correct MCP behavior)
 
 
-def test_explicit_stdio_mode():
+async def test_explicit_stdio_mode():
     """Test explicit stdio mode argument."""
     command = main()
     runner = CliRunner()
@@ -32,7 +32,7 @@ def test_explicit_stdio_mode():
     # stdio mode produces no output (correct MCP behavior)
 
 
-def test_invalid_mode_shows_error():
+async def test_invalid_mode_shows_error():
     """Test that invalid mode shows helpful error."""
     command = main()
     runner = CliRunner()

@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from pathlib import Path
+import aiofiles
 from ..session_tools import SessionManager
 
 
@@ -37,12 +38,13 @@ def file_exists(path: str, project: Optional[str] = None) -> bool:
         return False
 
 
-def get_file_content(path: str, project: Optional[str] = None) -> str:
+async def get_file_content(path: str, project: Optional[str] = None) -> str:
     """Get raw file content."""
     try:
         file_path = Path(path)
         if file_path.exists() and file_path.is_file():
-            return file_path.read_text()
+            async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+                return await f.read()
         else:
             return f"File not found: {path}"
     except Exception as e:

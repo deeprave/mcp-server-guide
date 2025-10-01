@@ -9,7 +9,7 @@ from mcp_server_guide.current_project_manager import CurrentProjectManager
 from mcp_server_guide.tools.config_tools import set_project_config_values, set_project_config
 
 
-def test_current_project_manager_read_error():
+async def test_current_project_manager_read_error():
     """Test CurrentProjectManager handles file read errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = CurrentProjectManager(Path(temp_dir))
@@ -29,7 +29,7 @@ def test_current_project_manager_read_error():
             current_file.chmod(0o644)
 
 
-def test_current_project_manager_clear_error():
+async def test_current_project_manager_clear_error():
     """Test CurrentProjectManager handles clear errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = CurrentProjectManager(Path(temp_dir))
@@ -48,7 +48,7 @@ def test_current_project_manager_clear_error():
             Path(temp_dir).chmod(0o755)
 
 
-def test_current_project_manager_write_error():
+async def test_current_project_manager_write_error():
     """Test CurrentProjectManager handles write errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = CurrentProjectManager(Path(temp_dir))
@@ -65,7 +65,7 @@ def test_current_project_manager_write_error():
             Path(temp_dir).chmod(0o755)
 
 
-def test_set_project_config_values_exception():
+async def test_set_project_config_values_exception():
     """Test exception handling in set_project_config_values."""
     with patch("mcp_server_guide.tools.config_tools.SessionManager") as mock_session:
         # Mock session to raise exception during auto-save
@@ -74,11 +74,11 @@ def test_set_project_config_values_exception():
         mock_instance.save_to_file.side_effect = Exception("Save failed")
 
         # This should trigger the exception handling but still succeed
-        result = set_project_config_values({"docroot": "/test/path"})
+        result = await set_project_config_values({"docroot": "/test/path"})
         assert result["success"] is True
 
 
-def test_set_project_config_exception():
+async def test_set_project_config_exception():
     """Test exception handling in set_project_config."""
     with patch("mcp_server_guide.tools.config_tools.SessionManager") as mock_session:
         # Mock session to raise exception during auto-save
@@ -87,5 +87,5 @@ def test_set_project_config_exception():
         mock_instance.save_to_file.side_effect = Exception("Save failed")
 
         # This should trigger the exception handling but still succeed
-        result = set_project_config("language", "python")
+        result = await set_project_config("language", "python")
         assert result["success"] is True

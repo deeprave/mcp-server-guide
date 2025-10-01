@@ -5,25 +5,25 @@ from ..session_tools import SessionManager
 from .category_tools import get_category_content
 
 
-def get_guide(project: Optional[str] = None) -> str:
+async def get_guide(project: Optional[str] = None) -> str:
     """Get project guidelines using unified category system."""
-    result = get_category_content("guide", project)
+    result = await get_category_content("guide", project)
     return result.get("content", "") if result.get("success") else ""
 
 
-def get_language_guide(project: Optional[str] = None) -> str:
+async def get_language_guide(project: Optional[str] = None) -> str:
     """Get language-specific guidelines using unified category system."""
-    result = get_category_content("lang", project)
+    result = await get_category_content("lang", project)
     return result.get("content", "") if result.get("success") else ""
 
 
-def get_project_context(project: Optional[str] = None) -> str:
+async def get_project_context(project: Optional[str] = None) -> str:
     """Get project context using unified category system."""
-    result = get_category_content("context", project)
+    result = await get_category_content("context", project)
     return result.get("content", "") if result.get("success") else ""
 
 
-def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
+async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     """Get all guide content using unified category system."""
     result = {}
     session = SessionManager()
@@ -42,7 +42,7 @@ def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     # Load content for each auto_load category
     for category_name in auto_load_categories:
         try:
-            category_result = get_category_content(category_name, project)
+            category_result = await get_category_content(category_name, project)
             if category_result.get("success"):
                 result[category_name] = category_result.get("content", "")
             else:
@@ -52,10 +52,8 @@ def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
 
     return result
 
-    return result
 
-
-def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
+async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across all categories for content matching query."""
     session = SessionManager()
     if project is None:
@@ -65,7 +63,7 @@ def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, 
     categories = ["guide", "lang", "context"]
 
     for category in categories:
-        result = get_category_content(category, project)
+        result = await get_category_content(category, project)
         if result.get("success") and result.get("content"):
             content = result["content"]
             if query.lower() in content.lower():
@@ -81,15 +79,15 @@ def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, 
     return results
 
 
-def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
+async def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display guide to user."""
-    content = get_guide(project)
+    content = await get_guide(project)
     return {"success": True, "content": content, "message": f"Guide content for project {project or 'current'}"}
 
 
-def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
+async def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display language guide to user."""
-    content = get_language_guide(project)
+    content = await get_language_guide(project)
     return {
         "success": True,
         "content": content,
@@ -97,9 +95,9 @@ def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     }
 
 
-def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
+async def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
     """Display project overview to user."""
-    all_content = get_all_guides(project)
+    all_content = await get_all_guides(project)
     return {"success": True, "content": all_content, "message": f"Project summary for {project or 'current'}"}
 
 

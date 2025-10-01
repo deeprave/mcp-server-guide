@@ -11,10 +11,10 @@ from mcp_server_guide.tools.session_management import (
 )
 
 
-def test_tools_return_expected_types():
+async def test_tools_return_expected_types():
     """Test that all tools return expected data types."""
     # Test session management tools
-    session = save_session()
+    session = await save_session()
     assert isinstance(session, dict)
     assert "success" in session
 
@@ -23,19 +23,19 @@ def test_tools_return_expected_types():
     assert isinstance(config, dict)
 
 
-def test_tools_with_parameters():
+async def test_tools_with_parameters():
     """Test tools accept and handle parameters correctly."""
     # Test config tool with parameters
-    result = set_project_config("docroot", "/test/path")
+    result = await set_project_config("docroot", "/test/path")
     assert result["success"] is True
     assert result["key"] == "docroot"
     assert result["value"] == "/test/path"
 
 
-def test_session_management_comprehensive():
+async def test_session_management_comprehensive():
     """Test comprehensive session management functionality."""
     # Save session
-    result = save_session()
+    result = await save_session()
     assert result["success"] is True
 
     # Load session
@@ -47,10 +47,10 @@ def test_session_management_comprehensive():
     assert result["success"] is True
 
 
-def test_config_tools_comprehensive():
+async def test_config_tools_comprehensive():
     """Test comprehensive configuration tools functionality."""
     # Set config
-    result = set_project_config("docroot", "/test/path", "test_project")
+    result = await set_project_config("docroot", "/test/path", "test_project")
     assert result["success"] is True
     assert result["project"] == "test_project"
 

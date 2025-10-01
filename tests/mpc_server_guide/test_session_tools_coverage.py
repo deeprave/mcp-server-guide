@@ -7,13 +7,13 @@ from mcp_server_guide.session_tools import (
     SessionManager,
     get_project_config,
     list_project_configs,
-    reset_project_config,
     switch_project,
     set_local_file,
+    set_project_config,
 )
 
 
-def test_session_manager_load_project_from_path():
+async def test_session_manager_load_project_from_path():
     """Test SessionManager.load_project_from_path method."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "test.json"
@@ -32,7 +32,7 @@ def test_session_manager_load_project_from_path():
         assert len(current_project) > 0
 
 
-def test_get_project_config():
+async def test_get_project_config():
     """Test get_project_config function."""
     # Set up some project data first
     session = SessionManager()
@@ -48,7 +48,7 @@ def test_get_project_config():
     assert result["config"]["language"] == "python"
 
 
-def test_list_project_configs():
+async def test_list_project_configs():
     """Test list_project_configs function."""
     # Set up some project data first
     session = SessionManager()
@@ -65,7 +65,7 @@ def test_list_project_configs():
     assert "other-project" in result["projects"]
 
 
-def test_reset_project_config():
+async def test_set_project_config():
     """Test reset_project_config function."""
     # Set up project data first
     session = SessionManager()
@@ -73,13 +73,13 @@ def test_reset_project_config():
     session.session_state.set_project_config("test-project", "language", "python")
 
     # Reset the project
-    result = reset_project_config()
+    result = set_project_config("language", "go")
 
     assert result["success"] is True
-    assert "Reset project test-project" in result["message"]
+    assert "Set language to 'go' for project test-project" in result["message"]
 
 
-def test_switch_project():
+async def test_switch_project():
     """Test switch_project function."""
     result = switch_project("new-project")
 
@@ -91,7 +91,7 @@ def test_switch_project():
     assert session.get_current_project() == "new-project"
 
 
-def test_set_local_file():
+async def test_set_local_file():
     """Test set_local_file function."""
     result = set_local_file("guide", "/path/to/local/file.md")
 
@@ -99,7 +99,7 @@ def test_set_local_file():
     assert "Set guide to 'local:/path/to/local/file.md'" in result["message"]
 
 
-def test_session_manager_save_to_file():
+async def test_session_manager_save_to_file():
     """Test SessionManager.save_to_file method."""
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "test_save.json"
@@ -109,7 +109,7 @@ def test_session_manager_save_to_file():
         session.session_state.set_project_config("test-project", "language", "python")
 
         # Save to file
-        session.save_to_file(config_file)
+        await session.save_to_file(config_file)
 
         # Verify file was created and contains data
         assert config_file.exists()
@@ -119,7 +119,7 @@ def test_session_manager_save_to_file():
         assert data["projects"]["test-project"]["language"] == "python"
 
 
-def test_session_manager_get_effective_config():
+async def test_session_manager_get_effective_config():
     """Test SessionManager.get_effective_config method."""
     session = SessionManager()
     session.set_current_project("test-project")

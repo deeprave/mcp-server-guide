@@ -11,7 +11,7 @@ from mcp_server_guide.language_detection import (
 )
 
 
-def test_count_source_files():
+async def test_count_source_files():
     """Test source file counting with limits."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create test files
@@ -24,7 +24,7 @@ def test_count_source_files():
         assert count == 3
 
 
-def test_definitive_indicators():
+async def test_definitive_indicators():
     """Test definitive language indicators."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Test Rust
@@ -37,7 +37,7 @@ def test_definitive_indicators():
         assert detect_project_language(temp_dir) == "python"
 
 
-def test_gradle_detection():
+async def test_gradle_detection():
     """Test Gradle project detection."""
     with tempfile.TemporaryDirectory() as temp_dir:
         (Path(temp_dir) / "build.gradle").touch()
@@ -51,7 +51,7 @@ def test_gradle_detection():
         assert detect_project_language(temp_dir) == "kotlin"
 
 
-def test_package_json_detection():
+async def test_package_json_detection():
     """Test package.json detection."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create package.json with TypeScript deps
@@ -62,7 +62,7 @@ def test_package_json_detection():
         assert detect_project_language(temp_dir) == "typescript"
 
 
-def test_makefile_detection():
+async def test_makefile_detection():
     """Test Makefile detection."""
     with tempfile.TemporaryDirectory() as temp_dir:
         (Path(temp_dir) / "Makefile").touch()
@@ -74,7 +74,7 @@ def test_makefile_detection():
         assert detect_project_language(temp_dir) == "cpp"
 
 
-def test_pure_source_detection():
+async def test_pure_source_detection():
     """Test pure source file detection."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Test Swift
@@ -87,7 +87,7 @@ def test_pure_source_detection():
         assert detect_project_language(temp_dir) == "csharp"
 
 
-def test_scala_detection():
+async def test_scala_detection():
     """Test Scala detection."""
     with tempfile.TemporaryDirectory() as temp_dir:
         (Path(temp_dir) / "build.sbt").touch()
@@ -98,14 +98,14 @@ def test_scala_detection():
         assert detect_project_language(temp_dir) == "scala"
 
 
-def test_no_detection():
+async def test_no_detection():
     """Test when no language can be detected."""
     with tempfile.TemporaryDirectory() as temp_dir:
         (Path(temp_dir) / "README.txt").touch()
         assert detect_project_language(temp_dir) is None
 
 
-def test_should_auto_detect_language():
+async def test_should_auto_detect_language():
     """Test auto-detection conditions."""
     assert should_auto_detect_language(None) is True
     assert should_auto_detect_language("") is True
@@ -113,7 +113,7 @@ def test_should_auto_detect_language():
     assert should_auto_detect_language("python") is False
 
 
-def test_package_json_fallback():
+async def test_package_json_fallback():
     """Test package.json fallback when JSON parsing fails."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create invalid JSON
@@ -125,7 +125,7 @@ def test_package_json_fallback():
         assert detect_project_language(temp_dir) == "typescript"
 
 
-def test_makefile_no_source_files():
+async def test_makefile_no_source_files():
     """Test Makefile with no source files (generic Makefile)."""
     with tempfile.TemporaryDirectory() as temp_dir:
         (Path(temp_dir) / "Makefile").touch()
@@ -134,7 +134,7 @@ def test_makefile_no_source_files():
         assert detect_project_language(temp_dir) is None
 
 
-def test_maven_kotlin_preference():
+async def test_maven_kotlin_preference():
     """Test Maven with more Kotlin than Java files."""
     with tempfile.TemporaryDirectory() as temp_dir:
         (Path(temp_dir) / "pom.xml").touch()

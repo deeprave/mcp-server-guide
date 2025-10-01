@@ -6,7 +6,7 @@ from mcp_server_guide.main import main
 from mcp_server_guide.config import Config
 
 
-def test_complete_workflow_with_defaults():
+async def test_complete_workflow_with_defaults():
     """Test complete workflow using default values."""
     runner = CliRunner()
     command = main()
@@ -21,7 +21,7 @@ def test_complete_workflow_with_defaults():
     assert result.exit_code == 0
 
 
-def test_complete_workflow_with_cli_args():
+async def test_complete_workflow_with_cli_args():
     """Test complete workflow with CLI arguments."""
     runner = CliRunner()
     command = main()
@@ -53,7 +53,7 @@ def test_complete_workflow_with_cli_args():
     assert result.exit_code == 0
 
 
-def test_config_class_basic():
+async def test_config_class_basic():
     """Test basic Config class functionality."""
     config = Config()
 

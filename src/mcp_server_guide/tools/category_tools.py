@@ -4,6 +4,7 @@ from ..naming import config_filename
 from typing import Dict, Any, List, Optional, Set
 from pathlib import Path
 import glob
+import aiofiles
 from ..session_tools import SessionManager
 from ..logging_config import get_logger
 from ..validation import validate_category, ConfigValidationError
@@ -18,10 +19,10 @@ MAX_GLOB_DEPTH = 8
 MAX_DOCUMENTS_PER_GLOB = 100
 
 
-def _auto_save_session(session: SessionManager, config_filename: str = config_filename()) -> None:
+async def _auto_save_session(session: SessionManager, config_filename: str = config_filename()) -> None:
     """Auto-save session state with error handling."""
     try:
-        session.save_to_file(config_filename)
+        await session.save_to_file(config_filename)
         logger.debug(f"Auto-saved session to {config_filename}")
     except Exception as e:
         logger.warning(f"Auto-save failed: {e}")
@@ -50,118 +51,79 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
                     break
 
                 match_path = Path(match_str)
+                if match_path.is_file():
+                    # Resolve symlinks with error handling
+                    try:
+                        resolved_path = match_path.resolve()
+                    except OSError as e:
+                        logger.warning(f"Failed to resolve symlink {match_path}: {e}")
+                        continue
 
-                # Skip if already processed (deduplication)
-                if match_path in seen_files:
-                    continue
-
-                # Check if it's a file (not directory)
-                if not match_path.is_file():
-                    continue
-
-                # Symlink detection and circular prevention
-                try:
-                    resolved_path = match_path.resolve()
+                    # Check if we've already seen this resolved path
                     if resolved_path in seen_files:
-                        logger.debug(f"Skipping potential circular symlink: {match_path}")
                         continue
-                    seen_files.add(resolved_path)
-                except (OSError, RuntimeError) as e:
-                    logger.warning(f"Error resolving path {match_path}: {e}")
-                    continue
 
-                # Depth limit check for recursive patterns
-                try:
-                    relative_path = resolved_path.relative_to(search_dir.resolve())
-                    depth = len(relative_path.parts) - 1  # Subtract 1 for the file itself
-                    if depth > MAX_GLOB_DEPTH:
-                        logger.debug(f"Skipping file beyond depth limit ({MAX_GLOB_DEPTH}): {resolved_path}")
+                    # Check depth limit
+                    try:
+                        relative_path = resolved_path.relative_to(search_dir.resolve())
+                        depth = len(relative_path.parts) - 1  # Subtract 1 for the file itself
+                        if depth <= MAX_GLOB_DEPTH:
+                            matched_files.append(resolved_path)
+                            seen_files.add(resolved_path)
+                    except ValueError:
+                        # Path is not relative to search_dir, skip it
+                        logger.debug(f"Skipping file outside search directory: {resolved_path}")
                         continue
-                except ValueError:
-                    # File is outside search directory - skip
-                    logger.debug(f"Skipping file outside search directory: {resolved_path}")
-                    continue
 
-                matched_files.append(resolved_path)
-
-        except (OSError, RuntimeError) as e:
-            logger.warning(f"Error during glob search for pattern '{pattern}': {e}")
+        except Exception as e:
+            logger.warning(f"Glob pattern '{pattern}' failed: {e}")
             continue
 
-        # If no matches found and pattern has no extension, try with .md
-        if not matches_found and "." not in Path(pattern).name:
+        # If no matches and pattern doesn't end with .md, try adding .md
+        if not matches_found and not pattern.endswith(".md"):
             md_pattern = f"{pattern}.md"
             md_pattern_path = search_dir / md_pattern
-
             try:
                 for match_str in glob.iglob(str(md_pattern_path), recursive=True):
                     if len(matched_files) >= MAX_DOCUMENTS_PER_GLOB:
                         break
 
                     match_path = Path(match_str)
+                    if match_path.is_file() and match_path not in seen_files:
+                        matched_files.append(match_path)
+                        seen_files.add(match_path)
 
-                    # Skip if already processed (deduplication)
-                    if match_path in seen_files:
-                        continue
-
-                    # Check if it's a file (not directory)
-                    if not match_path.is_file():
-                        continue
-
-                    # Symlink detection and circular prevention
-                    try:
-                        resolved_path = match_path.resolve()
-                        if resolved_path in seen_files:
-                            logger.debug(f"Skipping potential circular symlink: {match_path}")
-                            continue
-                        seen_files.add(resolved_path)
-                    except (OSError, RuntimeError) as e:
-                        logger.warning(f"Error resolving path {match_path}: {e}")
-                        continue
-
-                    # Depth limit check for recursive patterns
-                    try:
-                        relative_path = resolved_path.relative_to(search_dir.resolve())
-                        depth = len(relative_path.parts) - 1
-                        if depth > MAX_GLOB_DEPTH:
-                            logger.debug(f"Skipping file beyond depth limit ({MAX_GLOB_DEPTH}): {resolved_path}")
-                            continue
-                    except ValueError:
-                        # File is outside search directory - skip
-                        logger.debug(f"Skipping file outside search directory: {resolved_path}")
-                        continue
-
-                    matched_files.append(resolved_path)
-
-            except (OSError, RuntimeError) as e:
-                logger.warning(f"Error during glob search for pattern '{md_pattern}': {e}")
+            except Exception as e:
+                logger.warning(f"Glob pattern '{md_pattern}' failed: {e}")
                 continue
 
     return matched_files
 
 
-def add_category(
+async def add_category(
     name: str,
     dir: str,
     patterns: List[str],
-    project: Optional[str] = None,
     description: str = "",
+    project: Optional[str] = None,
     auto_load: bool = False,
 ) -> Dict[str, Any]:
     """Add a new custom category."""
     if name in BUILTIN_CATEGORIES:
-        return {
-            "success": False,
-            "error": f"Cannot add built-in category '{name}'. Built-in categories are: {', '.join(BUILTIN_CATEGORIES)}",
-        }
+        return {"success": False, "error": f"Cannot override built-in category '{name}'"}
 
-    # Validate category data before adding
-    category_data = {"dir": dir, "patterns": patterns, "description": description, "auto_load": auto_load}
+    # Validate category configuration
+    category_config = {
+        "dir": dir,
+        "patterns": patterns,
+        "description": description,
+        "auto_load": auto_load,
+    }
 
     try:
-        validate_category(name, category_data)
+        validate_category(name, category_config)
     except ConfigValidationError as e:
-        return {"success": False, "error": str(e), "errors": e.errors}
+        return {"success": False, "error": f"Invalid category configuration: {e}"}
 
     session = SessionManager()
     if project is None:
@@ -169,84 +131,58 @@ def add_category(
 
     # Get current config
     config = session.session_state.get_project_config(project)
+    categories = config.get("categories", {})
 
-    # Initialize categories if not present
-    if "categories" not in config:
-        config["categories"] = {}
+    if name in categories:
+        return {"success": False, "error": f"Category '{name}' already exists"}
 
-    # Check if category already exists
-    if name in config["categories"]:
-        return {"success": False, "error": f"Category '{name}' already exists. Use update_category to modify it."}
+    # Add the new category
+    categories[name] = category_config
 
-    # Add new category
-    category_config: Dict[str, Any] = {"dir": dir, "patterns": patterns, "description": description}
-    if auto_load:
-        category_config["auto_load"] = auto_load
-    config["categories"][name] = category_config
+    # Update session
+    session.session_state.set_project_config(project, "categories", categories)
 
-    # Save config
-    session.session_state.set_project_config(project, "categories", config["categories"])
-
-    # Auto-save session
-    _auto_save_session(session)
+    # Auto-save
+    await _auto_save_session(session)
 
     return {
         "success": True,
-        "message": f"Added category '{name}' with directory '{dir}' and {len(patterns)} patterns",
-        "category": {"name": name, "dir": dir, "patterns": patterns, "description": description},
+        "message": f"Category '{name}' added successfully",
+        "category": {**category_config, "name": name},
+        "project": project,
     }
 
 
-def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
-    """Remove a custom category."""
-    if name in BUILTIN_CATEGORIES:
-        return {
-            "success": False,
-            "error": f"Cannot remove built-in category '{name}'. Built-in categories are: {', '.join(BUILTIN_CATEGORIES)}",
-        }
-
-    session = SessionManager()
-    if project is None:
-        project = session.get_current_project()
-
-    # Get current config
-    config = session.session_state.get_project_config(project)
-
-    # Check if categories exist
-    if "categories" not in config or name not in config["categories"]:
-        return {"success": False, "error": f"Category '{name}' does not exist"}
-
-    # Remove category
-    removed_category = config["categories"].pop(name)
-
-    # Save config
-    session.session_state.set_project_config(project, "categories", config["categories"])
-
-    # Auto-save session
-    _auto_save_session(session)
-
-    return {"success": True, "message": f"Removed category '{name}'", "removed_category": removed_category}
-
-
-def update_category(
+async def update_category(
     name: str,
     dir: str,
     patterns: List[str],
-    project: Optional[str] = None,
     description: str = "",
+    project: Optional[str] = None,
     auto_load: Optional[bool] = None,
 ) -> Dict[str, Any]:
-    """Update an existing category (built-in or custom)."""
+    """Update an existing category."""
+    if name in BUILTIN_CATEGORIES:
+        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
 
-    # Validate category data before updating
-    category_data: Dict[str, Any] = {"dir": dir, "patterns": patterns, "description": description}
+    # Validate category configuration
+    category_config = {
+        "dir": dir,
+        "patterns": patterns,
+        "description": description,
+        "auto_load": False,
+    }
+
+    # Handle auto_load - if not provided, preserve existing value
+    auto_load_value: bool
     if auto_load is not None:
-        category_data["auto_load"] = auto_load
+        auto_load_value = auto_load
+        category_config["auto_load"] = auto_load_value
 
     try:
-        validate_category(name, category_data)
+        validate_category(name, category_config)
     except ConfigValidationError as e:
-        return {"success": False, "error": str(e), "errors": e.errors}
+        return {"success": False, "error": f"Invalid category configuration: {e}"}
 
     session = SessionManager()
     if project is None:
@@ -254,42 +190,67 @@ def update_category(
 
     # Get current config
     config = session.session_state.get_project_config(project)
+    categories = config.get("categories", {})
 
-    # Initialize categories if not present
-    if "categories" not in config:
-        config["categories"] = {}
+    if name not in categories:
+        return {"success": False, "error": f"Category '{name}' does not exist"}
 
-    # Check if category exists
-    if name not in config["categories"]:
-        return {"success": False, "error": f"Category '{name}' does not exist. Use add_category to create it."}
-
-    # Update category
-    old_category = config["categories"][name].copy()
-    updated_category: Dict[str, Any] = {"dir": dir, "patterns": patterns, "description": description}
-
-    # Handle auto_load field
-    if auto_load is not None:
-        if auto_load:
-            updated_category["auto_load"] = auto_load
-        # If auto_load is False, we don't store it (missing = False)
+    # Preserve existing auto_load setting if not explicitly provided
+    existing_category = categories[name]
+    if auto_load is None:
+        auto_load_value = existing_category.get("auto_load", False)
+        category_config["auto_load"] = auto_load_value
     else:
-        # Preserve existing auto_load setting if not specified
-        if old_category.get("auto_load", False):
-            updated_category["auto_load"] = True
+        auto_load_value = auto_load
+        category_config["auto_load"] = auto_load_value
 
-    config["categories"][name] = updated_category
+    # Update the category
+    categories[name] = category_config
 
-    # Save config
-    session.session_state.set_project_config(project, "categories", config["categories"])
+    # Update session
+    session.session_state.set_project_config(project, "categories", categories)
 
-    # Auto-save session
-    _auto_save_session(session)
+    # Auto-save
+    await _auto_save_session(session)
 
     return {
         "success": True,
-        "message": f"Updated category '{name}'",
-        "old_category": old_category,
-        "new_category": {"name": name, "dir": dir, "patterns": patterns, "description": description},
+        "message": f"Category '{name}' updated successfully",
+        "category": category_config,
+        "project": project,
+    }
+
+
+async def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+    """Remove a custom category."""
+    if name in BUILTIN_CATEGORIES:
+        return {"success": False, "error": f"Cannot remove built-in category '{name}'"}
+
+    session = SessionManager()
+    if project is None:
+        project = session.get_current_project()
+
+    # Get current config
+    config = session.session_state.get_project_config(project)
+    categories = config.get("categories", {})
+
+    if name not in categories:
+        return {"success": False, "error": f"Category '{name}' does not exist"}
+
+    # Remove the category
+    removed_category = categories.pop(name)
+
+    # Update session
+    session.session_state.set_project_config(project, "categories", categories)
+
+    # Auto-save
+    await _auto_save_session(session)
+
+    return {
+        "success": True,
+        "message": f"Category '{name}' removed successfully",
+        "removed_category": removed_category,
+        "project": project,
     }
 
 
@@ -301,34 +262,22 @@ def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
 
     # Get current config
     config = session.session_state.get_project_config(project)
-
     categories = config.get("categories", {})
 
-    builtin_categories = []
-    custom_categories = []
-
-    for name, category_config in categories.items():
-        category_info = {
-            "name": name,
-            "dir": category_config.get("dir", ""),
-            "patterns": category_config.get("patterns", []),
-            "description": category_config.get("description", ""),
-        }
-
-        if name in BUILTIN_CATEGORIES:
-            builtin_categories.append(category_info)
-        else:
-            custom_categories.append(category_info)
+    # Separate built-in and custom categories
+    builtin = {name: categories.get(name, {}) for name in BUILTIN_CATEGORIES if name in categories}
+    custom = {name: cat for name, cat in categories.items() if name not in BUILTIN_CATEGORIES}
 
     return {
-        "project": project,
-        "builtin_categories": builtin_categories,
-        "custom_categories": custom_categories,
+        "success": True,
+        "builtin_categories": builtin,
+        "custom_categories": custom,
         "total_categories": len(categories),
+        "project": project,
     }
 
 
-def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Get content from a category using glob patterns."""
     session = SessionManager()
     if project is None:
@@ -365,7 +314,8 @@ def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, 
 
     for file_path in matched_files:
         try:
-            content = file_path.read_text(encoding="utf-8")
+            async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+                content = await f.read()
             content_parts.append(f"# {file_path.name}\n\n{content}")
         except Exception as e:
             content_parts.append(f"# {file_path.name}\n\nError reading file: {str(e)}")
@@ -380,22 +330,23 @@ def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, 
             "search_dir": str(search_dir),
         }
 
-    # Combine all content
-    combined_content = "\n\n---\n\n".join(content_parts)
+    combined_content = "\n\n".join(content_parts)
+    matched_file_names = [str(f) for f in matched_files]
 
     return {
         "success": True,
         "content": combined_content,
-        "matched_files": [str(f) for f in matched_files],
+        "matched_files": matched_file_names,
         "patterns": patterns,
         "search_dir": str(search_dir),
+        "file_count": len(matched_files),
     }
 
 
 __all__ = [
     "add_category",
-    "remove_category",
     "update_category",
+    "remove_category",
     "list_categories",
     "get_category_content",
     "BUILTIN_CATEGORIES",

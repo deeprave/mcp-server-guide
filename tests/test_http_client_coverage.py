@@ -5,7 +5,7 @@ from unittest.mock import patch
 from src.mcp_server_guide.http_client import HttpClient, HttpError
 
 
-def test_get_conditional_exception():
+async def test_get_conditional_exception():
     """Test get_conditional exception handling."""
     client = HttpClient()
 
@@ -18,7 +18,7 @@ def test_get_conditional_exception():
         assert "HTTP conditional GET failed" in str(exc_info.value)
 
 
-def test_exists_exception():
+async def test_exists_exception():
     """Test exists method exception handling."""
     client = HttpClient()
 

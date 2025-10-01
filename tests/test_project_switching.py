@@ -4,10 +4,10 @@ from src.mcp_server_guide.tools.project_tools import switch_project, _create_bui
 from src.mcp_server_guide.session_tools import SessionManager
 
 
-def test_switch_to_new_project_creates_builtin_categories():
+async def test_switch_to_new_project_creates_builtin_categories():
     """Test that switching to a new project creates built-in categories with auto_load=true."""
     # Switch to a new project
-    result = switch_project("test-project-123")
+    result = await switch_project("test-project-123")
 
     assert result["success"] is True
     assert result["project"] == "test-project-123"
@@ -33,7 +33,7 @@ def test_switch_to_new_project_creates_builtin_categories():
     assert categories["context"]["patterns"] == ["project-context"]
 
 
-def test_create_builtin_categories():
+async def test_create_builtin_categories():
     """Test the _create_builtin_categories helper function."""
     session = SessionManager()
 

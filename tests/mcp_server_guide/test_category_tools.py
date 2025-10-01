@@ -1,7 +1,7 @@
 """Tests for category management tools."""
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 from src.mcp_server_guide.tools.category_tools import (
     add_category,
     remove_category,
@@ -26,17 +26,18 @@ def mock_session():
                 "context": {"dir": "context/", "patterns": ["context.md"]},
             }
         }
+        session_instance.save_to_file = AsyncMock()
         yield session_instance
 
 
-def test_builtin_categories_constant():
+async def test_builtin_categories_constant():
     """Test that builtin categories are defined correctly."""
     assert BUILTIN_CATEGORIES == {"guide", "lang", "context"}
 
 
-def test_add_category_success(mock_session):
+async def test_add_category_success(mock_session):
     """Test successful category addition."""
-    result = add_category("testing", "test/", ["*.md", "test-*.txt"])
+    result = await add_category("testing", "test/", ["*.md", "test-*.txt"])
 
     assert result["success"] is True
     assert result["category"]["name"] == "testing"
@@ -44,23 +45,23 @@ def test_add_category_success(mock_session):
     assert result["category"]["patterns"] == ["*.md", "test-*.txt"]
 
 
-def test_add_category_builtin_rejected(mock_session):
+async def test_add_category_builtin_rejected(mock_session):
     """Test that adding builtin categories is rejected."""
-    result = add_category("guide", "test/", ["*.md"])
+    result = await add_category("guide", "test/", ["*.md"])
 
     assert result["success"] is False
-    assert "Cannot add built-in category" in result["error"]
+    assert "Cannot override built-in category" in result["error"]
 
 
-def test_remove_category_builtin_rejected(mock_session):
+async def test_remove_category_builtin_rejected(mock_session):
     """Test that removing builtin categories is rejected."""
-    result = remove_category("guide")
+    result = await remove_category("guide")
 
     assert result["success"] is False
     assert "Cannot remove built-in category" in result["error"]
 
 
-def test_list_categories_basic(mock_session):
+async def test_list_categories_basic(mock_session):
     """Test basic category listing."""
     result = list_categories()
 
@@ -69,9 +70,9 @@ def test_list_categories_basic(mock_session):
     assert result["total_categories"] == 3
 
 
-def test_update_category_nonexistent(mock_session):
+async def test_update_category_nonexistent(mock_session):
     """Test updating non-existent category."""
-    result = update_category("nonexistent", "test/", ["*.md"])
+    result = await update_category("nonexistent", "test/", ["*.md"])
 
     assert result["success"] is False
     assert "does not exist" in result["error"]
@@ -79,7 +80,7 @@ def test_update_category_nonexistent(mock_session):
 
 @patch("src.mcp_server_guide.tools.category_tools.Path")
 @patch("src.mcp_server_guide.tools.category_tools.glob")
-def test_get_category_content_no_files(mock_glob, mock_path, mock_session):
+async def test_get_category_content_no_files(mock_glob, mock_path, mock_session):
     """Test getting category content when no files match."""
     mock_glob.glob.return_value = []
     mock_path.return_value.exists.return_value = True
@@ -88,16 +89,16 @@ def test_get_category_content_no_files(mock_glob, mock_path, mock_session):
     config = mock_session.session_state.get_project_config.return_value
     config["categories"]["testing"] = {"dir": "test/", "patterns": ["*.md"]}
 
-    result = get_category_content("testing")
+    result = await get_category_content("testing")
 
     assert result["success"] is True
     assert result["content"] == ""
     assert "No files found" in result["message"]
 
 
-def test_get_category_content_nonexistent_category(mock_session):
+async def test_get_category_content_nonexistent_category(mock_session):
     """Test getting content from non-existent category."""
-    result = get_category_content("nonexistent")
+    result = await get_category_content("nonexistent")
 
     assert result["success"] is False
     assert "does not exist" in result["error"]

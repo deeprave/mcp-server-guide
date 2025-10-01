@@ -60,7 +60,6 @@ class Config:
             description="Document root directory",
         )
 
-        # Legacy CLI arguments for built-in categories
         self.guidesdir = ConfigOption(
             name="guidesdir",
             cli_short="-g",

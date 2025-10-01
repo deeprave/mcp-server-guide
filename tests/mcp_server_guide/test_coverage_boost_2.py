@@ -7,18 +7,18 @@ from src.mcp_server_guide.tools.session_management import save_session
 from src.mcp_server_guide.tools.category_tools import _safe_glob_search
 
 
-def test_save_session_failure():
+async def test_save_session_failure():
     """Test save session failure handling."""
     with patch("src.mcp_server_guide.tools.session_management.SessionManager") as mock_session:
         mock_session.return_value.save_to_file.side_effect = Exception("Save error")
 
-        result = save_session("test.json")
+        result = await save_session("test.json")
 
         assert result["success"] is False
         assert "Save error" in result["error"]
 
 
-def test_safe_glob_non_file_skip():
+async def test_safe_glob_non_file_skip():
     """Test that safe glob skips non-file entries."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)
@@ -35,7 +35,7 @@ def test_safe_glob_non_file_skip():
         assert results[0].name == "file.md"
 
 
-def test_safe_glob_symlink_resolution_error():
+async def test_safe_glob_symlink_resolution_error():
     """Test safe glob handles symlink resolution errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         base_path = Path(temp_dir)

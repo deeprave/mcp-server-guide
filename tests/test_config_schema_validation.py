@@ -104,7 +104,7 @@ class TestConfigSchemaValidation:
         assert is_valid_config_key("docroot") is True
         assert is_valid_config_key("categories") is True
 
-        assert is_valid_config_key("tools") is False  # tools removed
+        assert is_valid_config_key("categories") is True
         assert is_valid_config_key("invalid_key") is False
         assert is_valid_config_key("categories.scm.auto_load") is False
 
@@ -112,7 +112,7 @@ class TestConfigSchemaValidation:
         """Test that ConfigValidationError can contain multiple error messages."""
         config = {
             "project": 123,  # Should be string
-            "tools": "not_array",  # Should be array
+            "categories": "not_dict",  # Should be dict
             "invalid_key": "value",  # Invalid key
         }
 

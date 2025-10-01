@@ -28,10 +28,11 @@ class SessionManager:
             logger.debug("Session manager initialized")
         return cls._instance
 
-    def save_to_file(self, config_file_path: str) -> None:
+    async def save_to_file(self, config_file_path: str) -> None:
         """Save session state to config file, preserving existing data."""
         import json
         from pathlib import Path
+        import aiofiles
 
         config_file = Path(config_file_path)
 
@@ -39,7 +40,9 @@ class SessionManager:
         existing_config = {}
         if config_file.exists():
             try:
-                existing_config = json.loads(config_file.read_text())
+                async with aiofiles.open(config_file, "r", encoding="utf-8") as f:
+                    content = await f.read()
+                    existing_config = json.loads(content)
             except (json.JSONDecodeError, OSError):
                 # Handle corrupted files by backing up and starting fresh
                 backup_file = config_file.with_suffix(".json.backup")
@@ -63,7 +66,8 @@ class SessionManager:
         existing_config.pop("current_project", None)
 
         # Write updated config
-        config_file.write_text(json.dumps(existing_config, indent=2))
+        async with aiofiles.open(config_file, "w", encoding="utf-8") as f:
+            await f.write(json.dumps(existing_config, indent=2))
 
     def get_current_project(self) -> str:
         """Get current project using CurrentProjectManager."""

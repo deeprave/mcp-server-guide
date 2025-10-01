@@ -6,7 +6,7 @@ import requests.exceptions
 from mcp_server_guide.http_client import HttpClient, HttpResponse, HttpError
 
 
-def test_http_client_basic():
+async def test_http_client_basic():
     """Test basic HTTP client functionality."""
     client = HttpClient()
 
@@ -23,7 +23,7 @@ def test_http_client_basic():
         assert result.headers == {"Content-Type": "text/plain"}
 
 
-def test_http_client_error_handling():
+async def test_http_client_error_handling():
     """Test HTTP client error handling to hit all branches."""
     client = HttpClient()
 
@@ -48,7 +48,7 @@ def test_http_client_error_handling():
             client.get("http://example.com/test")
 
 
-def test_http_client_comprehensive():
+async def test_http_client_comprehensive():
     """Test HTTP client comprehensive functionality."""
     client = HttpClient()
 
@@ -70,7 +70,7 @@ def test_http_client_comprehensive():
         )
 
 
-def test_http_client_initialization():
+async def test_http_client_initialization():
     """Test HTTP client initialization."""
     # Test default initialization
     client1 = HttpClient()
@@ -86,7 +86,7 @@ def test_http_client_initialization():
     assert client2.headers == expected_headers
 
 
-def test_http_response():
+async def test_http_response():
     """Test HttpResponse class."""
     response = HttpResponse(content="test content", headers={"Content-Type": "text/plain"})
 
@@ -94,14 +94,14 @@ def test_http_response():
     assert response.headers == {"Content-Type": "text/plain"}
 
 
-def test_http_error():
+async def test_http_error():
     """Test HttpError exception."""
     error = HttpError("Test error message")
     assert str(error) == "Test error message"
     assert isinstance(error, Exception)
 
 
-def test_http_client_exists():
+async def test_http_client_exists():
     """Test HTTP client exists method."""
     client = HttpClient()
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from src.mcp_server_guide.session_tools import SessionManager
 
 
-def test_absolute_docroot_resolution():
+async def test_absolute_docroot_resolution():
     """Test that absolute docroot paths are used as-is."""
     session = SessionManager()
 
@@ -25,7 +25,7 @@ def test_absolute_docroot_resolution():
         assert Path(config["docroot"]).is_absolute()
 
 
-def test_relative_docroot_resolution():
+async def test_relative_docroot_resolution():
     """Test that relative docroot paths are resolved to absolute."""
     session = SessionManager()
 
@@ -42,7 +42,7 @@ def test_relative_docroot_resolution():
     assert config["docroot"].endswith("docs")
 
 
-def test_current_dir_docroot_resolution():
+async def test_current_dir_docroot_resolution():
     """Test that '.' docroot is resolved to absolute current directory."""
     session = SessionManager()
 
@@ -59,7 +59,7 @@ def test_current_dir_docroot_resolution():
     assert config["docroot"] == str(Path.cwd())
 
 
-def test_missing_docroot_defaults_to_current():
+async def test_missing_docroot_defaults_to_current():
     """Test that missing docroot defaults to current directory."""
     session = SessionManager()
 

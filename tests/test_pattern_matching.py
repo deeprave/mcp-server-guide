@@ -5,7 +5,7 @@ from pathlib import Path
 from src.mcp_server_guide.tools.category_tools import _safe_glob_search
 
 
-def test_pattern_matching_adds_md_when_needed():
+async def test_pattern_matching_adds_md_when_needed():
     """Test that patterns without extension get .md added when no match found."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -19,7 +19,7 @@ def test_pattern_matching_adds_md_when_needed():
         assert result[0].name == "guidelines.md"
 
 
-def test_pattern_matching_prefers_exact_match():
+async def test_pattern_matching_prefers_exact_match():
     """Test that exact matches are preferred over .md extension."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -34,7 +34,7 @@ def test_pattern_matching_prefers_exact_match():
         assert result[0].name == "guidelines"
 
 
-def test_pattern_with_extension_unchanged():
+async def test_pattern_with_extension_unchanged():
     """Test that patterns with extensions work as before."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)

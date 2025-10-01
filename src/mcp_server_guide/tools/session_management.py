@@ -7,25 +7,25 @@ from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager
 
 
-def cleanup_config(config_filename: str = config_filename()) -> Dict[str, Any]:
+async def cleanup_config(config_filename: str = config_filename()) -> Dict[str, Any]:
     """Clean up obsolete configuration fields."""
     try:
         session = SessionManager()
-        session.save_to_file(config_filename)
+        await session.save_to_file(config_filename)
 
         return {"success": True, "message": "Configuration saved"}
     except Exception as e:
         return {"success": False, "error": str(e), "message": "Failed to save configuration"}
 
 
-def save_session(config_filename: str = config_filename()) -> Dict[str, Any]:
+async def save_session(config_filename: str = config_filename()) -> Dict[str, Any]:
     """Persist current session state."""
     try:
         session = SessionManager()
         current_project = session.get_current_project()
 
         # Use new save method that preserves existing data
-        session.save_to_file(config_filename)
+        await session.save_to_file(config_filename)
 
         return {"success": True, "project": current_project, "message": f"Session saved for project {current_project}"}
     except Exception as e:

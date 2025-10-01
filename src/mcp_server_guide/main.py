@@ -1,8 +1,9 @@
 """Main CLI entry point for MCP server."""
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, cast
 import click
+import contextlib
 from .config import Config
 from .logging_config import get_logger
 from .naming import config_filename
@@ -27,23 +28,22 @@ def validate_mode(mode: str) -> tuple[str, str]:
     raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio'")
 
 
-def apply_legacy_cli_to_categories(resolved_config: Dict[str, Any]) -> None:
-    """Apply legacy CLI arguments to built-in categories."""
+def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
+    """Configure built-in categories from CLI arguments."""
     from .tools.category_tools import update_category
 
-    # Map legacy CLI args to built-in categories
-    legacy_mappings = [
+    # CLI argument to category mappings
+    cli_mappings = [
         ("guidesdir", "guide", "guide"),
         ("langsdir", "lang", "lang"),
         ("contextdir", "context", "context"),
     ]
 
-    for dir_key, file_key, category_name in legacy_mappings:
+    for dir_key, file_key, category_name in cli_mappings:
         dir_value = resolved_config.get(dir_key)
         file_value = resolved_config.get(file_key)
 
         if dir_value or file_value:
-            # Get current category or use defaults
             try:
                 from .tools.category_tools import list_categories
 
@@ -57,10 +57,10 @@ def apply_legacy_cli_to_categories(resolved_config: Dict[str, Any]) -> None:
                         break
 
                 if existing_category:
-                    # Update the built-in category with CLI values
+                    # Update category with CLI values
                     new_dir = dir_value if dir_value else existing_category["dir"]
 
-                    # Handle file patterns
+                    # Set file patterns
                     if file_value and file_value != "none":
                         if category_name == "lang":
                             new_patterns = [f"{file_value}.md"]
@@ -70,15 +70,19 @@ def apply_legacy_cli_to_categories(resolved_config: Dict[str, Any]) -> None:
                         new_patterns = existing_category["patterns"]
 
                     # Update the category
-                    update_category(
-                        name=category_name,
-                        dir=new_dir,
-                        patterns=new_patterns,
-                        description=existing_category["description"],
+                    import asyncio
+
+                    asyncio.run(
+                        update_category(
+                            name=category_name,
+                            dir=new_dir,
+                            patterns=new_patterns,
+                            description=existing_category["description"],
+                        )
                     )
 
             except Exception as e:
-                logger.warning(f"Failed to apply legacy CLI arg to category {category_name}: {e}")
+                logger.warning(f"Failed to apply CLI arg to category {category_name}: {e}")
 
 
 def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
@@ -96,8 +100,6 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
             mcp.run()
         except (BrokenPipeError, KeyboardInterrupt):
             logger.debug("MCP server shutdown (pipe closed or interrupted)")
-            # Graceful shutdown on pipe close or Ctrl+C
-            pass
         return "MCP server started in stdio mode"
     else:
         logger.warning(f"Unsupported server mode: {mode}")
@@ -205,8 +207,8 @@ def main() -> click.Command:
 
         setup_logging(log_level or "INFO", log_file or "", bool(log_console))
 
-        # Apply legacy CLI arguments to built-in categories
-        apply_legacy_cli_to_categories(resolved_config)
+        # Configure built-in categories from CLI
+        configure_builtin_categories(resolved_config)
 
         # Log startup information
         logger.info(f"Starting MCP server in {mode_type} mode")
@@ -217,11 +219,8 @@ def main() -> click.Command:
 
         # Only echo result if we're not in stdio mode (to avoid breaking protocol)
         if mode_type != "stdio":
-            try:
+            with contextlib.suppress(OSError):
                 click.echo(result)
-            except (BrokenPipeError, OSError):
-                # Graceful handling if output pipe is closed
-                pass
 
     # Add options dynamically
     for option in options:
@@ -252,7 +251,7 @@ def main() -> click.Command:
                     option.cli_long, envvar=option.env_var, default=default_val, help=option.description
                 )(cli_main)
 
-    return cli_main
+    return cast(click.Command, cli_main)
 
 
 def cli_main() -> None:

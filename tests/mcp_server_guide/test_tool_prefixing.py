@@ -3,7 +3,7 @@
 from unittest.mock import Mock
 
 
-def test_ext_mcp_tool_decorator_default_prefix():
+async def test_ext_mcp_tool_decorator_default_prefix():
     """Test ExtMcpToolDecorator with default prefix."""
     from mcp_server_guide.server import ExtMcpToolDecorator
 
@@ -21,7 +21,7 @@ def test_ext_mcp_tool_decorator_default_prefix():
     mock_mcp.tool.assert_called_once_with(name="guide_test_function")
 
 
-def test_ext_mcp_tool_decorator_custom_name():
+async def test_ext_mcp_tool_decorator_custom_name():
     """Test ExtMcpToolDecorator with custom name parameter."""
     from mcp_server_guide.server import ExtMcpToolDecorator
 
@@ -39,7 +39,7 @@ def test_ext_mcp_tool_decorator_custom_name():
     mock_mcp.tool.assert_called_once_with(name="guide_custom_name")
 
 
-def test_ext_mcp_tool_decorator_custom_prefix():
+async def test_ext_mcp_tool_decorator_custom_prefix():
     """Test ExtMcpToolDecorator with custom prefix parameter."""
     from mcp_server_guide.server import ExtMcpToolDecorator
 
@@ -57,7 +57,7 @@ def test_ext_mcp_tool_decorator_custom_prefix():
     mock_mcp.tool.assert_called_once_with(name="workflow_test_function")
 
 
-def test_ext_mcp_tool_decorator_no_prefix():
+async def test_ext_mcp_tool_decorator_no_prefix():
     """Test ExtMcpToolDecorator with empty prefix."""
     from mcp_server_guide.server import ExtMcpToolDecorator
 
@@ -75,7 +75,7 @@ def test_ext_mcp_tool_decorator_no_prefix():
     mock_mcp.tool.assert_called_once_with(name="test_function")
 
 
-def test_ext_mcp_tool_decorator_kwargs_passthrough():
+async def test_ext_mcp_tool_decorator_kwargs_passthrough():
     """Test ExtMcpToolDecorator passes through additional kwargs."""
     from mcp_server_guide.server import ExtMcpToolDecorator
 
@@ -95,7 +95,7 @@ def test_ext_mcp_tool_decorator_kwargs_passthrough():
     )
 
 
-def test_guide_decorator_instance_exists():
+async def test_guide_decorator_instance_exists():
     """Test that guide decorator instance is created."""
     from mcp_server_guide.server import guide
 
@@ -105,7 +105,7 @@ def test_guide_decorator_instance_exists():
     assert guide.default_prefix == "guide_"
 
 
-def test_all_tools_have_guide_prefix():
+async def test_all_tools_have_guide_prefix():
     """Test that all server tools are registered with guide_ prefix."""
     # This test will verify the actual tool registration
     # We'll check this by importing the server module and verifying

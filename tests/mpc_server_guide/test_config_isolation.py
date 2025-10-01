@@ -15,7 +15,7 @@ class TestConfigIsolation:
         """Reset SessionManager singleton before each test."""
         SessionManager._instance = None
 
-    def test_save_session_uses_custom_filename(self):
+    async def test_save_session_uses_custom_filename(self):
         """Test that save_session can use a custom config filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = Path.cwd()
@@ -32,10 +32,10 @@ class TestConfigIsolation:
                 custom_filename = "test-config.json"
 
                 # Set config with custom filename to avoid auto-save to default file
-                set_project_config("language", "python", config_filename_param=custom_filename)
+                await set_project_config("language", "python", config_filename_param=custom_filename)
 
                 # Also explicitly save with custom filename
-                result = save_session(config_filename=custom_filename)
+                result = await save_session(config_filename=custom_filename)
 
                 assert result["success"] is True
 
@@ -50,7 +50,7 @@ class TestConfigIsolation:
             finally:
                 os.chdir(original_cwd)
 
-    def test_load_session_uses_custom_filename(self):
+    async def test_load_session_uses_custom_filename(self):
         """Test that load_session can use a custom config filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = Path.cwd()
@@ -89,7 +89,7 @@ class TestConfigIsolation:
             finally:
                 os.chdir(original_cwd)
 
-    def test_server_startup_uses_custom_filename(self):
+    async def test_server_startup_uses_custom_filename(self):
         """Test that server startup can use custom config filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = Path.cwd()
@@ -123,7 +123,7 @@ class TestConfigIsolation:
             finally:
                 os.chdir(original_cwd)
 
-    def test_tests_dont_affect_working_directory(self):
+    async def test_tests_dont_affect_working_directory(self):
         """Test that running tests doesn't create files in working directory."""
         # Record initial state
         working_dir = Path.cwd()
@@ -139,10 +139,10 @@ class TestConfigIsolation:
 
                 session = SessionManager()
                 session.set_current_project("isolated-test")
-                set_project_config("language", "java")
+                await set_project_config("language", "java")
 
                 # This should create files in temp_dir, not working_dir
-                save_session()
+                await save_session()
 
                 temp_files = list(Path(temp_dir).glob("*config*.json"))
                 assert len(temp_files) > 0  # Files created in temp dir
@@ -154,7 +154,7 @@ class TestConfigIsolation:
         final_files = set(working_dir.glob("*config*.json"))
         assert final_files == initial_files  # No new files in working dir
 
-    def test_auto_save_respects_custom_filename(self):
+    async def test_auto_save_respects_custom_filename(self):
         """Test that auto-save functionality respects custom filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = Path.cwd()
@@ -171,7 +171,7 @@ class TestConfigIsolation:
                 session.set_current_project("auto-save-test")
 
                 # This should trigger auto-save with custom filename
-                set_project_config("language", "go", config_filename_param=custom_filename)
+                await set_project_config("language", "go", config_filename_param=custom_filename)
 
                 # Custom file should exist
                 custom_file = Path(temp_dir) / custom_filename
