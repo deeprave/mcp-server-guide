@@ -226,6 +226,136 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
     return await tools.get_category_content(name, project)
 
 
+# MCP Prompt Handlers
+@mcp.prompt("guide")
+async def guide_prompt(category: Optional[str] = None) -> str:
+    """Get all guides or specific category."""
+    if category:
+        result = await tools.get_category_content(category, None)
+        if result.get("success"):
+            return str(result.get("content", ""))
+        else:
+            return f"Error: {result.get('error', 'Failed to get category')}"
+    else:
+        guides = await tools.get_all_guides(None)
+        if guides:
+            content_parts = []
+            for category_name, content in guides.items():
+                content_parts.append(f"## {category_name}\n\n{content}")
+            return "\n\n".join(content_parts)
+        else:
+            return "No guides available."
+
+
+@mcp.prompt("guide-category")
+async def guide_category_prompt(
+    action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
+) -> str:
+    """Manage categories (new, edit, del)."""
+    if action == "new":
+        # Check for duplicate category name
+        categories_result = tools.list_categories(None)
+        all_categories = {**categories_result["builtin_categories"], **categories_result["custom_categories"]}
+        if name in all_categories:
+            return f"Error: Category with name '{name}' already exists."
+
+        # Parse patterns from comma-separated string
+        pattern_list = patterns.split(",") if patterns else ["*.md"]
+        auto_load_bool = auto_load == "true" if auto_load else False
+
+        result = await tools.add_category(
+            name=name, dir=dir or name, patterns=pattern_list, description="", project=None, auto_load=auto_load_bool
+        )
+
+        if result.get("success"):
+            return f"Successfully created category '{name}'"
+        else:
+            return f"Error creating category: {result.get('error', 'Unknown error')}"
+
+    elif action == "edit":
+        # Get current category to preserve existing values
+        categories_result = tools.list_categories(None)
+        existing_categories: dict[str, Any] = {
+            **categories_result["builtin_categories"],
+            **categories_result["custom_categories"],
+        }
+
+        if name not in existing_categories:
+            return f"Error: Category '{name}' not found"
+
+        current_category = existing_categories[name]
+
+        # Use provided values or fall back to current values
+        new_dir = dir if dir else current_category["dir"]
+        new_patterns = patterns.split(",") if patterns else current_category["patterns"]
+        new_auto_load = auto_load == "true" if auto_load else current_category.get("auto_load", False)
+
+        result = await tools.update_category(
+            name=name,
+            dir=new_dir,
+            patterns=new_patterns,
+            description=current_category.get("description", ""),
+            project=None,
+            auto_load=new_auto_load,
+        )
+
+        if result.get("success"):
+            return f"Successfully updated category '{name}'"
+        else:
+            return f"Error updating category: {result.get('error', 'Unknown error')}"
+
+    elif action == "del":
+        result = await tools.remove_category(name, None)
+
+        if result.get("success"):
+            return f"Successfully deleted category '{name}'"
+        else:
+            return f"Error deleting category: {result.get('error', 'Unknown error')}"
+
+    else:
+        return f"Error: Unknown action '{action}'. Use 'new', 'edit', or 'del'."
+
+
+@mcp.prompt("g-category")
+async def g_category_prompt(
+    action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
+) -> str:
+    """Manage categories - shorthand."""
+    # Delegate to guide_category_prompt
+    result = await guide_category_prompt(action, name, dir, patterns, auto_load)
+    return str(result)
+
+
+@mcp.prompt("daic")
+async def daic_prompt(action: Optional[str] = None) -> str:
+    """Manage DAIC (Discussion-Alignment-Implementation-Check) state."""
+    from pathlib import Path
+
+    consent_file = Path(".consent")
+
+    if action is None:
+        # Return current state
+        if consent_file.exists():
+            return "DAIC state: ENABLED"
+        else:
+            return "DAIC state: DISABLED"
+    else:
+        # Handle enable/disable actions
+        enable_values = {"on", "true", "1", "+", "enabled"}
+        disable_values = {"off", "false", "0", "-", "disabled"}
+
+        if action.lower() in enable_values:
+            # Enable DAIC (remove .consent file)
+            consent_file.unlink(missing_ok=True)
+            return "DAIC state: ENABLED"
+        elif action.lower() in disable_values:
+            # Disable DAIC (create .consent file)
+            consent_file.touch()
+            return "DAIC state: ENABLED"
+        else:
+            return f"Invalid action '{action}'. Use: on|true or off|false"
+
+
 # MCP Resource Handlers
 def list_resources() -> List[Dict[str, Any]]:
     """List resources for auto_load categories."""

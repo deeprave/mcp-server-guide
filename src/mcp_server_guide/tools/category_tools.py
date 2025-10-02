@@ -4,6 +4,7 @@ from ..naming import config_filename
 from typing import Dict, Any, List, Optional, Set
 from pathlib import Path
 import glob
+import re
 import aiofiles
 from ..session_tools import SessionManager
 from ..logging_config import get_logger
@@ -17,6 +18,14 @@ BUILTIN_CATEGORIES = {"guide", "lang", "context"}
 # Safety limits for glob operations
 MAX_GLOB_DEPTH = 8
 MAX_DOCUMENTS_PER_GLOB = 100
+
+# Category name validation pattern
+CATEGORY_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _validate_category_name(name: str) -> bool:
+    """Validate category name against allowed pattern."""
+    return bool(name and CATEGORY_NAME_PATTERN.match(name))
 
 
 async def _auto_save_session(session: SessionManager, config_filename: str = config_filename()) -> None:
@@ -109,6 +118,10 @@ async def add_category(
     auto_load: bool = False,
 ) -> Dict[str, Any]:
     """Add a new custom category."""
+    # Validate category name
+    if not _validate_category_name(name):
+        return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
     if name in BUILTIN_CATEGORIES:
         return {"success": False, "error": f"Cannot override built-in category '{name}'"}
 
@@ -162,6 +175,10 @@ async def update_category(
     auto_load: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Update an existing category."""
+    # Validate category name
+    if not _validate_category_name(name):
+        return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
     if name in BUILTIN_CATEGORIES:
         return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
 
@@ -223,6 +240,10 @@ async def update_category(
 
 async def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Remove a custom category."""
+    # Validate category name
+    if not _validate_category_name(name):
+        return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
     if name in BUILTIN_CATEGORIES:
         return {"success": False, "error": f"Cannot remove built-in category '{name}'"}
 
@@ -282,6 +303,12 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
     session = SessionManager()
     if project is None:
         project = session.get_current_project_safe()
+
+    # Handle magic "*" category - return same as get_all_guides()
+    if name == "*":
+        from .content_tools import get_all_guides
+
+        return await get_all_guides(project)
 
     # Get current config
     config = session.session_state.get_project_config(project)

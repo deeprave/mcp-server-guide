@@ -71,6 +71,7 @@ class TestSetDirectory:
     def test_set_directory_with_path_object(self, tmp_path):
         """Test set_directory with pathlib.Path input."""
         from pathlib import Path
+
         with patch("mcp_server_guide.tools.session_management.SessionManager") as mock_session_class:
             mock_session = MagicMock()
             mock_session.get_current_project.return_value = "test-project"

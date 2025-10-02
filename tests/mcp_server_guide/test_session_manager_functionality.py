@@ -78,6 +78,7 @@ class TestSessionManagerCore:
     def test_set_directory_with_path_object(self):
         """Test set_directory method with pathlib.Path input."""
         from pathlib import Path
+
         session_manager = SessionManager()
 
         with patch("mcp_server_guide.current_project_manager.CurrentProjectManager") as mock_manager_class:

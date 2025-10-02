@@ -98,10 +98,7 @@ class TestCurrentProjectManager:
         finally:
             chdir(original_cwd)
 
-    @pytest.mark.skipif(
-        sys.platform.startswith("win"),
-        reason="Permission error simulation is not reliable on Windows"
-    )
+    @pytest.mark.skipif(sys.platform.startswith("win"), reason="Permission error simulation is not reliable on Windows")
     async def test_handles_missing_permissions(self, tmp_path, chdir):
         """
         Test graceful handling when .current file can't be written.

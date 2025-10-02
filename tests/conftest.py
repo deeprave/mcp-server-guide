@@ -63,8 +63,9 @@ def complete_test_isolation(request):
     """Ensure complete test isolation - no modification of project files."""
     global _session_temp_dir
 
-    # Store original working directory
+    # Store original working directory and PWD
     original_cwd = os.getcwd()
+    original_pwd = os.environ.get("PWD")
 
     # Reset SessionManager singleton
     SessionManager._instance = None
@@ -74,14 +75,19 @@ def complete_test_isolation(request):
     test_subdir = _session_temp_dir / f"test_{test_name}_{id(request)}"
     test_subdir.mkdir(parents=True, exist_ok=True)
 
-    # Change to test subdirectory
+    # Change to test subdirectory and update PWD
     os.chdir(test_subdir)
+    os.environ["PWD"] = str(test_subdir)
 
     try:
         yield str(test_subdir)
     finally:
-        # Always restore original directory and reset singleton
+        # Always restore original directory and PWD
         os.chdir(original_cwd)
+        if original_pwd is not None:
+            os.environ["PWD"] = original_pwd
+        elif "PWD" in os.environ:
+            del os.environ["PWD"]
         SessionManager._instance = None
 
 
