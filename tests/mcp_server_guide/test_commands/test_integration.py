@@ -12,7 +12,7 @@ async def test_full_command_pipeline():
     handler = CommandHandler()
 
     # Test /guide command
-    parsed = parser.parse_command("/guide")
+    parsed = parser.parse_command("guide")
     assert parsed is not None
 
     # Mock the execution (would need actual integration in real scenario)
@@ -30,9 +30,10 @@ async def test_parameter_parsing_integration():
     handler = CommandHandler()
 
     # Test complex command with parameters
-    parsed = parser.parse_command("/guide-new typescript dir=lang/ts patterns=*.ts,*.tsx auto-load=true")
+    parsed = parser.parse_command("guide:new typescript dir=lang/ts patterns=*.ts,*.tsx auto-load=true")
     assert parsed is not None
-    assert parsed["command"] == "guide-new"
+    assert parsed["command"] == "guide"
+    assert parsed["subcommand"] == "new"
     assert parsed["args"] == ["typescript"]
     assert parsed["params"]["dir"] == "lang/ts"
     assert parsed["params"]["patterns"] == ["*.ts", "*.tsx"]
@@ -51,11 +52,11 @@ def test_error_handling_invalid_syntax():
     # Test various invalid inputs
     assert parser.parse_command("") is None
     assert parser.parse_command("   ") is None
-    assert parser.parse_command("/") is None
-    assert parser.parse_command("guide") is None  # No slash
+    assert parser.parse_command("guide me through this") is None  # Natural language
+    assert parser.parse_command("please guide me") is None  # Natural language
 
     # Valid commands should still work
-    result = parser.parse_command("/guide")
+    result = parser.parse_command("guide")
     assert result is not None
 
 
@@ -76,11 +77,20 @@ def test_command_help_structure():
     parser = CommandParser()
 
     # Test that all valid commands parse to consistent structure
-    commands = ["/guide", "/guide lang", "/lang", "/guide-new test", "/guide-edit test dir=new", "/guide-del test"]
+    commands = ["guide", "guide lang", "g:lang", "guide:new test", "guide:edit test dir=new", "guide:del test"]
+    expected_outputs = [
+        {"command": "guide", "subcommand": None, "args": [], "params": {}},
+        {"command": "guide", "subcommand": None, "args": ["lang"], "params": {}},
+        {"command": "g", "subcommand": "lang", "args": [], "params": {}},
+        {"command": "guide", "subcommand": "new", "args": ["test"], "params": {}},
+        {"command": "guide", "subcommand": "edit", "args": ["test"], "params": {"dir": "new"}},
+        {"command": "guide", "subcommand": "del", "args": ["test"], "params": {}},
+    ]
 
-    for cmd in commands:
+    for cmd, expected in zip(commands, expected_outputs):
         result = parser.parse_command(cmd)
-        assert result is not None
-        assert "command" in result
-        assert "args" in result
-        assert "params" in result
+        assert result is not None, f"Parser returned None for command: {cmd}"
+        assert result.get("command") == expected["command"], f"Command mismatch for '{cmd}': {result.get('command')} != {expected['command']}"
+        assert result.get("subcommand") == expected["subcommand"], f"Subcommand mismatch for '{cmd}': {result.get('subcommand')} != {expected['subcommand']}"
+        assert result.get("args") == expected["args"], f"Args mismatch for '{cmd}': {result.get('args')} != {expected['args']}"
+        assert result.get("params") == expected["params"], f"Params mismatch for '{cmd}': {result.get('params')} != {expected['params']}"
