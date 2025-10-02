@@ -10,7 +10,7 @@ async def test_list_resources_returns_resources_for_auto_load_true_categories():
         # Set up mock session with auto_load categories
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project.return_value = "test-project"
+        mock_session.get_current_project_safe.return_value = "test-project"
         mock_session.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {
@@ -64,7 +64,7 @@ async def test_list_resources_returns_empty_list_when_no_auto_load_true_categori
         # Set up mock session with no auto_load categories
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project.return_value = "test-project"
+        mock_session.get_current_project_safe.return_value = "test-project"
         mock_session.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {

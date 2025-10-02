@@ -10,7 +10,7 @@ async def test_get_all_guides_returns_only_auto_load_true_categories():
         # Set up mock session
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project.return_value = "test-project"
+        mock_session.get_current_project_safe.return_value = "test-project"
         mock_session.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide", "auto_load": True},
@@ -47,7 +47,7 @@ async def test_get_all_guides_returns_empty_dict_when_no_auto_load_true_categori
         # Set up mock session
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project.return_value = "test-project"
+        mock_session.get_current_project_safe.return_value = "test-project"
         mock_session.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide"},  # No auto_load = False
@@ -71,7 +71,7 @@ async def test_get_all_guides_error_handling_when_category_loading_fails():
         # Set up mock session
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project.return_value = "test-project"
+        mock_session.get_current_project_safe.return_value = "test-project"
         mock_session.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide", "auto_load": True},

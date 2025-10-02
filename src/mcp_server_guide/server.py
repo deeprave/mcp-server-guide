@@ -39,10 +39,21 @@ guide = ExtMcpToolDecorator(mcp, prefix="guide_")
 
 # Register MCP Tools
 @guide.tool()
-def get_current_project() -> str:
+def guide_set_directory(directory: str) -> Dict[str, Any]:
+    """Set the working directory for the MCP server."""
+    from .tools.session_management import set_directory
+
+    return set_directory(directory)
+
+
+@guide.tool()
+def get_current_project() -> Dict[str, Any]:
     """Get the active project name."""
     logger.debug("Getting current project")
-    return tools.get_current_project()
+    project = tools.get_current_project()
+    if project is None:
+        return {"success": False, "error": "No project set. Use 'set directory /path/to/project' first."}
+    return {"success": True, "project": project}
 
 
 @guide.tool()
@@ -219,7 +230,7 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
 def list_resources() -> List[Dict[str, Any]]:
     """List resources for auto_load categories."""
     session = SessionManager()
-    current_project = session.get_current_project()
+    current_project = session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
     config = session.session_state.get_project_config(current_project)
@@ -363,7 +374,7 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
         session_manager = SessionManager()
 
     # Use the same session manager instance (singleton)
-    current_project = session_manager.get_current_project()
+    current_project = session_manager.get_current_project_safe()
     logger.debug(f"Current project: {current_project}")
 
     # Get session config for current project

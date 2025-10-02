@@ -1,8 +1,9 @@
 """Directory-scoped current project tracking."""
 
 import logging
+import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from .naming import current_filename
 
@@ -23,21 +24,62 @@ class CurrentProjectManager:
         """Initialize manager for specified directory.
 
         Args:
-            directory: Directory to manage project for (defaults to current working directory)
+            directory: Directory to manage project for. If None, uses PWD environment variable
         """
-        self.directory = directory or Path.cwd()
-        self.current_file = self.directory / self.CURRENT_FILE_NAME
+        self._override_directory = directory
 
-    def get_current_project(self) -> str:
-        """Get current project name from .current file or fallback to directory name.
+    @property
+    def directory(self) -> Optional[Path]:
+        """Get current directory or None if not set."""
+        # If explicit directory provided, use it (for tests)
+        if self._override_directory:
+            return self._override_directory
 
-        Returns:
-            Current project name, either from .current file or directory name as fallback
+        # Try PWD environment variable (client's working directory)
+        pwd = os.environ.get("PWD")
+        if pwd:
+            pwd_path = Path(pwd).resolve()
+            if pwd_path.exists():
+                return pwd_path
+        # Fallback to current working directory if PWD is unset or invalid
+        return Path.cwd()
+
+    @property
+    def current_file(self) -> Optional[Path]:
+        """Get current file path or None if directory not set."""
+        if self.directory is None:
+            return None
+        return self.directory / self.CURRENT_FILE_NAME
+
+    def is_directory_set(self) -> bool:
+        """Check if working directory is properly set."""
+        return self.directory is not None
+
+    def set_directory(self, directory: Union[str, Path]) -> None:
+        """Explicitly set the working directory.
+
+        Accepts either a string or Path object for the directory.
+        Normalizes the provided directory path to an absolute path.
+
+        Raises:
+            ValueError: If the provided path does not exist or is not a directory.
         """
+        path = Path(directory).expanduser().resolve()
+        if not path.exists():
+            raise ValueError(f"Provided path '{directory}' does not exist.")
+        if not path.is_dir():
+            raise ValueError(f"Provided path '{directory}' is not a directory.")
+        self._override_directory = path
+
+    def get_current_project(self) -> Optional[str]:
+        """Get current project name or None if directory not set."""
+        if not self.is_directory_set():
+            return None
+
         try:
-            if self.current_file.exists():
+            if self.current_file and self.current_file.exists():
                 content = self.current_file.read_text(encoding="utf-8").strip()
-                if content:  # Handle empty files
+                if content:
                     logger.debug(f"Read current project '{content}' from {self.current_file}")
                     return content
                 else:
@@ -46,9 +88,12 @@ class CurrentProjectManager:
             logger.warning(f"Failed to read {self.current_file}: {e}")
 
         # Fallback to directory name
-        project_name = self.directory.name
-        logger.debug(f"Using directory name as project: '{project_name}'")
-        return project_name
+        if self.directory:
+            project_name = self.directory.name
+            logger.debug(f"Using directory name as project: '{project_name}'")
+            return project_name
+
+        return None
 
     def set_current_project(self, project_name: str) -> None:
         """Set current project name by writing to .current file.
@@ -58,11 +103,17 @@ class CurrentProjectManager:
 
         Raises:
             OSError: If the file cannot be written (permissions, disk space, etc.)
+            ValueError: If directory is not set or project name is empty
         """
+        if not self.is_directory_set():
+            raise ValueError("Directory must be set before setting current project")
+
         if not project_name or not project_name.strip():
             raise ValueError("Project name cannot be empty")
 
         try:
+            if self.current_file is None:
+                raise ValueError("Working directory not set. Use set_directory() first.")
             self.current_file.write_text(project_name.strip(), encoding="utf-8")
             logger.debug(f"Set current project to '{project_name}' in {self.current_file}")
         except (OSError, IOError) as e:
@@ -71,6 +122,9 @@ class CurrentProjectManager:
 
     def clear_current_project(self) -> None:
         """Remove the .current file, reverting to directory name fallback."""
+        if not self.is_directory_set() or not self.current_file:
+            return
+
         try:
             if self.current_file.exists():
                 self.current_file.unlink()
@@ -84,4 +138,4 @@ class CurrentProjectManager:
         Returns:
             True if .current file exists, False otherwise
         """
-        return self.current_file.exists()
+        return self.current_file is not None and self.current_file.exists()

@@ -10,7 +10,7 @@ def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
     """List available files (guides, languages, etc.)."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     config = session.session_state.get_project_config(project)
 

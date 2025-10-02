@@ -90,7 +90,15 @@ def test_command_help_structure():
     for cmd, expected in zip(commands, expected_outputs):
         result = parser.parse_command(cmd)
         assert result is not None, f"Parser returned None for command: {cmd}"
-        assert result.get("command") == expected["command"], f"Command mismatch for '{cmd}': {result.get('command')} != {expected['command']}"
-        assert result.get("subcommand") == expected["subcommand"], f"Subcommand mismatch for '{cmd}': {result.get('subcommand')} != {expected['subcommand']}"
-        assert result.get("args") == expected["args"], f"Args mismatch for '{cmd}': {result.get('args')} != {expected['args']}"
-        assert result.get("params") == expected["params"], f"Params mismatch for '{cmd}': {result.get('params')} != {expected['params']}"
+        assert result.get("command") == expected["command"], (
+            f"Command mismatch for '{cmd}': {result.get('command')} != {expected['command']}"
+        )
+        assert result.get("subcommand") == expected["subcommand"], (
+            f"Subcommand mismatch for '{cmd}': {result.get('subcommand')} != {expected['subcommand']}"
+        )
+        assert result.get("args") == expected["args"], (
+            f"Args mismatch for '{cmd}': {result.get('args')} != {expected['args']}"
+        )
+        assert result.get("params") == expected["params"], (
+            f"Params mismatch for '{cmd}': {result.get('params')} != {expected['params']}"
+        )

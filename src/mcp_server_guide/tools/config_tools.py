@@ -10,7 +10,7 @@ def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     config = session.session_state.get_project_config(project)
     # Only set project name if not already explicitly set in config
@@ -37,7 +37,7 @@ async def set_project_config_values(
     session = SessionManager()
 
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Validate entire configuration before setting any values
     try:
@@ -99,7 +99,7 @@ async def set_project_config(
 
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Check if trying to change an immutable project key
     if config_key == "project":
@@ -140,7 +140,7 @@ def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get merged configuration (file + session)."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     return session.get_effective_config(project)
 

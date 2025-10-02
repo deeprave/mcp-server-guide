@@ -1,12 +1,77 @@
 """Session management tools."""
 
+import asyncio
+import os
 from ..naming import config_filename
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable, Union
+from functools import wraps
 from pathlib import Path
 from ..session_tools import SessionManager
 from ..project_config import ProjectConfigManager
 
 
+def require_directory_set(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to ensure directory is set before running tool."""
+
+    if asyncio.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            session = SessionManager()
+            if not session.is_directory_set():
+                return {
+                    "success": False,
+                    "error": "Working directory not set. Please use 'set directory /path/to/project' first.",
+                    "blocked": True,
+                }
+            return await func(*args, **kwargs)
+
+        return async_wrapper
+    else:
+
+        @wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            session = SessionManager()
+            if not session.is_directory_set():
+                return {
+                    "success": False,
+                    "error": "Working directory not set. Please use 'set directory /path/to/project' first.",
+                    "blocked": True,
+                }
+            return func(*args, **kwargs)
+
+        return sync_wrapper
+
+
+def set_directory(directory: Union[str, Path]) -> Dict[str, Any]:
+    """Set the working directory for the MCP server."""
+    try:
+        # Handle None values before os.fspath
+        if directory is None:
+            return {"success": False, "error": "Directory must be a non-empty string"}
+
+        # Use os.fspath for idiomatic Path/str conversion
+        directory_str = os.fspath(directory)
+
+        if not directory_str or not directory_str.strip():
+            return {"success": False, "error": "Directory must be a non-empty string"}
+
+        path = Path(directory_str).expanduser().resolve()
+        if not path.exists():
+            return {"success": False, "error": f"Directory does not exist: {directory}"}
+        if not path.is_dir():
+            return {"success": False, "error": f"Path is not a directory: {directory}"}
+
+        session = SessionManager()
+        session.set_directory(str(path))
+
+        project = session.get_current_project()
+        return {"success": True, "message": f"Working directory set to: {path}", "project": project}
+    except (OSError, PermissionError, ValueError) as e:
+        return {"success": False, "error": f"Failed to set directory: {e}"}
+
+
+@require_directory_set
 async def cleanup_config(config_filename: str = config_filename()) -> Dict[str, Any]:
     """Clean up obsolete configuration fields."""
     try:
@@ -37,6 +102,10 @@ def load_session(project_path: Optional[Path] = None, config_filename: str = con
     try:
         if project_path is None:
             project_path = Path(".")
+
+        # Validate that path is a directory
+        if project_path.exists() and not project_path.is_dir():
+            return {"success": False, "error": f"Session path '{project_path}' exists but is not a directory"}
 
         session = SessionManager()
         manager = ProjectConfigManager()

@@ -1,11 +1,11 @@
 """Project management tools."""
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ..session_tools import SessionManager
 from .session_management import save_session
 
 
-def get_current_project() -> str:
+def get_current_project() -> Optional[str]:
     """Get the active project name."""
     session = SessionManager()
     return session.get_current_project()
@@ -69,7 +69,9 @@ def list_projects() -> List[str]:
     # Get all projects from session state
     projects = list(session.session_state.projects.keys())
     if not projects:
-        projects = [session.get_current_project()]
+        current = session.get_current_project()
+        if current:
+            projects = [current]
     return projects
 
 

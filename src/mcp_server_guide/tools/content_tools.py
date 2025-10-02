@@ -28,7 +28,7 @@ async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     result = {}
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
     config = session.session_state.get_project_config(project)
@@ -57,7 +57,7 @@ async def search_content(query: str, project: Optional[str] = None) -> List[Dict
     """Search across all categories for content matching query."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     results = []
     categories = ["guide", "lang", "context"]

@@ -118,7 +118,7 @@ class TestConfigIsolation:
 
                 # Should have loaded the custom config
                 session = SessionManager()
-                assert session.current_project == "server-project"
+                assert session.get_current_project() == "server-project"
 
             finally:
                 os.chdir(original_cwd)

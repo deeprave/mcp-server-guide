@@ -68,7 +68,7 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
     with patch("src.mcp_server_guide.tools.content_tools.SessionManager") as mock_session:
         session_instance = Mock()
         mock_session.return_value = session_instance
-        session_instance.get_current_project.return_value = "current-project"
+        session_instance.get_current_project_safe.return_value = "current-project"
 
         await get_guide(None)
 
@@ -83,7 +83,7 @@ async def test_get_all_guides_uses_unified_system():
         # Set up mock session with auto_load categories
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project.return_value = "test-project"
+        mock_session.get_current_project_safe.return_value = "test-project"
         mock_session.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "auto_load": True},

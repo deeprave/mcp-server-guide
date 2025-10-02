@@ -9,7 +9,7 @@ from mcp_server_guide.session_tools import SessionManager
 class TestSessionManagerUpdates:
     """Test that SessionManager only updates config files, never overwrites them."""
 
-    async def test_session_manager_preserves_existing_config_data(self, tmp_path):
+    async def test_session_manager_preserves_existing_config_data(self, tmp_path, chdir):
         """Test that existing config data is preserved when updating."""
         config_file = tmp_path / ".mcp-server-guide.config.json"
 
@@ -24,7 +24,7 @@ class TestSessionManagerUpdates:
 
         original_cwd = os.getcwd()
         try:
-            os.chdir(tmp_path)
+            chdir(tmp_path)
 
             # Create session manager and make changes
             session = SessionManager()
@@ -47,9 +47,9 @@ class TestSessionManagerUpdates:
             assert updated_config["projects"]["project-a"]["docroot"] == "/custom/root"
 
         finally:
-            os.chdir(original_cwd)
+            chdir(original_cwd)
 
-    async def test_session_manager_uses_current_project_manager(self, tmp_path):
+    async def test_session_manager_uses_current_project_manager(self, tmp_path, chdir):
         """Test that SessionManager uses CurrentProjectManager instead of storing current_project in config."""
         config_file = tmp_path / ".mcp-server-guide.config.json"
         current_file = tmp_path / ".mcp-server-guide.current"
@@ -63,7 +63,7 @@ class TestSessionManagerUpdates:
 
         original_cwd = os.getcwd()
         try:
-            os.chdir(tmp_path)
+            chdir(tmp_path)
 
             session = SessionManager()
 
@@ -82,15 +82,15 @@ class TestSessionManagerUpdates:
             assert "existing-project" in updated_config["projects"]
 
         finally:
-            os.chdir(original_cwd)
+            chdir(original_cwd)
 
-    async def test_session_manager_handles_missing_config_file(self, tmp_path):
+    async def test_session_manager_handles_missing_config_file(self, tmp_path, chdir):
         """Test that SessionManager creates new config file when none exists."""
         config_file = tmp_path / ".mcp-server-guide.config.json"
 
         original_cwd = os.getcwd()
         try:
-            os.chdir(tmp_path)
+            chdir(tmp_path)
 
             session = SessionManager()
             session.session_state.set_project_config("new-project", "language", "go")
@@ -110,9 +110,9 @@ class TestSessionManagerUpdates:
             assert config_data["projects"]["new-project"]["language"] == "go"
 
         finally:
-            os.chdir(original_cwd)
+            chdir(original_cwd)
 
-    async def test_session_manager_handles_corrupted_config_file(self, tmp_path):
+    async def test_session_manager_handles_corrupted_config_file(self, tmp_path, chdir):
         """Test graceful handling of corrupted config files."""
         config_file = tmp_path / ".mcp-server-guide.config.json"
 
@@ -121,7 +121,7 @@ class TestSessionManagerUpdates:
 
         original_cwd = os.getcwd()
         try:
-            os.chdir(tmp_path)
+            chdir(tmp_path)
 
             session = SessionManager()
 
@@ -135,9 +135,9 @@ class TestSessionManagerUpdates:
             assert "projects" in config_data
 
         finally:
-            os.chdir(original_cwd)
+            chdir(original_cwd)
 
-    async def test_single_config_manager_responsibility(self, tmp_path):
+    async def test_single_config_manager_responsibility(self, tmp_path, chdir):
         """Test that only one class manages config file writes."""
         # This test ensures we have a single point of responsibility
         # for config file management to prevent overwrites
@@ -150,7 +150,7 @@ class TestSessionManagerUpdates:
 
         original_cwd = os.getcwd()
         try:
-            os.chdir(tmp_path)
+            chdir(tmp_path)
 
             # Multiple operations should all go through the same manager
             session = SessionManager()
@@ -181,4 +181,4 @@ class TestSessionManagerUpdates:
             assert final_config["projects"]["project-3"]["language"] == "go"
 
         finally:
-            os.chdir(original_cwd)
+            chdir(original_cwd)

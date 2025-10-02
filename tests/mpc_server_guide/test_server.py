@@ -1,5 +1,6 @@
 """Tests for MCP server functionality."""
 
+from unittest.mock import patch
 from mcp_server_guide import server
 
 
@@ -7,11 +8,24 @@ async def test_server_tool_functions():
     """Test all MCP server tool functions."""
     # Test get_current_project
     result = server.get_current_project()
-    assert isinstance(result, str)
+    assert isinstance(result, dict)
+    # Assert expected keys in the returned dict
+    assert "success" in result
+    if result["success"]:
+        assert "project" in result
 
     # Test switch_project
     result = await server.switch_project("test_project")
     assert isinstance(result, dict)
+
+
+async def test_get_current_project_no_project_set():
+    """Test get_current_project when no project is set."""
+    with patch("mcp_server_guide.server.tools.get_current_project", return_value=None):
+        result = server.get_current_project()
+        assert isinstance(result, dict)
+        assert result["success"] is False
+        assert "No project set" in result["error"]
 
     # Test list_projects
     result = server.list_projects()

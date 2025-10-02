@@ -127,7 +127,7 @@ async def add_category(
 
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Get current config
     config = session.session_state.get_project_config(project)
@@ -186,7 +186,7 @@ async def update_category(
 
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Get current config
     config = session.session_state.get_project_config(project)
@@ -228,7 +228,7 @@ async def remove_category(name: str, project: Optional[str] = None) -> Dict[str,
 
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Get current config
     config = session.session_state.get_project_config(project)
@@ -258,7 +258,7 @@ def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
     """List all categories (built-in and custom)."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Get current config
     config = session.session_state.get_project_config(project)
@@ -281,7 +281,7 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
     """Get content from a category using glob patterns."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project()
+        project = session.get_current_project_safe()
 
     # Get current config
     config = session.session_state.get_project_config(project)

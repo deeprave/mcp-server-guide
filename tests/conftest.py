@@ -5,13 +5,25 @@ import os
 import shutil
 import atexit
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Union
 import pytest
 
 from mcp_server_guide.session_tools import SessionManager
 
 # Global session temp directory
 _session_temp_dir = None
+
+
+@pytest.fixture
+def chdir():
+    """Fixture that provides a chdir function that updates both cwd and PWD."""
+
+    def _chdir(path: Union[str, Path]) -> None:
+        """Change directory and update PWD environment variable."""
+        os.chdir(path)
+        os.environ["PWD"] = os.getcwd()
+
+    return _chdir
 
 
 def robust_cleanup(directory: Path) -> None:
