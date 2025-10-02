@@ -182,3 +182,7 @@ Desktop.ini
 .todo/
 q.json
 .claude
+
+# Project configuration
+.mcp-server-guide.*
+
