@@ -304,12 +304,6 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
     if project is None:
         project = session.get_current_project_safe()
 
-    # Handle magic "*" category - return same as get_all_guides()
-    if name == "*":
-        from .content_tools import get_all_guides
-
-        return await get_all_guides(project)
-
     # Get current config
     config = session.session_state.get_project_config(project)
     categories = config.get("categories", {})

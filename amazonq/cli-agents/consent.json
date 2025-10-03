@@ -1,0 +1,45 @@
+{
+  "name": "consent",
+  "$schema": "https://raw.githubusercontent.com/aws/amazon-q-developer-cli/refs/heads/main/schemas/agent-v1.json",
+  "description": "Agent that provides consent-based fs_write capability",
+  "resources": [],
+  "tools": ["*"],
+  "allowedTools": [
+    "fs_read",
+    "fs_write",
+    "execute_bash",
+    "use_aws",
+    "report_issue",
+    "introspect",
+    "knowledge",
+    "thinking",
+    "todo_list",
+    "@Guide/*",
+    "@Context7/*",
+    "@SequentialThinking/*",
+    "@ClaudeDesktop/*",
+    "@Fetch/*",
+    "@YouTrack/*",
+    "@Trello/*",
+    "@Atlassian/*"
+  ],
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "~/.aws/amazonq/scripts/q_AgentSpawn.sh"
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "~/.aws/amazonq/scripts/q_UserPromptSubmit.sh"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "~/.aws/amazonq/scripts/q_PreToolUse.sh",
+        "matcher": "*"
+      }
+    ]
+  },
+  "useLegacyMcpJson": true
+}

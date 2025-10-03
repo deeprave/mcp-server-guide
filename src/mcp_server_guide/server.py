@@ -2,6 +2,7 @@
 
 from typing import Dict, Any, Optional, List
 from mcp.server.fastmcp import FastMCP
+from pathlib import Path
 from .session import resolve_session_path
 from .session_tools import SessionManager
 from .file_source import FileSource, FileAccessor
@@ -229,7 +230,7 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
 # MCP Prompt Handlers
 @mcp.prompt("guide")
 async def guide_prompt(category: Optional[str] = None) -> str:
-    """Get all guides or specific category."""
+    """Get all auto-load guides or specific category."""
     if category:
         result = await tools.get_category_content(category, None)
         if result.get("success"):
@@ -239,9 +240,10 @@ async def guide_prompt(category: Optional[str] = None) -> str:
     else:
         guides = await tools.get_all_guides(None)
         if guides:
-            content_parts = []
-            for category_name, content in guides.items():
-                content_parts.append(f"## {category_name}\n\n{content}")
+            content_parts = [
+                f"## {category_name}\n\n{content}"
+                for category_name, content in guides.items()
+            ]
             return "\n\n".join(content_parts)
         else:
             return "No guides available."
@@ -329,31 +331,39 @@ async def g_category_prompt(
 @mcp.prompt("daic")
 async def daic_prompt(action: Optional[str] = None) -> str:
     """Manage DAIC (Discussion-Alignment-Implementation-Check) state."""
-    from pathlib import Path
+    from .current_project_manager import CurrentProjectManager
 
-    consent_file = Path(".consent")
+    # Get client working directory for .consent file
+    project_manager = CurrentProjectManager()
+
+    client_dir = project_manager.directory
+    if client_dir is None:
+        return "Error: Client working directory not available"
+    client_dir = Path(client_dir)
+    consent_file = client_dir / ".consent"
 
     if action is None:
         # Return current state
-        if consent_file.exists():
-            return "DAIC state: ENABLED"
-        else:
-            return "DAIC state: DISABLED"
-    else:
-        # Handle enable/disable actions
-        enable_values = {"on", "true", "1", "+", "enabled"}
-        disable_values = {"off", "false", "0", "-", "disabled"}
+        return (
+            "DAIC state: DISABLED"
+            if consent_file.exists()
+            else "DAIC state: ENABLED"
+        )
+    # Handle enable/disable actions
+    enable_values = {"on", "true", "1", "+", "enabled"}
+    disable_values = {"off", "false", "0", "-", "disabled"}
 
-        if action.lower() in enable_values:
-            # Enable DAIC (remove .consent file)
-            consent_file.unlink(missing_ok=True)
-            return "DAIC state: ENABLED"
-        elif action.lower() in disable_values:
-            # Disable DAIC (create .consent file)
-            consent_file.touch()
-            return "DAIC state: ENABLED"
-        else:
-            return f"Invalid action '{action}'. Use: on|true or off|false"
+    normalized_action = action.strip().lower()
+    if normalized_action in enable_values:
+        # Enable DAIC (remove .consent file)
+        consent_file.unlink(missing_ok=True)
+        return "DAIC state: ENABLED"
+    elif normalized_action in disable_values:
+        # Disable DAIC (create .consent file)
+        consent_file.touch()
+        return "DAIC state: ENABLED"
+    else:
+        return f"Invalid action '{action}'. Use: on|true or off|false"
 
 
 # MCP Resource Handlers

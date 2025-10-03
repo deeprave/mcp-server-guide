@@ -1,32 +1,7 @@
-"""Tests for magic category "*" functionality."""
+"""Tests for category name validation (formerly magic category tests)."""
 
 import pytest
-from mcp_server_guide.tools.category_tools import get_category_content, add_category, update_category, remove_category
-from mcp_server_guide.tools.content_tools import get_all_guides
-from mcp_server_guide.server import mcp
-from mcp.types import GetPromptResult
-
-
-@pytest.mark.asyncio
-async def test_get_category_content_star_returns_auto_load_guides():
-    """Test that get_category_content("*") returns auto_load guides."""
-    # This should return the same content as get_all_guides()
-    result = await get_category_content("*")
-    expected = await get_all_guides()
-
-    assert result == expected
-
-
-@pytest.mark.asyncio
-async def test_guide_prompt_with_star_category_returns_auto_load_guides():
-    """Test that @guide category=* returns auto_load guides."""
-    # This should return the same content as get_all_guides()
-    result = await mcp.get_prompt("guide", {"category": "*"})
-
-    assert isinstance(result, GetPromptResult)
-    # The prompt should contain the same content as get_all_guides()
-    # We'll check that the result contains the expected guide content
-    assert len(result.messages) > 0
+from mcp_server_guide.tools.category_tools import add_category, update_category, remove_category
 
 
 @pytest.mark.asyncio
