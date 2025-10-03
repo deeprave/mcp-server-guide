@@ -12,7 +12,7 @@ else
   cat << 'EOF'
 ✅ IMPLEMENTATION MODE
 You may proceed with implementation and architectural changes.
-Once completed you MUST touch the .consent file to return to DAIC mode.
+If you have completed the implementation you MUST remove the .consent file to return to DAIC mode.
 EOF
 fi
 exit 0

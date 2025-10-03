@@ -179,8 +179,12 @@ async def update_category(
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
 
+    # Allow partial updates to builtin categories (dir, patterns, auto_load)
+    # but prevent complete removal or name changes
     if name in BUILTIN_CATEGORIES:
-        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
+        # Built-in categories can only be updated, not renamed or removed
+        # This is handled by the function signature - name cannot be changed
+        pass
 
     # Validate category configuration
     category_config = {

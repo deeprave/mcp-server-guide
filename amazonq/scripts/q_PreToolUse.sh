@@ -8,12 +8,15 @@ EXEMPT_PATHS=(
 
 function is_path_exempt() {
     local check_path="$1"
+    # Convert absolute path to relative if it starts with current directory
+    local relative_path="${check_path#$PWD/}"
+
     for pattern in "${EXEMPT_PATHS[@]}"; do
-        if [[ "$check_path" == $pattern ]]; then
-            return 0  # Path is exempt
+        if [[ "$relative_path" == $pattern ]]; then
+            return 0
         fi
     done
-    return 1  # Path is not exempt
+    return 1
 }
 
 function has_consent() {

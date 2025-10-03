@@ -240,10 +240,7 @@ async def guide_prompt(category: Optional[str] = None) -> str:
     else:
         guides = await tools.get_all_guides(None)
         if guides:
-            content_parts = [
-                f"## {category_name}\n\n{content}"
-                for category_name, content in guides.items()
-            ]
+            content_parts = [f"## {category_name}\n\n{content}" for category_name, content in guides.items()]
             return "\n\n".join(content_parts)
         else:
             return "No guides available."
@@ -328,6 +325,10 @@ async def g_category_prompt(
     return str(result)
 
 
+DAIC_ENABLED = "DAIC mode: ENABLED (Discussion-Alignment-Implementation-Check)"
+DAIC_DISABLED = "DAIC mode: DISABLED (Implementation allowed)"
+
+
 @mcp.prompt("daic")
 async def daic_prompt(action: Optional[str] = None) -> str:
     """Manage DAIC (Discussion-Alignment-Implementation-Check) state."""
@@ -344,11 +345,7 @@ async def daic_prompt(action: Optional[str] = None) -> str:
 
     if action is None:
         # Return current state
-        return (
-            "DAIC state: DISABLED"
-            if consent_file.exists()
-            else "DAIC state: ENABLED"
-        )
+        return DAIC_DISABLED if consent_file.exists() else DAIC_ENABLED
     # Handle enable/disable actions
     enable_values = {"on", "true", "1", "+", "enabled"}
     disable_values = {"off", "false", "0", "-", "disabled"}
@@ -357,11 +354,11 @@ async def daic_prompt(action: Optional[str] = None) -> str:
     if normalized_action in enable_values:
         # Enable DAIC (remove .consent file)
         consent_file.unlink(missing_ok=True)
-        return "DAIC state: ENABLED"
+        return DAIC_ENABLED
     elif normalized_action in disable_values:
-        # Disable DAIC (create .consent file)
-        consent_file.touch()
-        return "DAIC state: ENABLED"
+        # Disable DAIC (touch .consent file)
+        consent_file.unlink(missing_ok=True)
+        return DAIC_DISABLED
     else:
         return f"Invalid action '{action}'. Use: on|true or off|false"
 

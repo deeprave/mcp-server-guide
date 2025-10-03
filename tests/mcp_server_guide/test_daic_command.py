@@ -21,7 +21,7 @@ async def test_daic_prompt_returns_current_state(tmp_path, monkeypatch):
     result = await mcp.get_prompt("daic", {})
     assert isinstance(result, GetPromptResult)
     assert len(result.messages) > 0
-    assert "DAIC state: ENABLED" in result.messages[0].content.text
+    assert "DAIC mode: ENABLED (Discussion-Alignment-Implementation-Check)" in result.messages[0].content.text
 
     # Test DISABLED state (.consent file exists)
     consent_file.touch()
@@ -29,7 +29,7 @@ async def test_daic_prompt_returns_current_state(tmp_path, monkeypatch):
     result = await mcp.get_prompt("daic", {})
     assert isinstance(result, GetPromptResult)
     assert len(result.messages) > 0
-    assert "DAIC state: DISABLED" in result.messages[0].content.text
+    assert "DAIC mode: DISABLED (Implementation allowed)" in result.messages[0].content.text
 
 
 @pytest.mark.asyncio
