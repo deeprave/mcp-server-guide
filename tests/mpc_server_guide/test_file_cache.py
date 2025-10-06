@@ -146,7 +146,9 @@ async def test_file_accessor_with_http_caching():
             mock_client.get_conditional = AsyncMock(return_value=None)  # 304 Not Modified
             mock_client_class.return_value = mock_client
 
-            http_source = FileSource("http", "https://example.com/docs/")
+            from mcp_server_guide.file_source import FileSourceType
+
+            http_source = FileSource(FileSourceType.HTTP, "https://example.com/docs/")
             accessor = FileAccessor(cache_dir=temp_dir)
 
             # First read - should fetch from HTTP and cache
@@ -169,7 +171,7 @@ async def test_file_accessor_with_http_caching():
 
 async def test_file_accessor_cache_invalidation():
     """Test cache invalidation when remote content changes."""
-    from mcp_server_guide.file_source import FileSource, FileAccessor
+    from mcp_server_guide.file_source import FileSource, FileAccessor, FileSourceType
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -191,7 +193,7 @@ async def test_file_accessor_cache_invalidation():
             mock_client.get_conditional = AsyncMock(return_value=updated_response)  # Content changed
             mock_client_class.return_value = mock_client
 
-            http_source = FileSource("http", "https://example.com/docs/")
+            http_source = FileSource(FileSourceType.HTTP, "https://example.com/docs/")
             accessor = FileAccessor(cache_dir=temp_dir)
 
             # First read
@@ -231,7 +233,7 @@ async def test_cache_respects_cache_control():
 
 async def test_fallback_to_cache_on_network_error():
     """Test falling back to cache when network fails."""
-    from mcp_server_guide.file_source import FileSource, FileAccessor
+    from mcp_server_guide.file_source import FileSource, FileAccessor, FileSourceType
     from mcp_server_guide.http_client import HttpError
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -250,7 +252,7 @@ async def test_fallback_to_cache_on_network_error():
             mock_client.get_conditional = AsyncMock(side_effect=HttpError("Network error"))
             mock_client_class.return_value = mock_client
 
-            http_source = FileSource("http", "https://example.com/docs/")
+            http_source = FileSource(FileSourceType.HTTP, "https://example.com/docs/")
             accessor = FileAccessor(cache_dir=temp_dir)
 
             # First read - populates cache

@@ -118,6 +118,22 @@ packages = ["src"]
 strict = true
 ```
 
+### Testing
+#### TDD
+
+If using TDD, tests should be written before the implementation. Sometimes those tests may not be optimal for ongoing testing or regression testing.
+So here are some general guidelines.
+
+##### Refactoring or Redesign
+
+Again, if using TDD, some tests are required to be written to test a refactoring or other re-arrangement (removing code or changes in design).
+These should be regarded as "throwaway" tests as in the end, once the task is done and the tests pass to confirm successful completion they may serve no useful purpose going forwards. Those tests may be removed. Instead, replace with tests that actually TEST something useful about the resulting code, if required - and not already covered.
+
+##### Coverage
+
+Don't write tests just to achieve code coverage. Instead, test something in a useful way - that functionality works, that something returns or is set to a correct value etc. Certainly do not name tests, classes or modules containing the word _coverage_ - this is a bad smell that this module contains artificial tests purely to enhance or provide coverage. Tests should test actual functionality, and do not exist to achieve an arbitrary statistic.
+
+
 **Essential `.pre-commit-config.yaml`:**
 ```yaml
 # See https://pre-commit.com for more information

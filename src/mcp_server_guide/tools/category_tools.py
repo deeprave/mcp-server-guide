@@ -10,7 +10,7 @@ from ..session_tools import SessionManager
 from ..logging_config import get_logger
 from ..validation import validate_category, ConfigValidationError
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 # Built-in categories that cannot be removed or overwritten
 BUILTIN_CATEGORIES = {"guide", "lang", "context"}

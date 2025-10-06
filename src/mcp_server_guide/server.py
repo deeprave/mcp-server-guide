@@ -1,21 +1,97 @@
 """MCP server for developer guidelines and project rules with hybrid file access."""
 
+import functools
 from typing import Dict, Any, Optional, List
+from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
-from .session import resolve_session_path
 from .session_tools import SessionManager
 from .file_source import FileSource, FileAccessor
 from .logging_config import get_logger
 from .naming import config_filename
+from .error_handler import ErrorHandler
+from .client_path import ClientPath
 from . import tools
 
-logger = get_logger(__name__)
-mcp = FastMCP(name="Developer Guide MCP")
+logger = get_logger()
+error_handler = ErrorHandler(logger)
+
+
+@asynccontextmanager
+async def server_lifespan(server: FastMCP) -> Any:
+    """Server lifespan manager for initialization and cleanup.
+
+    Basic server initialization that doesn't require client context.
+    Client root initialization happens on first request that needs it.
+    """
+    logger.info("=== Starting MCP server initialization ===")
+
+    try:
+        logger.info("MCP server initialized successfully")
+        yield
+
+    except Exception as e:
+        logger.error(f"Unexpected error during server initialization: {e}", exc_info=True)
+        raise
+    finally:
+        logger.info("MCP server shutting down")
+
+
+async def ensure_client_roots_initialized() -> None:
+    """Ensure ClientPath is initialized, calling initialize if needed.
+
+    This function is called automatically before any tool/prompt execution via decorator.
+    It uses the current MCP context to initialize ClientPath exactly once.
+
+    Raises:
+        RuntimeError: If client working directory cannot be initialized
+    """
+    if ClientPath.is_initialized():
+        return
+
+    async with ClientPath.get_init_lock():
+        # Double-check after acquiring lock
+        if ClientPath.is_initialized():
+            return
+
+        try:
+            context = mcp.get_context()
+            session = context.session
+
+            logger.debug("Initializing client working directory from MCP session...")
+            await ClientPath.initialize(session)
+            logger.debug("Client working directory initialized successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize client working directory: {e}", exc_info=True)
+            raise RuntimeError(f"Cannot initialize client working directory: {e}") from e
+
+
+mcp = FastMCP(name="Developer Guide MCP", lifespan=server_lifespan)
+
+
+def log_tool_usage(func: Any) -> Any:
+    """Decorator to log tool usage and responses with comprehensive error handling."""
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        tool_name = getattr(func, "__name__", "unknown_tool")
+        logger.debug(f"Tool '{tool_name}' called with args: {args}, kwargs: {kwargs}")
+        try:
+            result = func(*args, **kwargs)
+            logger.debug(f"Tool '{tool_name}' completed successfully")
+            return result
+        except Exception as e:
+            # Use ErrorHandler for comprehensive error logging with traceback
+            error_handler.handle_error(e, f"tool '{tool_name}'")
+            # Re-raise the original exception for MCP framework handling
+            raise
+
+    return wrapper
 
 
 class ExtMcpToolDecorator:
-    """Extended MCP tool decorator with flexible prefixing."""
+    """Extended MCP tool decorator with flexible prefixing and automatic client root initialization."""
 
     def __init__(self, mcp_instance: FastMCP, prefix: str = "") -> None:
         self.mcp = mcp_instance
@@ -29,7 +105,25 @@ class ExtMcpToolDecorator:
                 tool_name = f"{prefix}{func.__name__}"
             else:
                 tool_name = f"{self.default_prefix}{func.__name__}"
-            return self.mcp.tool(name=tool_name, **kwargs)(func)
+
+            # Wrap function with client root initialization (for async functions)
+            import inspect
+
+            if inspect.iscoroutinefunction(func):
+
+                @functools.wraps(func)
+                async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                    await ensure_client_roots_initialized()
+                    return await func(*args, **kwargs)
+
+                wrapped_func = async_wrapper
+            else:
+                # Sync function - no initialization needed
+                wrapped_func = func
+
+            # Wrap with logging
+            logged_func = log_tool_usage(wrapped_func)
+            return self.mcp.tool(name=tool_name, **kwargs)(logged_func)
 
         return decorator
 
@@ -170,7 +264,6 @@ async def save_session() -> Dict[str, Any]:
 @guide.tool()
 def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
     """Load session from project."""
-    from pathlib import Path
 
     path = Path(project_path) if project_path else None
     return tools.load_session(path)
@@ -231,6 +324,9 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
 @mcp.prompt("guide")
 async def guide_prompt(category: Optional[str] = None) -> str:
     """Get all auto-load guides or specific category."""
+    # Client roots automatically initialized by first tool/prompt call
+    await ensure_client_roots_initialized()
+
     if category:
         result = await tools.get_category_content(category, None)
         if result.get("success"):
@@ -251,6 +347,9 @@ async def guide_category_prompt(
     action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
 ) -> str:
     """Manage categories (new, edit, del)."""
+    # Ensure client roots are initialized within MCP request context
+    await ensure_client_roots_initialized()
+
     if action == "new":
         # Check for duplicate category name
         categories_result = tools.list_categories(None)
@@ -325,42 +424,76 @@ async def g_category_prompt(
     return str(result)
 
 
-DAIC_ENABLED = "DAIC mode: ENABLED (Discussion-Alignment-Implementation-Check)"
-DAIC_DISABLED = "DAIC mode: DISABLED (Implementation allowed)"
+DAIC_ENABLED = "DAIC mode: ENABLED"
+DAIC_DESC = "Discussion-Alignment-Implementation-Check"
+DAIC_DISABLED = "DAIC mode: DISABLED"
+
+
+async def daic_status(state: bool | None = None) -> bool | None:
+    """Set or check the current DAIC status."""
+    # Ensure client roots are initialized
+    await ensure_client_roots_initialized()
+
+    from .client_path import ClientPath
+
+    client_dir = ClientPath.get_primary_root()
+    if client_dir is None:
+        logger.debug("Cannot determine DAIC status: no client working directory")
+        return None
+
+    consent_file = client_dir / ".consent"
+    logger.debug(f"DAIC consent file path: {consent_file}")
+
+    async def check_status() -> bool | None:
+        exists = consent_file.exists()
+        logger.debug(f"Consent file exists: {exists}, DAIC enabled: {not exists}")
+        return not exists
+
+    match state:
+        case False:
+            # Disable DAIC by creating the .consent file
+            try:
+                consent_file.touch()
+                logger.debug(f"Created consent file: {consent_file}")
+            except Exception as e:
+                logger.error(f"Failed to create consent file {consent_file}: {e}")
+                return None
+        case True:
+            # Enable DAIC by removing the .consent file
+            try:
+                consent_file.unlink(missing_ok=True)
+                logger.debug(f"Removed consent file: {consent_file}")
+            except Exception as e:
+                logger.error(f"Failed to remove consent file {consent_file}: {e}")
+                return None
+
+    return await check_status()
 
 
 @mcp.prompt("daic")
-async def daic_prompt(action: Optional[str] = None) -> str:
+async def daic_prompt(arg: Optional[str] = None) -> str:
     """Manage DAIC (Discussion-Alignment-Implementation-Check) state."""
-    from .current_project_manager import CurrentProjectManager
 
-    # Get client working directory for .consent file
-    project_manager = CurrentProjectManager()
-
-    client_dir = project_manager.directory
-    if client_dir is None:
-        return "Error: Client working directory not available"
-    client_dir = Path(client_dir)
-    consent_file = client_dir / ".consent"
-
-    if action is None:
+    if arg is not None:
+        arg = arg.strip()
+    if not arg:
         # Return current state
-        return DAIC_DISABLED if consent_file.exists() else DAIC_ENABLED
-    # Handle enable/disable actions
-    enable_values = {"on", "true", "1", "+", "enabled"}
-    disable_values = {"off", "false", "0", "-", "disabled"}
+        match await daic_status():
+            case None:
+                return "Error: Client working directory not available"
+            case True:
+                return f"{DAIC_ENABLED} ({DAIC_DESC})"
+            case False:
+                return f"{DAIC_DISABLED} (Implementation allowed)"
 
-    normalized_action = action.strip().lower()
-    if normalized_action in enable_values:
-        # Enable DAIC (remove .consent file)
-        consent_file.unlink(missing_ok=True)
-        return DAIC_ENABLED
-    elif normalized_action in disable_values:
-        # Disable DAIC (touch .consent file)
-        consent_file.unlink(missing_ok=True)
-        return DAIC_DISABLED
-    else:
-        return f"Invalid action '{action}'. Use: on|true or off|false"
+    if arg.lower() in {"on", "enable", "true", "1", "yes"}:
+        # Enable DAIC
+        await daic_status(True)
+        return f"{DAIC_ENABLED} ({DAIC_DESC})"
+
+    # Disable DAIC and return the formatted message
+    await daic_status(False)
+    return f"{DAIC_DISABLED} - {arg.strip()}"
 
 
 # MCP Resource Handlers
@@ -451,17 +584,18 @@ def create_server(
         if category:
             # Use category system to get content
             from .tools.category_tools import get_category_content
+            from .file_source import FileSource, FileSourceType
 
             result = await get_category_content(category, project_context)
             if result.get("success") and result.get("search_dir"):
-                return FileSource("server", result["search_dir"])
+                return FileSource(FileSourceType.SERVER, result["search_dir"])
 
         # Fallback for unknown keys
         session_path = config.get(config_key)
         if session_path:
             return FileSource.from_session_path(session_path, project_context)
         default_path = server.config.get(config_key, "./")  # type: ignore[attr-defined]
-        return FileSource("server", default_path)
+        return FileSource(FileSourceType.SERVER, default_path)
 
     server._get_file_source = _get_file_source  # type: ignore[attr-defined]
 
@@ -511,31 +645,16 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
         session_manager = SessionManager()
 
     # Use the same session manager instance (singleton)
-    current_project = session_manager.get_current_project_safe()
-    logger.debug(f"Current project: {current_project}")
+    try:
+        # Session manager is already initialized as singleton
+        logger.info("MCP server initialized successfully")
+    except Exception as e:
+        logger.error(f"Unexpected error during server initialization: {e}", exc_info=True)
 
-    # Get session config for current project
-    session_config = session_manager.session_state.get_project_config(current_project)
+        # Force flush all handlers before raising exception
+        for handler in logger.handlers:
+            handler.flush()
 
-    # Start with session defaults
-    merged_config = session_config.copy()
-
-    # Override with provided config for keys not set in session
-    current_project_overrides = session_manager.session_state.projects.get(current_project, {})
-    for key, value in config.items():
-        # Only use provided config if session doesn't have this key set
-        if key not in current_project_overrides and key != "config_filename":
-            merged_config[key] = value
-
-    # Ensure session overrides take precedence
-    for key, value in current_project_overrides.items():
-        merged_config[key] = value
-
-    logger.debug(f"Merged configuration: {merged_config}")
-    # Store session config on server for testing
-    server.session_config = merged_config  # type: ignore[attr-defined]
-
-    # Add session path resolution method
-    server.resolve_session_path = lambda path: resolve_session_path(path, current_project)  # type: ignore[attr-defined]
+        raise
 
     return server

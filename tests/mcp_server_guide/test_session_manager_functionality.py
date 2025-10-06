@@ -1,7 +1,7 @@
 """Tests for SessionManager functionality and project configuration management."""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 from mcp_server_guide.session_tools import (
     SessionManager,
     set_project_config,
@@ -36,73 +36,97 @@ class TestSessionManagerCore:
         """Test get_current_project method."""
         session_manager = SessionManager()
 
-        # The method imports CurrentProjectManager inside the method
-        with patch("mcp_server_guide.current_project_manager.CurrentProjectManager") as mock_manager_class:
-            mock_manager = MagicMock()
-            mock_manager.get_current_project.return_value = "test-project"
-            mock_manager_class.return_value = mock_manager
+        # Mock the directory and current_file properties using property mock
+        with (
+            patch.object(session_manager, "is_directory_set", return_value=True),
+            patch.object(type(session_manager), "current_file", new_callable=PropertyMock) as mock_current_file,
+        ):
+            # Create a mock file object
+            mock_file = MagicMock()
+            mock_file.exists.return_value = True
+            mock_file.read_text.return_value = "test-project"
+            mock_current_file.return_value = mock_file
 
             result = session_manager.get_current_project()
-
             assert result == "test-project"
-            mock_manager.get_current_project.assert_called_once()
 
     def test_is_directory_set(self):
         """Test is_directory_set method."""
         session_manager = SessionManager()
 
-        # The method imports CurrentProjectManager inside the method
-        with patch("mcp_server_guide.current_project_manager.CurrentProjectManager") as mock_manager_class:
-            mock_manager = MagicMock()
-            mock_manager.is_directory_set.return_value = True
-            mock_manager_class.return_value = mock_manager
+        with patch.object(type(session_manager), "directory", new_callable=PropertyMock) as mock_directory:
+            mock_directory.return_value = None
+            assert session_manager.is_directory_set() is False
 
-            result = session_manager.is_directory_set()
-
-            assert result is True
-            mock_manager.is_directory_set.assert_called_once()
+            mock_directory.return_value = "/some/path"
+            assert session_manager.is_directory_set() is True
 
     def test_set_directory(self):
         """Test set_directory method."""
-        session_manager = SessionManager()
-
-        # The method imports CurrentProjectManager inside the method
-        with patch("mcp_server_guide.current_project_manager.CurrentProjectManager") as mock_manager_class:
-            mock_manager = MagicMock()
-            mock_manager_class.return_value = mock_manager
-
-            session_manager.set_directory("/test/path")
-
-            mock_manager.set_directory.assert_called_once_with("/test/path")
-
-    def test_set_directory_with_path_object(self):
-        """Test set_directory method with pathlib.Path input."""
+        import tempfile
         from pathlib import Path
 
         session_manager = SessionManager()
 
-        with patch("mcp_server_guide.current_project_manager.CurrentProjectManager") as mock_manager_class:
-            mock_manager = MagicMock()
-            mock_manager_class.return_value = mock_manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            session_manager.set_directory(temp_dir)
+            assert session_manager._override_directory == Path(temp_dir).resolve()
 
-            test_path = Path("/test/path")
-            session_manager.set_directory(test_path)
+    def test_set_directory_with_path_object(self):
+        """Test set_directory method with pathlib.Path input."""
+        import tempfile
+        from pathlib import Path
 
-            # The manager should receive the string version of the path
-            mock_manager.set_directory.assert_called_once_with(str(test_path))
+        session_manager = SessionManager()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            session_manager.set_directory(Path(temp_dir))
+            assert session_manager._override_directory == Path(temp_dir).resolve()
+
+    def test_set_directory_invalid_input(self):
+        """Test set_directory method with invalid inputs."""
+        import pytest
+
+        session_manager = SessionManager()
+
+        # Test non-existent directory
+        with pytest.raises(ValueError, match="does not exist"):
+            session_manager.set_directory("/non/existent/directory")
+
+        # Test incorrect type
+        with pytest.raises(TypeError):
+            session_manager.set_directory(123)
 
     def test_set_current_project(self):
         """Test set_current_project method."""
         session_manager = SessionManager()
 
-        # This method should delegate to CurrentProjectManager
-        with patch("mcp_server_guide.current_project_manager.CurrentProjectManager") as mock_manager_class:
-            mock_manager = MagicMock()
-            mock_manager_class.return_value = mock_manager
+        with (
+            patch.object(session_manager, "is_directory_set", return_value=True),
+            patch.object(session_manager, "get_current_project", return_value="old-project"),
+            patch.object(type(session_manager), "current_file", new_callable=PropertyMock) as mock_current_file,
+        ):
+            mock_file = MagicMock()
+            mock_current_file.return_value = mock_file
 
             session_manager.set_current_project("new-project")
+            mock_file.write_text.assert_called_once_with("new-project", encoding="utf-8")
 
-            mock_manager.set_current_project.assert_called_once_with("new-project")
+    def test_set_current_project_error_cases(self):
+        """Test set_current_project method error handling."""
+        import pytest
+
+        session_manager = SessionManager()
+
+        # Test missing directory
+        with patch.object(session_manager, "is_directory_set", return_value=False):
+            with pytest.raises(ValueError, match="Directory must be set before setting current project"):
+                session_manager.set_current_project("test-project")
+
+        # Test invalid project name (empty string)
+        with patch.object(session_manager, "is_directory_set", return_value=True):
+            with pytest.raises(ValueError, match="Project name must be a non-empty string"):
+                session_manager.set_current_project("")
 
 
 class TestProjectConfigManagement:

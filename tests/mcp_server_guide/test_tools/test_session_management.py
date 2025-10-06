@@ -1,5 +1,6 @@
 """Tests for session management tools."""
 
+import os
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from mcp_server_guide.tools.session_management import (
@@ -353,11 +354,12 @@ class TestResetSession:
             mock_session_class.return_value = mock_session
 
             result = reset_session()
+            expected_project = os.path.basename(os.getcwd())
 
             assert result["success"] is True
-            assert result["project"] == "mcp-server-guide"
+            assert result["project"] == expected_project
             assert result["message"] == "Session reset to defaults"
-            mock_session.set_current_project.assert_called_once_with("mcp-server-guide")
+            mock_session.set_current_project.assert_called_once_with(expected_project)
 
     def test_reset_session_with_none_project(self):
         """Test reset_session when get_current_project returns None."""
@@ -366,11 +368,12 @@ class TestResetSession:
             mock_session_class.return_value = mock_session
 
             result = reset_session()
+            expected_project = os.path.basename(os.getcwd())
 
             assert result["success"] is True
-            assert result["project"] == "mcp-server-guide"
+            assert result["project"] == expected_project
             assert result["message"] == "Session reset to defaults"
-            mock_session.set_current_project.assert_called_once_with("mcp-server-guide")
+            mock_session.set_current_project.assert_called_once_with(expected_project)
 
     def test_reset_session_set_current_project_raises_valueerror(self):
         """Test reset_session when set_current_project raises ValueError."""

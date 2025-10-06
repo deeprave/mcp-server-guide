@@ -66,6 +66,8 @@ class TestSessionManagerUpdates:
             chdir(tmp_path)
 
             session = SessionManager()
+            # Set directory to ensure CurrentProjectManager works properly
+            session.set_directory(str(tmp_path))
 
             # Should read current project from .current file, not config
             assert session.get_current_project() == "test-project"

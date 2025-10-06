@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import aiohttp
 from ..logging_config import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class AsyncHTTPClient:

@@ -185,13 +185,15 @@ async def test_server_integration_with_session_paths():
         with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
             guide_source = await server._get_file_source("guide", "integration-project")
-            assert guide_source.type == "local"
+            from mcp_server_guide.file_source import FileSourceType
+
+            assert guide_source.type == FileSourceType.LOCAL
 
             lang_source = await server._get_file_source("language", "integration-project")
-            assert lang_source.type == "server"
+            assert lang_source.type == FileSourceType.SERVER
 
             context_source = await server._get_file_source("context", "integration-project")
-            assert context_source.type == "http"
+            assert context_source.type == FileSourceType.HTTP
             assert context_source.base_path == "https://example.com/context.md"
 
 

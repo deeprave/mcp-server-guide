@@ -60,7 +60,7 @@ With this MCP, the enabled DAIC mode is the default state. An agent should be pr
 
 The q_PreToolUse.sh script includes a couple of exceptions that are intended to allow the agent write access to specific folders for creating and updating implementation plans or specifications.
 
-The mcp-server-guide prompts `@daic on` and `@daic off` provide a means to manually switch modes, and `@daic` without arguments returns the current state. In claude code, this can be
+The prompts `@daic on` and `@daic off` provide a means to manually switch modes, and `@daic` without arguments returns the current state.
 
 ## Agents
 

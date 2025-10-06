@@ -3,13 +3,14 @@
 import logging
 from typing import Any, Union, Optional, Callable
 from .exceptions import MCPError, ErrorResponse, SuccessResponse
+from .logging_config import get_logger
 
 
 class ErrorHandler:
     """Centralized error handling and response formatting."""
 
     def __init__(self, logger: Optional[logging.Logger] = None):
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger or get_logger()
 
     def handle_error(self, error: Exception, operation: str = "") -> ErrorResponse:
         """Handle an error and return standardized response.
@@ -30,7 +31,9 @@ class ErrorHandler:
         else:
             # Log unexpected errors with full traceback
             self.logger.error(
-                f"Unexpected error in {operation}: {error}", exc_info=True, extra={"operation": operation}
+                f"Unexpected error in {operation}: {error}",
+                exc_info=True,
+                extra={"operation": operation, "error_type": type(error).__name__},
             )
 
         return ErrorResponse.from_exception(error, operation)

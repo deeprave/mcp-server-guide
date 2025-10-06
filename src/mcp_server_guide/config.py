@@ -15,8 +15,9 @@ class ConfigOption:
     cli_short: str
     cli_long: str
     env_var: str
-    default: Union[str, Callable[[], str]]
+    default: Union[str, bool, Callable[[], str]]
     description: str
+    group: str = "other"
 
 
 class Config:
@@ -30,25 +31,18 @@ class Config:
             cli_long="--config",
             env_var="MG_CONFIG",
             default=config_filename(),
-            description="Configuration file path",
+            description="specify config file path",
+            group="config",
         )
 
         self.global_config = ConfigOption(
             name="global_config",
             cli_short="",
-            cli_long="--global",
+            cli_long="--global-config/--no-global-config",
             env_var="MG_CONFIG_GLOBAL",
             default="",
-            description="Use global configuration file",
-        )
-
-        self.no_global = ConfigOption(
-            name="no_global",
-            cli_short="",
-            cli_long="--no-global",
-            env_var="",
-            default="",
-            description="Disable global configuration file (overrides MG_CONFIG_GLOBAL)",
+            description="use global config (platform-specific location)",
+            group="config",
         )
 
         self.docroot = ConfigOption(
@@ -57,43 +51,58 @@ class Config:
             cli_long="--docroot",
             env_var="MG_DOCROOT",
             default=".",
-            description="Document root directory",
-        )
-
-        self.guidesdir = ConfigOption(
-            name="guidesdir",
-            cli_short="-g",
-            cli_long="--guidesdir",
-            env_var="MG_GUIDEDIR",
-            default="guide/",
-            description="Guidelines directory (configures 'guide' category)",
+            description="server document root (absolute path)",
+            group="docroot",
         )
 
         self.guide = ConfigOption(
             name="guide",
-            cli_short="-G",
+            cli_short="-g",
             cli_long="--guide",
             env_var="MG_GUIDE",
             default="guidelines",
-            description="Guidelines file (configures 'guide' category)",
+            description="*guide file patterns",
+            group="content",
         )
 
-        self.langsdir = ConfigOption(
-            name="langsdir",
-            cli_short="-l",
-            cli_long="--langsdir",
-            env_var="MG_LANGDIR",
-            default="lang/",
-            description="Languages directory (configures 'lang' category)",
+        self.guidesdir = ConfigOption(
+            name="guidesdir",
+            cli_short="",
+            cli_long="--guidesdir",
+            env_var="MG_GUIDEDIR",
+            default="guide/",
+            description="**guide directory path",
+            group="content",
         )
 
         self.lang = ConfigOption(
             name="lang",
-            cli_short="-L",
+            cli_short="-l",
             cli_long="--lang",
             env_var="MG_LANGUAGE",
             default="none",
-            description="Language file (configures 'lang' category)",
+            description="*language file patterns",
+            group="content",
+        )
+
+        self.langsdir = ConfigOption(
+            name="langsdir",
+            cli_short="",
+            cli_long="--langsdir",
+            env_var="MG_LANGDIR",
+            default="lang/",
+            description="**language directory path",
+            group="content",
+        )
+
+        self.context = ConfigOption(
+            name="context",
+            cli_short="",
+            cli_long="--context",
+            env_var="MG_CONTEXT",
+            default="project-context",
+            description="*context file patterns",
+            group="content",
         )
 
         self.contextdir = ConfigOption(
@@ -102,16 +111,8 @@ class Config:
             cli_long="--contextdir",
             env_var="MG_CONTEXTDIR",
             default="context/",
-            description="Context directory (configures 'context' category)",
-        )
-
-        self.context = ConfigOption(
-            name="context",
-            cli_short="-C",
-            cli_long="--context",
-            env_var="MG_CONTEXT",
-            default="project-context",
-            description="Project context file (configures 'context' category)",
+            description="**context directory path",
+            group="content",
         )
 
         # Logging configuration
@@ -122,6 +123,7 @@ class Config:
             env_var="MG_LOG_LEVEL",
             default="OFF",
             description="Logging level (DEBUG, INFO, WARN, ERROR, OFF)",
+            group="logging",
         )
 
         self.log_file = ConfigOption(
@@ -131,6 +133,7 @@ class Config:
             env_var="MG_LOG_FILE",
             default="",
             description="Log file path (empty for no file logging)",
+            group="logging",
         )
 
         self.log_console = ConfigOption(
@@ -140,6 +143,27 @@ class Config:
             env_var="MG_LOG_CONSOLE",
             default=lambda: "true",
             description="Enable console logging (default: true unless file specified)",
+            group="logging",
+        )
+
+        self.log_json = ConfigOption(
+            name="log_json",
+            cli_short="",
+            cli_long="--log-json",
+            env_var="MG_LOG_JSON",
+            default=False,
+            description="Enable JSON structured logging to file (console remains text format)",
+            group="logging",
+        )
+
+        self.version = ConfigOption(
+            name="version",
+            cli_short="",
+            cli_long="--version",
+            env_var="",
+            default="",
+            description="Show version and exit",
+            group="other",
         )
 
     def get_global_config_path(self) -> str:

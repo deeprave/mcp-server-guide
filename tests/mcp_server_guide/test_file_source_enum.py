@@ -1,0 +1,56 @@
+"""Tests for FileSourceType enum."""
+
+import pytest
+from mcp_server_guide.file_source import FileSourceType
+
+
+class TestFileSourceType:
+    """Test FileSourceType enum functionality."""
+
+    def test_enum_values(self):
+        """Test that enum has expected values."""
+        assert FileSourceType.LOCAL
+        assert FileSourceType.SERVER
+        assert FileSourceType.HTTP
+
+    def test_enum_string_representation(self):
+        """Test enum string representation."""
+        assert str(FileSourceType.LOCAL) == "local"
+        assert str(FileSourceType.SERVER) == "server"
+        assert str(FileSourceType.HTTP) == "http"
+
+    def test_enum_value_access(self):
+        """Test accessing enum values."""
+        assert FileSourceType.LOCAL.value == "local"
+        assert FileSourceType.SERVER.value == "server"
+        assert FileSourceType.HTTP.value == "http"
+
+    def test_client_alias(self):
+        """Test that CLIENT is an alias for LOCAL."""
+        assert FileSourceType.CLIENT == FileSourceType.LOCAL
+        assert FileSourceType.CLIENT.value == "local"
+
+    def test_enum_comparison(self):
+        """Test enum comparison operations."""
+        assert FileSourceType.LOCAL == FileSourceType.LOCAL
+        assert FileSourceType.LOCAL != FileSourceType.SERVER
+        assert FileSourceType.CLIENT == FileSourceType.LOCAL
+
+    def test_enum_from_string(self):
+        """Test creating enum from string values."""
+        assert FileSourceType("local") == FileSourceType.LOCAL
+        assert FileSourceType("server") == FileSourceType.SERVER
+        assert FileSourceType("http") == FileSourceType.HTTP
+
+    def test_enum_invalid_string_raises_error(self):
+        """Test that passing an invalid string to FileSourceType raises a ValueError."""
+        with pytest.raises(ValueError):
+            FileSourceType("invalid_value")
+
+    def test_enum_iteration(self):
+        """Test iterating over enum values."""
+        values = list(FileSourceType)
+        assert FileSourceType.LOCAL in values
+        assert FileSourceType.SERVER in values
+        assert FileSourceType.HTTP in values
+        # CLIENT should not appear as separate value since it's an alias

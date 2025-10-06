@@ -5,7 +5,7 @@ from typing import Dict, Optional
 import requests
 from .logging_config import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class HttpError(Exception):

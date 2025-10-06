@@ -186,3 +186,5 @@ q.json
 # Project configuration
 .mcp-server-guide.*
 .consent
+q.chat
+q.json

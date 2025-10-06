@@ -1,7 +1,12 @@
 """Centralized naming for MCP server components."""
 
+import importlib.metadata
+
 # Version constant for centralized version management
-MCP_GUIDE_VERSION = "1.0"
+try:
+    MCP_GUIDE_VERSION = importlib.metadata.version("mcp-server-guide")
+except importlib.metadata.PackageNotFoundError:
+    MCP_GUIDE_VERSION = "unknown"
 
 # Module-level constant for backward compatibility
 CONFIG_FILENAME = ".mcp-server-guide.config.json"

@@ -124,7 +124,7 @@ async def set_project_config(
             # Log error but don't fail the config change
             from ..logging_config import get_logger
 
-            logger = get_logger(__name__)
+            logger = get_logger()
             logger.warning(f"Failed to auto-save session after config change: {e}")
 
     return {

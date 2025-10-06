@@ -50,12 +50,15 @@ class TestDirectoryCreationFixes:
         expected_user_agent = f"mcp-server-guide/{MCP_GUIDE_VERSION}"
         assert user_agent() == expected_user_agent
         assert MCP_GUIDE_VERSION in user_agent()
-        """Test that CURRENT_FILE_NAME uses centralized mcp_name() function."""
-        from mcp_server_guide.current_project_manager import CurrentProjectManager
+
+    def test_current_file_name_uses_centralized_naming(self):
+        """Test that current_file_name uses centralized mcp_name() function."""
+        from mcp_server_guide.session_tools import SessionManager
         from mcp_server_guide.naming import mcp_name
 
+        session_manager = SessionManager()
         expected_filename = f".{mcp_name()}.current"
-        assert CurrentProjectManager.CURRENT_FILE_NAME == expected_filename
+        assert session_manager.current_file_name == expected_filename
 
 
 class TestSessionScopedTestIsolation:
@@ -98,11 +101,3 @@ class TestSessionScopedTestIsolation:
 
         # Should be in a unique test subdirectory
         assert current_dir != session_dir_resolved
-
-    def test_user_agent_uses_version_constant(self):
-        """Test that user_agent() uses centralized version constant."""
-        from mcp_server_guide.naming import user_agent, MCP_GUIDE_VERSION
-
-        expected_user_agent = f"mcp-server-guide/{MCP_GUIDE_VERSION}"
-        assert user_agent() == expected_user_agent
-        assert MCP_GUIDE_VERSION in user_agent()

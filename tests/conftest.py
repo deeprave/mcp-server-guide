@@ -59,7 +59,7 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 @pytest.fixture(autouse=True)
-def complete_test_isolation(request):
+def complete_test_isolation(request, monkeypatch):
     """Ensure complete test isolation - no modification of project files."""
     global _session_temp_dir
 
@@ -79,6 +79,12 @@ def complete_test_isolation(request):
     os.chdir(test_subdir)
     os.environ["PWD"] = str(test_subdir)
 
+    # Mock ClientPath to be initialized with test directory
+    from mcp_server_guide.client_path import ClientPath
+
+    monkeypatch.setattr(ClientPath, "_initialized", True)
+    monkeypatch.setattr(ClientPath, "_primary_root", test_subdir)
+
     try:
         yield str(test_subdir)
     finally:
@@ -89,6 +95,9 @@ def complete_test_isolation(request):
         elif "PWD" in os.environ:
             del os.environ["PWD"]
         SessionManager._instance = None
+        # Reset ClientPath
+        ClientPath._initialized = False
+        ClientPath._primary_root = None
 
 
 @pytest.fixture

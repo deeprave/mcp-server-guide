@@ -110,23 +110,15 @@ def load_session(project_path: Optional[Path] = None, config_filename: str = con
         session = SessionManager()
         manager = ProjectConfigManager()
 
-        # Try to load full session state first
-        if manager.load_full_session_state(project_path, session, config_filename):
-            return {
-                "success": True,
-                "path": str(project_path),
-                "project": session.get_current_project(),
-                "message": f"Session loaded from {project_path}",
-            }
-        else:
+        if not manager.load_full_session_state(project_path, session, config_filename):
             # Fallback to old project-based loading
             session.load_project_from_path(project_path)
-            return {
-                "success": True,
-                "path": str(project_path),
-                "project": session.get_current_project(),
-                "message": f"Session loaded from {project_path}",
-            }
+        return {
+            "success": True,
+            "path": str(project_path),
+            "project": session.get_current_project(),
+            "message": f"Session loaded from {project_path}",
+        }
     except Exception as e:
         return {"success": False, "error": str(e), "message": "Failed to load session"}
 
@@ -135,10 +127,16 @@ def reset_session() -> Dict[str, Any]:
     """Reset to defaults."""
     try:
         session = SessionManager()
-        # Reset to default project
-        session.set_current_project("mcp-server-guide")
+        # Reset to current directory name
+        current_project = os.path.basename(os.getcwd())
+        session.set_current_project(current_project)
 
-        return {"success": True, "project": "mcp-server-guide", "message": "Session reset to defaults"}
+        # Reset project config to defaults
+        from ..session_tools import reset_project_config
+
+        reset_project_config()
+
+        return {"success": True, "project": current_project, "message": "Session reset to defaults"}
     except Exception as e:
         return {"success": False, "error": str(e), "message": "Failed to reset session"}
 

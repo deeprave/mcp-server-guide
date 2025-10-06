@@ -71,8 +71,12 @@ async def test_session_management_success_paths():
             assert result["success"] is True
 
     # Test successful reset_session
+    import os
+
     with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
         result = reset_session()
         assert isinstance(result, dict)
         assert result["success"] is True
-        assert result["project"] == "mcp-server-guide"
+        # Should use current directory name, not hardcoded tool name
+        expected_project = os.path.basename(os.getcwd())
+        assert result["project"] == expected_project

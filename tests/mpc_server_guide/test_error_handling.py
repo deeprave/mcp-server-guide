@@ -1,18 +1,19 @@
-"""Tests to boost coverage for error handling paths."""
+"""Tests for error handling and exception scenarios in session management and config tools."""
 
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-from mcp_server_guide.current_project_manager import CurrentProjectManager
+from mcp_server_guide.session_tools import SessionManager
 from mcp_server_guide.tools.config_tools import set_project_config_values, set_project_config
 
 
-async def test_current_project_manager_read_error():
-    """Test CurrentProjectManager handles file read errors."""
+async def test_session_manager_read_error():
+    """Test SessionManager handles file read errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        manager = CurrentProjectManager(Path(temp_dir))
+        manager = SessionManager()
+        manager.set_directory(Path(temp_dir))
 
         # Create a file with invalid permissions to trigger read error
         current_file = manager.current_file
@@ -29,29 +30,11 @@ async def test_current_project_manager_read_error():
             current_file.chmod(0o644)
 
 
-async def test_current_project_manager_clear_error():
-    """Test CurrentProjectManager handles clear errors."""
+async def test_session_manager_write_error():
+    """Test SessionManager handles write errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        manager = CurrentProjectManager(Path(temp_dir))
-
-        # Create current file
-        manager.set_current_project("test-project")
-
-        # Make directory read-only to prevent file deletion
-        Path(temp_dir).chmod(0o444)
-
-        try:
-            # This should trigger the exception handling path but not raise
-            manager.clear_current_project()
-        finally:
-            # Restore permissions for cleanup
-            Path(temp_dir).chmod(0o755)
-
-
-async def test_current_project_manager_write_error():
-    """Test CurrentProjectManager handles write errors."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        manager = CurrentProjectManager(Path(temp_dir))
+        manager = SessionManager()
+        manager.set_directory(Path(temp_dir))
 
         # Make directory read-only to prevent file creation
         Path(temp_dir).chmod(0o444)
