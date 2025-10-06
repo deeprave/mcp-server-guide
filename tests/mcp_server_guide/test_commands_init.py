@@ -1,5 +1,6 @@
 """Test commands module initialization."""
 
+
 def test_commands_init_imports():
     """Test that commands module imports work correctly."""
     from mcp_server_guide.commands import CommandParser, CommandHandler, CommandProcessor

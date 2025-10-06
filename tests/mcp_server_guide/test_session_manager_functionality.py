@@ -1,7 +1,7 @@
 """Tests for SessionManager functionality and project configuration management."""
 
 import pytest
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock, PropertyMock, AsyncMock
 from mcp_server_guide.session_tools import (
     SessionManager,
     set_project_config,
@@ -16,23 +16,23 @@ from mcp_server_guide.validation import ConfigValidationError
 class TestSessionManagerCore:
     """Test core SessionManager methods."""
 
-    def test_get_current_project_safe_with_none_project(self):
+    async def test_get_current_project_safe_with_none_project(self):
         """Test get_current_project_safe when project is None."""
         session_manager = SessionManager()
 
         with patch.object(session_manager, "get_current_project", return_value=None):
             with pytest.raises(ValueError, match="Working directory not set. Use set_directory\\(\\) first."):
-                session_manager.get_current_project_safe()
+                await session_manager.get_current_project_safe()
 
-    def test_get_current_project_safe_with_valid_project(self):
+    async def test_get_current_project_safe_with_valid_project(self):
         """Test get_current_project_safe when project is valid."""
         session_manager = SessionManager()
 
         with patch.object(session_manager, "get_current_project", return_value="test-project"):
-            result = session_manager.get_current_project_safe()
+            result = await session_manager.get_current_project_safe()
             assert result == "test-project"
 
-    def test_get_current_project(self):
+    async def test_get_current_project(self):
         """Test get_current_project method."""
         session_manager = SessionManager()
 
@@ -40,14 +40,19 @@ class TestSessionManagerCore:
         with (
             patch.object(session_manager, "is_directory_set", return_value=True),
             patch.object(type(session_manager), "current_file", new_callable=PropertyMock) as mock_current_file,
+            patch("aiofiles.open") as mock_aiofiles_open,
         ):
             # Create a mock file object
             mock_file = MagicMock()
             mock_file.exists.return_value = True
-            mock_file.read_text.return_value = "test-project"
             mock_current_file.return_value = mock_file
 
-            result = session_manager.get_current_project()
+            # Mock aiofiles context manager
+            mock_file_handle = MagicMock()
+            mock_file_handle.read = AsyncMock(return_value="test-project")
+            mock_aiofiles_open.return_value.__aenter__.return_value = mock_file_handle
+
+            result = await session_manager.get_current_project()
             assert result == "test-project"
 
     def test_is_directory_set(self):
@@ -97,7 +102,7 @@ class TestSessionManagerCore:
         with pytest.raises(TypeError):
             session_manager.set_directory(123)
 
-    def test_set_current_project(self):
+    async def test_set_current_project(self):
         """Test set_current_project method."""
         session_manager = SessionManager()
 
@@ -109,10 +114,10 @@ class TestSessionManagerCore:
             mock_file = MagicMock()
             mock_current_file.return_value = mock_file
 
-            session_manager.set_current_project("new-project")
+            await session_manager.set_current_project("new-project")
             mock_file.write_text.assert_called_once_with("new-project", encoding="utf-8")
 
-    def test_set_current_project_error_cases(self):
+    async def test_set_current_project_error_cases(self):
         """Test set_current_project method error handling."""
         import pytest
 
@@ -121,18 +126,18 @@ class TestSessionManagerCore:
         # Test missing directory
         with patch.object(session_manager, "is_directory_set", return_value=False):
             with pytest.raises(ValueError, match="Directory must be set before setting current project"):
-                session_manager.set_current_project("test-project")
+                await session_manager.set_current_project("test-project")
 
         # Test invalid project name (empty string)
         with patch.object(session_manager, "is_directory_set", return_value=True):
             with pytest.raises(ValueError, match="Project name must be a non-empty string"):
-                session_manager.set_current_project("")
+                await session_manager.set_current_project("")
 
 
 class TestProjectConfigManagement:
     """Test project configuration management functions."""
 
-    def test_set_project_config_validation_error(self):
+    async def test_set_project_config_validation_error(self):
         """Test set_project_config with validation error."""
         with (
             patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class,
@@ -145,13 +150,13 @@ class TestProjectConfigManagement:
             mock_session = MagicMock()
             mock_session_class.return_value = mock_session
 
-            result = set_project_config("test_key", "invalid_value")
+            result = await set_project_config("test_key", "invalid_value")
 
             assert result["success"] is False
             assert result["error"] == "Invalid value"
             assert result["errors"] == ["error message"]
 
-    def test_set_project_config_value_error_from_get_current_project_safe(self):
+    async def test_set_project_config_value_error_from_get_current_project_safe(self):
         """Test set_project_config with ValueError from get_current_project_safe."""
         with (
             patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class,
@@ -161,7 +166,7 @@ class TestProjectConfigManagement:
             mock_session.get_current_project_safe.side_effect = ValueError("Directory not set")
             mock_session_class.return_value = mock_session
 
-            result = set_project_config("test_key", "test_value")
+            result = await set_project_config("test_key", "test_value")
 
             assert result["success"] is False
             assert result["error"] == "Directory not set"
@@ -170,27 +175,27 @@ class TestProjectConfigManagement:
 class TestGetProjectConfig:
     """Test get_project_config function."""
 
-    def test_get_project_config_value_error(self):
+    async def test_get_project_config_value_error(self):
         """Test get_project_config with ValueError from get_current_project_safe."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
             mock_session.get_current_project_safe.side_effect = ValueError("Directory not set")
             mock_session_class.return_value = mock_session
 
-            result = get_project_config()
+            result = await get_project_config()
 
             assert result["success"] is False
             assert result["error"] == "Directory not set"
 
-    def test_get_project_config_success(self):
+    async def test_get_project_config_success(self):
         """Test get_project_config successful execution."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
-            mock_session.get_current_project_safe.return_value = "test-project"
+            mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
             mock_session.session_state.get_project_config.return_value = {"key": "value"}
             mock_session_class.return_value = mock_session
 
-            result = get_project_config()
+            result = await get_project_config()
 
             assert result["success"] is True
             assert result["project"] == "test-project"
@@ -220,30 +225,30 @@ class TestListProjectConfigs:
 class TestResetProjectConfig:
     """Test reset_project_config function missing coverage."""
 
-    def test_reset_project_config_project_exists(self):
+    async def test_reset_project_config_project_exists(self):
         """Test reset_project_config when project exists in session state."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
-            mock_session.get_current_project.return_value = "test-project"
+            mock_session.get_current_project = AsyncMock(return_value="test-project")
             mock_session.session_state.projects = {"test-project": {"key": "value"}}
             mock_session_class.return_value = mock_session
 
-            result = reset_project_config()
+            result = await reset_project_config()
 
             assert result["success"] is True
             assert result["message"] == "Reset project test-project to defaults"
             # Verify the project was deleted from session state
             assert "test-project" not in mock_session.session_state.projects
 
-    def test_reset_project_config_project_not_exists(self):
+    async def test_reset_project_config_project_not_exists(self):
         """Test reset_project_config when project doesn't exist in session state."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
-            mock_session.get_current_project.return_value = "test-project"
+            mock_session.get_current_project = AsyncMock(return_value="test-project")
             mock_session.session_state.projects = {}  # Empty projects
             mock_session_class.return_value = mock_session
 
-            result = reset_project_config()
+            result = await reset_project_config()
 
             assert result["success"] is True
             assert result["message"] == "Reset project test-project to defaults"
@@ -252,43 +257,44 @@ class TestResetProjectConfig:
 class TestSwitchProject:
     """Test switch_project function missing coverage."""
 
-    def test_switch_project_success(self):
+    async def test_switch_project_success(self):
         """Test switch_project successful execution."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
+            mock_session.set_current_project = AsyncMock()
             mock_session_class.return_value = mock_session
 
-            result = switch_project("new-project")
+            result = await switch_project("new-project")
 
             assert result["success"] is True
             assert result["message"] == "Switched to project new-project"
             mock_session.set_current_project.assert_called_once_with("new-project")
 
-    def test_switch_project_invalid_project_name(self):
+    async def test_switch_project_invalid_project_name(self):
         """Test switch_project with None, empty, or non-string project name."""
         # Test with empty string
         with pytest.raises(ValueError, match="Project name must be a non-empty string"):
-            switch_project("")
+            await switch_project("")
 
         # Test with None
         with pytest.raises(ValueError, match="Project name must be a non-empty string"):
-            switch_project(None)
+            await switch_project(None)
 
         # Test with integer
         with pytest.raises(ValueError, match="Project name must be a non-empty string"):
-            switch_project(123)
+            await switch_project(123)
 
         # Test with list
         with pytest.raises(ValueError, match="Project name must be a non-empty string"):
-            switch_project(["project1"])
+            await switch_project(["project1"])
 
-    def test_switch_project_exception(self):
+    async def test_switch_project_exception(self):
         """Test switch_project with exception."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
-            mock_session.set_current_project.side_effect = Exception("Switch error")
+            mock_session.set_current_project = AsyncMock(side_effect=Exception("Switch error"))
             mock_session_class.return_value = mock_session
 
             # The actual implementation doesn't catch exceptions, so it will raise
             with pytest.raises(Exception, match="Switch error"):
-                switch_project("new-project")
+                await switch_project("new-project")

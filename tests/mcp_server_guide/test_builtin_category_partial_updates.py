@@ -11,7 +11,7 @@ def mock_session():
     with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe.return_value = "test-project"
+        session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
         session_instance.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {

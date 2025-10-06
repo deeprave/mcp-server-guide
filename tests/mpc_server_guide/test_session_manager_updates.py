@@ -67,10 +67,11 @@ class TestSessionManagerUpdates:
 
             session = SessionManager()
             # Set directory to ensure CurrentProjectManager works properly
-            session.set_directory(str(tmp_path))
+            session.set_directory(str(tmp_path))  # NOT awaited
 
             # Should read current project from .current file, not config
-            assert session.get_current_project() == "test-project"
+            current_project = await session.get_current_project()
+            assert current_project == "test-project"
 
             # Save session
             await session.save_to_file(str(config_file))

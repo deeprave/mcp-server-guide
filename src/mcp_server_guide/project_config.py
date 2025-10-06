@@ -175,7 +175,7 @@ class ProjectConfigManager:
         with open(config_file, "w") as f:
             json.dump(session_data, f, indent=2)
 
-    def load_full_session_state(
+    async def load_full_session_state(
         self, project_path: Path, session: Any, config_filename: str = config_filename()
     ) -> bool:
         """Load complete session state including all projects."""
@@ -186,16 +186,18 @@ class ProjectConfigManager:
 
         try:
             import json
+            import aiofiles
 
-            with open(config_file) as f:
-                session_data = json.load(f)
+            async with aiofiles.open(config_file, "r") as f:
+                contents = await f.read()
+                session_data = json.loads(contents)
 
             # Restore session state
             if "projects" in session_data:
                 session.session_state.projects = session_data["projects"]
 
             if "current_project" in session_data:
-                session.set_current_project(session_data["current_project"])
+                await session.set_current_project(session_data["current_project"])
 
             return True
         except (json.JSONDecodeError, FileNotFoundError, KeyError):

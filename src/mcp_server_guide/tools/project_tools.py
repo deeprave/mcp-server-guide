@@ -5,10 +5,10 @@ from ..session_tools import SessionManager
 from .session_management import save_session
 
 
-def get_current_project() -> Optional[str]:
+async def get_current_project() -> Optional[str]:
     """Get the active project name."""
     session = SessionManager()
-    return session.get_current_project()
+    return await session.get_current_project()
 
 
 async def switch_project(name: str) -> Dict[str, Any]:
@@ -19,7 +19,7 @@ async def switch_project(name: str) -> Dict[str, Any]:
     project_exists = name in session.session_state.projects
 
     # Set current project
-    session.set_current_project(name)
+    await session.set_current_project(name)
 
     if not project_exists:
         # Auto-create built-in categories for new project
@@ -63,13 +63,13 @@ def _create_builtin_categories(session: SessionManager, project_name: str) -> No
     session.session_state.set_project_config(project_name, "categories", categories)
 
 
-def list_projects() -> List[str]:
+async def list_projects() -> List[str]:
     """List available projects."""
     session = SessionManager()
     # Get all projects from session state
     projects = list(session.session_state.projects.keys())
     if not projects:
-        current = session.get_current_project()
+        current = await session.get_current_project()
         if current:
             projects = [current]
     return projects

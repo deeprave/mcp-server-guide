@@ -18,7 +18,7 @@ def mock_session():
     with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe.return_value = "test-project"
+        session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
         session_instance.session_state.get_project_config.return_value = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["guidelines.md"]},
@@ -63,7 +63,7 @@ async def test_remove_category_builtin_rejected(mock_session):
 
 async def test_list_categories_basic(mock_session):
     """Test basic category listing."""
-    result = list_categories()
+    result = await list_categories()
 
     assert result["project"] == "test-project"
     assert len(result["builtin_categories"]) == 3

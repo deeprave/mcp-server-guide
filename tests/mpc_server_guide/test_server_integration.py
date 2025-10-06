@@ -25,7 +25,7 @@ async def test_server_resolves_http_resources():
 
         # Mock session with HTTP guide
         session = SessionManager()
-        session.set_current_project("test-project")
+        await session.set_current_project("test-project")
         session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
@@ -56,7 +56,7 @@ async def test_server_caches_http_resources():
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
-        session.set_current_project("test-project")
+        await session.set_current_project("test-project")
         session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
@@ -103,7 +103,7 @@ async def test_server_handles_mixed_sources():
         readme_path.write_text("# Local Guide")
 
         session = SessionManager()
-        session.set_current_project("mixed-project")
+        await session.set_current_project("mixed-project")
         session.session_state.set_project_config("mixed-project", "guide", f"local:{readme_path}")  # Local file
         session.session_state.set_project_config(
             "mixed-project", "language", "https://example.com/lang.md"
@@ -137,7 +137,7 @@ async def test_server_fallback_on_http_error():
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
-        session.set_current_project("fallback-project")
+        await session.set_current_project("fallback-project")
         session.session_state.set_project_config("fallback-project", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
@@ -175,7 +175,7 @@ async def test_server_integration_with_session_paths():
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
-        session.set_current_project("integration-project")
+        await session.set_current_project("integration-project")
 
         # Test various path formats from Issue 002
         session.session_state.set_project_config("integration-project", "guide", "local:./local-guide.md")
@@ -203,7 +203,7 @@ async def test_server_respects_cache_settings():
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
-        session.set_current_project("cache-test")
+        await session.set_current_project("cache-test")
         session.session_state.set_project_config("cache-test", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):

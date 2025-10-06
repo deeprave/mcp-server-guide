@@ -172,7 +172,7 @@ class CommandHandler:
 
         try:
             # Get current categories to find existing values
-            categories_result = list_categories(None)
+            categories_result = await list_categories(None)
             all_categories = {**categories_result["builtin_categories"], **categories_result["custom_categories"]}
 
             if category_name not in all_categories:
@@ -257,7 +257,7 @@ class CommandHandler:
         """
         try:
             # Get available categories
-            categories_result = list_categories(None)
+            categories_result = await list_categories(None)
 
             help_content = {
                 "commands": {

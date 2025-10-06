@@ -27,6 +27,18 @@ async def server_lifespan(server: FastMCP) -> Any:
     logger.info("=== Starting MCP server initialization ===")
 
     try:
+        # Configure built-in categories from deferred CLI config
+        from .main import _deferred_builtin_config, configure_builtin_categories
+
+        deferred_config = _deferred_builtin_config.get()
+        if deferred_config:
+            logger.debug("Configuring built-in categories from deferred CLI config")
+            try:
+                await configure_builtin_categories(deferred_config)
+                logger.debug("Built-in categories configured successfully")
+            except Exception as e:
+                logger.warning(f"Failed to configure built-in categories: {e}")
+
         logger.info("MCP server initialized successfully")
         yield
 
@@ -134,18 +146,18 @@ guide = ExtMcpToolDecorator(mcp, prefix="guide_")
 
 # Register MCP Tools
 @guide.tool()
-def guide_set_directory(directory: str) -> Dict[str, Any]:
+async def guide_set_directory(directory: str) -> Dict[str, Any]:
     """Set the working directory for the MCP server."""
     from .tools.session_management import set_directory
 
-    return set_directory(directory)
+    return await set_directory(directory)
 
 
 @guide.tool()
-def get_current_project() -> Dict[str, Any]:
+async def get_current_project() -> Dict[str, Any]:
     """Get the active project name."""
     logger.debug("Getting current project")
-    project = tools.get_current_project()
+    project = await tools.get_current_project()
     if project is None:
         return {"success": False, "error": "No project set. Use 'set directory /path/to/project' first."}
     return {"success": True, "project": project}
@@ -159,16 +171,16 @@ async def switch_project(name: str) -> Dict[str, Any]:
 
 
 @guide.tool()
-def list_projects() -> List[str]:
+async def list_projects() -> List[str]:
     """List available projects."""
     logger.debug("Listing available projects")
-    return tools.list_projects()
+    return await tools.list_projects()
 
 
 @guide.tool()
-def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
+async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration."""
-    return tools.get_project_config(project)
+    return await tools.get_project_config(project)
 
 
 @guide.tool()
@@ -184,9 +196,9 @@ async def set_project_config(key: str, value: Any, project: Optional[str] = None
 
 
 @guide.tool()
-def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
+async def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get merged configuration (file + session)."""
-    return tools.get_effective_config(project)
+    return await tools.get_effective_config(project)
 
 
 @guide.tool()
@@ -238,9 +250,9 @@ async def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @guide.tool()
-def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
+async def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
     """List available files (guides, languages, etc.)."""
-    return tools.list_files(file_type, project)
+    return await tools.list_files(file_type, project)
 
 
 @guide.tool()
@@ -262,17 +274,11 @@ async def save_session() -> Dict[str, Any]:
 
 
 @guide.tool()
-def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
+async def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
     """Load session from project."""
 
     path = Path(project_path) if project_path else None
-    return tools.load_session(path)
-
-
-@guide.tool()
-def reset_session() -> Dict[str, Any]:
-    """Reset to defaults."""
-    return tools.reset_session()
+    return await tools.load_session(path)
 
 
 # Category Management Tools
@@ -309,9 +315,9 @@ async def update_category(
 
 
 @guide.tool()
-def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
+async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
     """List all categories (built-in and custom)."""
-    return tools.list_categories(project)
+    return await tools.list_categories(project)
 
 
 @guide.tool()
@@ -352,7 +358,7 @@ async def guide_category_prompt(
 
     if action == "new":
         # Check for duplicate category name
-        categories_result = tools.list_categories(None)
+        categories_result = await tools.list_categories(None)
         all_categories = {**categories_result["builtin_categories"], **categories_result["custom_categories"]}
         if name in all_categories:
             return f"Error: Category with name '{name}' already exists."
@@ -372,7 +378,7 @@ async def guide_category_prompt(
 
     elif action == "edit":
         # Get current category to preserve existing values
-        categories_result = tools.list_categories(None)
+        categories_result = await tools.list_categories(None)
         existing_categories: dict[str, Any] = {
             **categories_result["builtin_categories"],
             **categories_result["custom_categories"],
@@ -497,10 +503,10 @@ async def daic_prompt(arg: Optional[str] = None) -> str:
 
 
 # MCP Resource Handlers
-def list_resources() -> List[Dict[str, Any]]:
+async def list_resources() -> List[Dict[str, Any]]:
     """List resources for auto_load categories."""
     session = SessionManager()
-    current_project = session.get_current_project_safe()
+    current_project = await session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
     config = session.session_state.get_project_config(current_project)
@@ -631,13 +637,39 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     try:
         from pathlib import Path
         from .project_config import ProjectConfigManager
+        import asyncio
 
         session_manager = SessionManager()
         manager = ProjectConfigManager()
 
         # Try to load full session state
-        if manager.load_full_session_state(Path("."), session_manager, config_file):
-            logger.info("Auto-loaded saved session configuration")
+        config_path = Path(".") / config_file
+        if config_path.exists():
+            try:
+                # Check if we're in an async context
+                asyncio.get_running_loop()
+                # We're in an async context - try to load synchronously for tests
+                import json
+
+                with open(config_path) as f:
+                    session_data = json.load(f)
+
+                # Restore session state synchronously
+                if "projects" in session_data:
+                    session_manager.session_state.projects = session_data["projects"]
+
+                if "current_project" in session_data:
+                    # Direct assignment needed here as we're in sync context for tests
+                    # Using set_current_project would require await which isn't available
+                    session_manager._current_project = session_data["current_project"]
+
+                logger.info("Auto-loaded saved session configuration (sync mode)")
+            except RuntimeError:
+                # No running loop, we can use asyncio.run
+                if asyncio.run(manager.load_full_session_state(Path("."), session_manager, config_file)):
+                    logger.info("Auto-loaded saved session configuration")
+                else:
+                    logger.debug("No saved session found, using defaults")
         else:
             logger.debug("No saved session found, using defaults")
     except Exception as e:

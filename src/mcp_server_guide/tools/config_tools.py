@@ -6,11 +6,11 @@ from ..validation import validate_config, ConfigValidationError
 from ..naming import config_filename
 
 
-def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
+async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project_safe()
+        project = await session.get_current_project_safe()
 
     config = session.session_state.get_project_config(project)
     # Only set project name if not already explicitly set in config
@@ -37,12 +37,12 @@ async def set_project_config_values(
     session = SessionManager()
 
     if project is None:
-        project = session.get_current_project_safe()
+        project = await session.get_current_project_safe()
 
     # Validate entire configuration before setting any values
     try:
         # Get current config and merge with new values for validation
-        current_config = get_project_config(project)
+        current_config = await get_project_config(project)
         merged_config = {**current_config, **config_dict}
         validate_config(merged_config)
     except ConfigValidationError as e:
@@ -99,7 +99,7 @@ async def set_project_config(
 
     session = SessionManager()
     if project is None:
-        project = session.get_current_project_safe()
+        project = await session.get_current_project_safe()
 
     # Check if trying to change an immutable project key
     if config_key == "project":
@@ -136,11 +136,11 @@ async def set_project_config(
     }
 
 
-def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
+async def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get merged configuration (file + session)."""
     session = SessionManager()
     if project is None:
-        project = session.get_current_project_safe()
+        project = await session.get_current_project_safe()
 
     return session.get_effective_config(project)
 

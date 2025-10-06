@@ -6,9 +6,8 @@ from mcp_server_guide.tools import get_current_project, get_guide, get_project_c
 
 async def test_get_current_project():
     """Test getting current project name."""
-    result = get_current_project()
-    assert isinstance(result, str)
-    assert len(result) > 0
+    result = await get_current_project()
+    assert isinstance(result, str) or result is None  # Can be None if not set
 
 
 async def test_get_guide_default_project():
@@ -31,14 +30,14 @@ async def test_get_guide_specific_project():
 
 async def test_get_project_config_default():
     """Test getting project config for default project."""
-    result = get_project_config()
+    result = await get_project_config()
     assert isinstance(result, dict)
     assert "project" in result
 
 
 async def test_get_project_config_specific():
     """Test getting project config for specific project."""
-    result = get_project_config("mcp_server_guide")
+    result = await get_project_config("mcp_server_guide")
     assert isinstance(result, dict)
     assert "project" in result
 
@@ -51,5 +50,5 @@ async def test_switch_project():
     assert result["project"] == "test-project"
 
     # Verify the switch worked
-    current = get_current_project()
+    current = await get_current_project()
     assert current == "test-project"

@@ -23,11 +23,11 @@ async def test_session_manager_load_project_from_path():
         config_file.write_text(json.dumps(config_data))
 
         session = SessionManager()
-        session.load_project_from_path(config_file)
+        await session.load_project_from_path(config_file)
 
         # The project name will be derived from the directory, not the config file
         # This is the expected behavior based on the implementation
-        current_project = session.get_current_project()
+        current_project = await session.get_current_project()
         assert current_project is not None
         assert len(current_project) > 0
 
@@ -36,11 +36,11 @@ async def test_get_project_config():
     """Test get_project_config function."""
     # Set up some project data first
     session = SessionManager()
-    session.set_current_project("test-project")
+    await session.set_current_project("test-project")
     session.session_state.set_project_config("test-project", "language", "python")
 
     # This should return current project config
-    result = get_project_config()
+    result = await get_project_config()
 
     assert result["success"] is True
     assert result["project"] == "test-project"
@@ -66,14 +66,14 @@ async def test_list_project_configs():
 
 
 async def test_set_project_config():
-    """Test reset_project_config function."""
+    """Test set_project_config function."""
     # Set up project data first
     session = SessionManager()
-    session.set_current_project("test-project")
+    await session.set_current_project("test-project")
     session.session_state.set_project_config("test-project", "language", "python")
 
     # Reset the project
-    result = set_project_config("language", "go")
+    result = await set_project_config("language", "go")
 
     assert result["success"] is True
     assert "Set language to 'go' for project test-project" in result["message"]
@@ -81,19 +81,20 @@ async def test_set_project_config():
 
 async def test_switch_project():
     """Test switch_project function."""
-    result = switch_project("new-project")
+    result = await switch_project("new-project")
 
     assert result["success"] is True
     assert result["message"] == "Switched to project new-project"
 
     # Verify the switch worked
     session = SessionManager()
-    assert session.get_current_project() == "new-project"
+    current_project = await session.get_current_project()
+    assert current_project == "new-project"
 
 
 async def test_set_local_file():
     """Test set_local_file function."""
-    result = set_local_file("guide", "/path/to/local/file.md")
+    result = await set_local_file("guide", "/path/to/local/file.md")
 
     assert result["success"] is True
     assert "Set guide to 'local:/path/to/local/file.md'" in result["message"]
@@ -105,7 +106,7 @@ async def test_session_manager_save_to_file():
         config_file = Path(temp_dir) / "test_save.json"
 
         session = SessionManager()
-        session.set_current_project("test-project")
+        await session.set_current_project("test-project")
         session.session_state.set_project_config("test-project", "language", "python")
 
         # Save to file
@@ -122,7 +123,7 @@ async def test_session_manager_save_to_file():
 async def test_session_manager_get_effective_config():
     """Test SessionManager.get_effective_config method."""
     session = SessionManager()
-    session.set_current_project("test-project")
+    await session.set_current_project("test-project")
     session.session_state.set_project_config("test-project", "language", "python")
 
     # Get effective config - it merges with defaults so just check language

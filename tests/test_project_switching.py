@@ -19,7 +19,7 @@ async def test_switch_to_new_project_creates_builtin_categories():
     # Check that built-in categories were created
     from mcp_server_guide.tools.category_tools import list_categories
 
-    categories_result = list_categories()
+    categories_result = await list_categories()
 
     assert categories_result["success"] is True
 

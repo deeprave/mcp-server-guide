@@ -5,6 +5,7 @@ from typing import Any, Dict, cast
 from pathlib import Path
 import click
 import contextlib
+from contextvars import ContextVar
 from .config import Config
 from .logging_config import get_logger
 from .naming import config_filename
@@ -12,6 +13,9 @@ from .client_path import ClientPath
 from .path_resolver import LazyPath
 
 logger = get_logger()
+
+# Thread-safe storage for CLI configuration using contextvars
+_deferred_builtin_config: ContextVar[Dict[str, Any]] = ContextVar("deferred_builtin_config", default={})
 
 
 def resolve_config_path_with_client_defaults(config_path: str) -> Path:
@@ -256,9 +260,9 @@ def validate_mode(mode: str) -> tuple[str, str]:
     raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio'")
 
 
-def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
+async def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
     """Configure built-in categories from CLI arguments."""
-    from .tools.category_tools import update_category
+    from .tools.category_tools import update_category, list_categories
 
     # CLI argument to category mappings
     cli_mappings = [
@@ -273,9 +277,7 @@ def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
 
         if dir_value or file_value:
             try:
-                from .tools.category_tools import list_categories
-
-                categories_result = list_categories()
+                categories_result = await list_categories()
 
                 # Find existing built-in category
                 existing_category = None
@@ -295,19 +297,15 @@ def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
                         new_patterns = existing_category["patterns"]
 
                     # Update the category
-                    import asyncio
-
-                    asyncio.run(
-                        update_category(
-                            name=category_name,
-                            dir=new_dir,
-                            patterns=new_patterns,
-                            description=existing_category["description"],
-                        )
+                    await update_category(
+                        name=category_name,
+                        dir=new_dir,
+                        patterns=new_patterns,
+                        description=existing_category["description"],
                     )
 
-            except Exception as e:
-                logger.warning(f"Failed to apply CLI arg to category {category_name}: {e}")
+            except Exception:
+                logger.warning(f"Failed to configure category {category_name}")
 
 
 def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
@@ -468,13 +466,9 @@ def main() -> click.Command:
 
             logger.debug(f"Resolved configuration: {json.dumps(resolved_config, indent=2, default=str)}")
 
-            # Configure built-in categories from CLI
-            logger.debug("Configuring built-in categories from CLI")
-            try:
-                configure_builtin_categories(resolved_config)
-                logger.debug("Built-in categories configured successfully")
-            except Exception as e:
-                logger.warning(f"Failed to configure built-in categories: {e}", exc_info=True)
+            # Store built-in categories config for deferred async processing
+            logger.debug("Storing built-in categories config for async processing")
+            _deferred_builtin_config.set(resolved_config.copy())
 
             # Start MCP server
             logger.debug("Starting MCP server")

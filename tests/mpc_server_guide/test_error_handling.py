@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 import pytest
 
 from mcp_server_guide.session_tools import SessionManager
@@ -22,7 +22,7 @@ async def test_session_manager_read_error():
 
         try:
             # This should trigger the exception handling path
-            result = manager.get_current_project()
+            result = await manager.get_current_project()
             # Should fallback to directory name
             assert result == Path(temp_dir).name
         finally:
@@ -34,18 +34,20 @@ async def test_session_manager_write_error():
     """Test SessionManager handles write errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = SessionManager()
-        manager.set_directory(Path(temp_dir))
+        manager.set_directory(Path(temp_dir))  # NOT awaited
 
-        # Make directory read-only to prevent file creation
-        Path(temp_dir).chmod(0o444)
+        # Create the current file first, then make it read-only
+        current_file = Path(temp_dir) / ".mcp-server-guide.current"
+        current_file.write_text("initial")
+        current_file.chmod(0o444)  # Make file read-only
 
         try:
             # This should trigger the exception handling path and raise
-            with pytest.raises((OSError, IOError)):
-                manager.set_current_project("test-project")
+            with pytest.raises((OSError, IOError, PermissionError)):
+                await manager.set_current_project("test-project")
         finally:
             # Restore permissions for cleanup
-            Path(temp_dir).chmod(0o755)
+            current_file.chmod(0o644)
 
 
 async def test_set_project_config_values_exception():
@@ -54,7 +56,8 @@ async def test_set_project_config_values_exception():
         # Mock session to raise exception during auto-save
         mock_instance = MagicMock()
         mock_session.return_value = mock_instance
-        mock_instance.save_to_file.side_effect = Exception("Save failed")
+        mock_instance.get_current_project_safe = AsyncMock(return_value="test-project")
+        mock_instance.save_to_file = AsyncMock(side_effect=Exception("Save failed"))
 
         # This should trigger the exception handling but still succeed
         result = await set_project_config_values({"docroot": "/test/path"})
@@ -67,7 +70,8 @@ async def test_set_project_config_exception():
         # Mock session to raise exception during auto-save
         mock_instance = MagicMock()
         mock_session.return_value = mock_instance
-        mock_instance.save_to_file.side_effect = Exception("Save failed")
+        mock_instance.get_current_project_safe = AsyncMock(return_value="test-project")
+        mock_instance.save_to_file = AsyncMock(side_effect=Exception("Save failed"))
 
         # This should trigger the exception handling but still succeed
         result = await set_project_config("language", "python")

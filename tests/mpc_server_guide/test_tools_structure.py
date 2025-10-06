@@ -19,7 +19,7 @@ async def test_tools_return_expected_types():
     assert "success" in session
 
     # Test config tools
-    config = get_project_config()
+    config = await get_project_config()
     assert isinstance(config, dict)
 
 
@@ -39,11 +39,11 @@ async def test_session_management_comprehensive():
     assert result["success"] is True
 
     # Load session
-    result = load_session()
+    result = await load_session()
     assert result["success"] is True
 
     # Reset session
-    result = reset_session()
+    result = await reset_session()  # Now properly awaited
     assert result["success"] is True
 
 
@@ -55,6 +55,6 @@ async def test_config_tools_comprehensive():
     assert result["project"] == "test_project"
 
     # Get config
-    config = get_project_config("test_project")
+    config = await get_project_config("test_project")
     assert isinstance(config, dict)
     assert config["docroot"] == "/test/path"

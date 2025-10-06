@@ -87,6 +87,7 @@ async def test_daic_prompt_disable_action(tmp_path, monkeypatch):
     consent_file = tmp_path / ".consent"
     assert consent_file.exists()
 
+
 @pytest.mark.asyncio
 async def test_daic_prompt_enable_with_on(tmp_path, monkeypatch):
     """Test that @daic on enables DAIC mode."""

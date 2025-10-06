@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from src.mcp_server_guide.tools.session_management import save_session
 from src.mcp_server_guide.tools.category_tools import _safe_glob_search
 
@@ -10,7 +10,9 @@ from src.mcp_server_guide.tools.category_tools import _safe_glob_search
 async def test_save_session_failure():
     """Test save session failure handling."""
     with patch("src.mcp_server_guide.tools.session_management.SessionManager") as mock_session:
-        mock_session.return_value.save_to_file.side_effect = Exception("Save error")
+        session_instance = mock_session.return_value
+        session_instance.get_current_project = AsyncMock(side_effect=Exception("Save error"))
+        session_instance.save_to_file = AsyncMock()
 
         result = await save_session("test.json")
 

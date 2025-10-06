@@ -7,7 +7,7 @@ from mcp_server_guide import server
 async def test_server_tool_functions():
     """Test all MCP server tool functions."""
     # Test get_current_project
-    result = server.get_current_project()
+    result = await server.get_current_project()
     assert isinstance(result, dict)
     # Assert expected keys in the returned dict
     assert "success" in result
@@ -22,20 +22,20 @@ async def test_server_tool_functions():
 async def test_get_current_project_no_project_set():
     """Test get_current_project when no project is set."""
     with patch("mcp_server_guide.server.tools.get_current_project", return_value=None):
-        result = server.get_current_project()
+        result = await server.get_current_project()
         assert isinstance(result, dict)
         assert result["success"] is False
         assert "No project set" in result["error"]
 
     # Test list_projects
-    result = server.list_projects()
+    result = await server.list_projects()
     assert isinstance(result, list)
 
     # Test get_project_config
-    result = server.get_project_config()
+    result = await server.get_project_config()
     assert isinstance(result, dict)
 
-    result = server.get_project_config("test_project")
+    result = await server.get_project_config("test_project")
     assert isinstance(result, dict)
 
     # Test set_project_config
@@ -46,10 +46,10 @@ async def test_get_current_project_no_project_set():
     assert isinstance(result, dict)
 
     # Test get_effective_config
-    result = server.get_effective_config()
+    result = await server.get_effective_config()
     assert isinstance(result, dict)
 
-    result = server.get_effective_config("test_project")
+    result = await server.get_effective_config("test_project")
     assert isinstance(result, dict)
 
 
@@ -118,10 +118,10 @@ async def test_server_display_functions():
 async def test_server_file_functions():
     """Test server file-related functions."""
     # Test list_files
-    result = server.list_files("guide")
+    result = await server.list_files("guide")
     assert isinstance(result, list)
 
-    result = server.list_files("guide", "test_project")
+    result = await server.list_files("guide", "test_project")
     assert isinstance(result, list)
 
     # Test file_exists
@@ -146,14 +146,10 @@ async def test_server_session_functions():
     assert isinstance(result, dict)
 
     # Test load_session
-    result = server.load_session()
+    result = await server.load_session()
     assert isinstance(result, dict)
 
-    result = server.load_session("/test/path")
-    assert isinstance(result, dict)
-
-    # Test reset_session
-    result = server.reset_session()
+    result = await server.load_session("/test/path")
     assert isinstance(result, dict)
 
 

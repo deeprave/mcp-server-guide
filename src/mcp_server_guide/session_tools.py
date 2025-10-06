@@ -78,14 +78,17 @@ class SessionManager:
             raise ValueError(f"Provided path '{directory}' is not a directory.")
         self._override_directory = path
 
-    def get_current_project(self) -> Optional[str]:
+    async def get_current_project(self) -> Optional[str]:
         """Get current project name."""
         if not self.is_directory_set():
             return None
 
         try:
             if self.current_file and self.current_file.exists():
-                content = self.current_file.read_text(encoding="utf-8").strip()
+                import aiofiles
+
+                async with aiofiles.open(self.current_file, "r", encoding="utf-8") as f:
+                    content = (await f.read()).strip()
                 if content:
                     logger.debug(f"Read current project '{content}' from {self.current_file}")
                     return content
@@ -102,7 +105,7 @@ class SessionManager:
 
         return None
 
-    def set_current_project(self, project_name: str) -> None:
+    async def set_current_project(self, project_name: str) -> None:
         """Set current project name by writing to .current file.
 
         Args:
@@ -118,7 +121,8 @@ class SessionManager:
         if not project_name or not isinstance(project_name, str):
             raise ValueError("Project name must be a non-empty string")
 
-        old_project = self.get_current_project()
+        old_project = await self.get_current_project()
+        self._current_project = project_name
 
         try:
             if self.current_file:
@@ -173,15 +177,15 @@ class SessionManager:
         async with aiofiles.open(config_file, "w", encoding="utf-8") as f:
             await f.write(json.dumps(existing_config, indent=2))
 
-    def get_current_project_safe(self) -> str:
+    async def get_current_project_safe(self) -> str:
         """Get current project with error handling for None case."""
-        project = self.get_current_project()
+        project = await self.get_current_project()
         if project is None:
             logger.error("Cannot determine client working directory - MCP server cannot function")
             raise ValueError("Working directory not set. Use set_directory() first.")
         return project
 
-    def load_project_from_path(self, project_path: Any) -> None:
+    async def load_project_from_path(self, project_path: Any) -> None:
         """Load project configuration from path."""
         logger.debug(f"Loading project configuration from {project_path}")
         from .project_config import ProjectConfigManager
@@ -189,7 +193,7 @@ class SessionManager:
         manager = ProjectConfigManager()
         config = manager.load_config(project_path)
         if config:
-            self.set_current_project(config.project)
+            await self.set_current_project(config.project)
             # Load config into session state
             for key, value in config.to_dict().items():
                 if key != "project":
@@ -212,7 +216,7 @@ class SessionManager:
 _session_manager = SessionManager()
 
 
-def set_project_config(key: str, value: str) -> Dict[str, Any]:
+async def set_project_config(key: str, value: str) -> Dict[str, Any]:
     """Set configuration value for current project."""
     session_manager = SessionManager()
 
@@ -223,19 +227,19 @@ def set_project_config(key: str, value: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e), "errors": e.errors}
 
     try:
-        current_project = session_manager.get_current_project_safe()
+        current_project = await session_manager.get_current_project_safe()
         session_manager.session_state.set_project_config(current_project, key, value)
         return {"success": True, "message": f"Set {key} to '{value}' for project {current_project}"}
     except ValueError as e:
         return {"success": False, "error": str(e)}
 
 
-def get_project_config() -> Dict[str, Any]:
+async def get_project_config() -> Dict[str, Any]:
     """Get current project's configuration."""
     session_manager = SessionManager()
 
     try:
-        current_project = session_manager.get_current_project_safe()
+        current_project = await session_manager.get_current_project_safe()
         config = session_manager.session_state.get_project_config(current_project)
         return {"success": True, "project": current_project, "config": config}
     except ValueError as e:
@@ -253,33 +257,33 @@ def list_project_configs() -> Dict[str, Any]:
     return {"success": True, "projects": projects}
 
 
-def reset_project_config() -> Dict[str, Any]:
+async def reset_project_config() -> Dict[str, Any]:
     """Reset current project to defaults."""
     session_manager = SessionManager()
 
-    current_project = session_manager.get_current_project()
+    current_project = await session_manager.get_current_project()
     if current_project in session_manager.session_state.projects:
         del session_manager.session_state.projects[current_project]
 
     return {"success": True, "message": f"Reset project {current_project} to defaults"}
 
 
-def switch_project(project_name: str) -> Dict[str, Any]:
+async def switch_project(project_name: str) -> Dict[str, Any]:
     """Manually switch project context."""
     if not project_name or not isinstance(project_name, str):
         raise ValueError("Project name must be a non-empty string")
 
     session_manager = SessionManager()
-    session_manager.set_current_project(project_name)
+    await session_manager.set_current_project(project_name)
 
     return {"success": True, "message": f"Switched to project {project_name}"}
 
 
-def set_local_file(key: str, local_path: str) -> Dict[str, Any]:
+async def set_local_file(key: str, local_path: str) -> Dict[str, Any]:
     """Set config to use local file."""
     # Add local: prefix to the path
     local_file_path = f"local:{local_path}"
-    return set_project_config(key, local_file_path)
+    return await set_project_config(key, local_file_path)
 
 
 # Backward compatibility exports

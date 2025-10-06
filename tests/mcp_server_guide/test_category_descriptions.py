@@ -15,7 +15,7 @@ def mock_session():
     with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe.return_value = "test-project"
+        session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
         session_instance.session_state.get_project_config.return_value = {"categories": {}}
         session_instance.save_to_file = AsyncMock()
         session_instance.save_to_file = AsyncMock()
@@ -59,7 +59,7 @@ async def test_list_categories_includes_descriptions(mock_session):
         "testing": {"dir": "test/", "patterns": ["*.md"], "description": "Test documentation"},
     }
 
-    result = list_categories()
+    result = await list_categories()
 
     # Find the testing category
     testing_category = result["custom_categories"].get("testing")
@@ -79,7 +79,7 @@ async def test_list_categories_handles_missing_descriptions(mock_session):
         }
     }
 
-    result = list_categories()
+    result = await list_categories()
 
     testing_category = result["custom_categories"]["testing"]
     assert testing_category.get("description", "") == ""

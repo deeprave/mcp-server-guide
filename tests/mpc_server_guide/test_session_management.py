@@ -20,7 +20,7 @@ async def test_load_session_error_handling():
     """Test load_session with error conditions."""
     # Test load_session with exception
     with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Load error")):
-        result = load_session()
+        result = await load_session()
         assert isinstance(result, dict)
         assert result["success"] is False
         assert "error" in result
@@ -29,7 +29,7 @@ async def test_load_session_error_handling():
     # Test load_session with path
     test_path = Path("/test/path")
     with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Load error")):
-        result = load_session(test_path)
+        result = await load_session(test_path)
         assert isinstance(result, dict)
         assert result["success"] is False
 
@@ -38,7 +38,7 @@ async def test_reset_session_error_handling():
     """Test reset_session with error conditions."""
     # Test reset_session with exception
     with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Reset error")):
-        result = reset_session()
+        result = await reset_session()
         assert isinstance(result, dict)
         assert result["success"] is False
         assert "error" in result
@@ -49,7 +49,7 @@ async def test_session_management_success_paths():
     """Test session management success paths."""
     # Mock successful SessionManager
     mock_session = Mock()
-    mock_session.get_current_project.return_value = "test_project"
+    mock_session.get_current_project = AsyncMock(return_value="test_project")
     mock_session.save_to_file = AsyncMock()
 
     # Mock successful ProjectConfigManager
@@ -59,22 +59,26 @@ async def test_session_management_success_paths():
     with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
         with patch("mcp_server_guide.tools.session_management.ProjectConfigManager", return_value=mock_manager):
             result = await save_session()
+            print(f"DEBUG: save_session result = {result}")
             assert isinstance(result, dict)
             assert result["success"] is True
             assert result["project"] == "test_project"
 
     # Test successful load_session
+    mock_manager.load_full_session_state = AsyncMock(return_value=True)
     with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
         with patch("mcp_server_guide.tools.session_management.ProjectConfigManager", return_value=mock_manager):
-            result = load_session()
+            result = await load_session()
             assert isinstance(result, dict)
             assert result["success"] is True
 
     # Test successful reset_session
     import os
 
+    mock_session.set_current_project = AsyncMock()
     with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
-        result = reset_session()
+        result = await reset_session()  # Now properly awaited
+        print(f"DEBUG: reset_session result in success_paths = {result}")
         assert isinstance(result, dict)
         assert result["success"] is True
         # Should use current directory name, not hardcoded tool name

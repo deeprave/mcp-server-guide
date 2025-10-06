@@ -3,7 +3,7 @@
 import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, AsyncMock
 
 from mcp_server_guide.tools.category_tools import _safe_glob_search, add_category, get_category_content
 from mcp_server_guide.validation import ConfigValidationError
@@ -76,7 +76,7 @@ class TestAddCategoryErrors:
         # Mock SessionManager and session_state properly
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
             mock_session = Mock()
-            mock_session.get_current_project_safe.return_value = "test_project"
+            mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
             # Mock session_state.get_project_config
             mock_session.session_state.get_project_config.return_value = {
@@ -99,7 +99,7 @@ class TestGetCategoryContentErrors:
         # Mock SessionManager properly
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
             mock_session = Mock()
-            mock_session.get_current_project_safe.return_value = "test_project"
+            mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
             # Mock session_state.get_project_config
             mock_session.session_state.get_project_config.return_value = {
@@ -122,7 +122,7 @@ class TestGetCategoryContentErrors:
             # Mock SessionManager properly
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
-                mock_session.get_current_project_safe.return_value = "test_project"
+                mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
                 # Mock session_state.get_project_config
                 mock_session.session_state.get_project_config.return_value = {
@@ -150,7 +150,7 @@ class TestGetCategoryContentErrors:
             # Mock SessionManager properly
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
-                mock_session.get_current_project_safe.return_value = "test_project"
+                mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
                 # Mock session_state.get_project_config
                 mock_session.session_state.get_project_config.return_value = {
@@ -183,7 +183,7 @@ class TestGetCategoryContentErrors:
 
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
-                mock_session.get_current_project_safe.return_value = "test_project"
+                mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
                 mock_session.session_state.get_project_config.return_value = {
                     "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
                     "docroot": temp_dir,
@@ -212,7 +212,7 @@ class TestGetCategoryContentErrors:
             # Mock SessionManager properly
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
-                mock_session.get_current_project_safe.return_value = "test_project"
+                mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
                 # Mock session_state.get_project_config
                 mock_session.session_state.get_project_config.return_value = {

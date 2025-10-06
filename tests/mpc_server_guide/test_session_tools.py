@@ -19,7 +19,7 @@ async def test_set_project_config_values_tool():
     assert "2/2" in result["message"]  # Should show successful count
 
     # Verify the values were set
-    config = get_project_config()
+    config = await get_project_config()
     assert config["docroot"] == "/test/path"
     assert config["project"] == "test-project"
     assert config["project"] == "test-project"
@@ -53,7 +53,7 @@ async def test_get_project_config_tool():
     await set_project_config("project", "test-project")
 
     # Get config
-    config = get_project_config()
+    config = await get_project_config()
     assert config["docroot"] == "/test/path"
     assert config["project"] == "test-project"
 
@@ -66,7 +66,7 @@ async def test_list_project_configs_tool():
     await set_project_config("project", "test-project")
 
     # List all configs
-    config = get_project_config()
+    config = await get_project_config()
     assert "docroot" in config
 
 
@@ -78,11 +78,11 @@ async def test_reset_project_config_tool():
     # Reset config
     from mcp_server_guide.tools.session_management import reset_session
 
-    result = reset_session()
+    result = await reset_session()  # Now properly awaited
     assert result["success"] is True
 
     # Verify config was reset
-    config = get_project_config()
+    config = await get_project_config()
     # Should have default values, not the custom one we set
     assert config.get("guide") != "python-web"
 
@@ -99,7 +99,7 @@ async def test_session_manager_initialization():
     assert session1 is session2
 
     # Should have a current project
-    assert session1.get_current_project() is not None
+    assert await session1.get_current_project() is not None
 
 
 async def test_project_context_switching():
@@ -117,5 +117,5 @@ async def test_project_context_switching():
     await set_project_config("docroot", "/project-b")
 
     # Verify each project has its own config
-    config_b = get_project_config("project-b")
+    config_b = await get_project_config("project-b")
     assert config_b.get("docroot") == "/project-b"

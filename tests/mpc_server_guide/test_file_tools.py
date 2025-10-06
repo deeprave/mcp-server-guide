@@ -8,20 +8,20 @@ async def test_list_files_error_handling():
     """Test list_files with various error conditions."""
     # Test with non-existent directory
     with patch("pathlib.Path.exists", return_value=False):
-        result = list_files("guide", "test_project")
+        result = await list_files("guide", "test_project")
         assert result == []
 
     # Test with path that's not a directory
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_dir", return_value=False):
-            result = list_files("guide", "test_project")
+            result = await list_files("guide", "test_project")
             assert result == []
 
     # Test with exception during iteration
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_dir", return_value=True):
             with patch("pathlib.Path.iterdir", side_effect=Exception("Permission denied")):
-                result = list_files("guide", "test_project")
+                result = await list_files("guide", "test_project")
                 assert result == []
 
 
@@ -97,7 +97,7 @@ async def test_list_files_successful_operation():
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_dir", return_value=True):
             with patch("pathlib.Path.iterdir", return_value=[mock_file1, mock_file2, mock_dir]):
-                result = list_files("guide", "test_project")
+                result = await list_files("guide", "test_project")
                 assert "file1.md" in result
                 assert "file2.md" in result
                 assert "subdir" not in result  # Should only include files

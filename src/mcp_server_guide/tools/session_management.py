@@ -43,7 +43,7 @@ def require_directory_set(func: Callable[..., Any]) -> Callable[..., Any]:
         return sync_wrapper
 
 
-def set_directory(directory: Union[str, Path]) -> Dict[str, Any]:
+async def set_directory(directory: Union[str, Path]) -> Dict[str, Any]:
     """Set the working directory for the MCP server."""
     try:
         # Handle None values before os.fspath
@@ -65,10 +65,15 @@ def set_directory(directory: Union[str, Path]) -> Dict[str, Any]:
         session = SessionManager()
         session.set_directory(str(path))
 
-        project = session.get_current_project()
+        project = await session.get_current_project()
         return {"success": True, "message": f"Working directory set to: {path}", "project": project}
+    except asyncio.CancelledError:
+        # Re-raise cancellation to allow proper cleanup
+        raise
     except (OSError, PermissionError, ValueError) as e:
         return {"success": False, "error": f"Failed to set directory: {e}"}
+    except Exception as e:
+        return {"success": False, "error": f"Unexpected error setting directory: {e}"}
 
 
 @require_directory_set
@@ -87,7 +92,7 @@ async def save_session(config_filename: str = config_filename()) -> Dict[str, An
     """Persist current session state."""
     try:
         session = SessionManager()
-        current_project = session.get_current_project()
+        current_project = await session.get_current_project()
 
         # Use new save method that preserves existing data
         await session.save_to_file(config_filename)
@@ -97,7 +102,7 @@ async def save_session(config_filename: str = config_filename()) -> Dict[str, An
         return {"success": False, "error": str(e), "message": "Failed to save session"}
 
 
-def load_session(project_path: Optional[Path] = None, config_filename: str = config_filename()) -> Dict[str, Any]:
+async def load_session(project_path: Optional[Path] = None, config_filename: str = config_filename()) -> Dict[str, Any]:
     """Load session from project."""
     try:
         if project_path is None:
@@ -110,31 +115,33 @@ def load_session(project_path: Optional[Path] = None, config_filename: str = con
         session = SessionManager()
         manager = ProjectConfigManager()
 
-        if not manager.load_full_session_state(project_path, session, config_filename):
+        if not await manager.load_full_session_state(project_path, session, config_filename):
             # Fallback to old project-based loading
-            session.load_project_from_path(project_path)
+            await session.load_project_from_path(project_path)
         return {
             "success": True,
             "path": str(project_path),
-            "project": session.get_current_project(),
+            "project": await session.get_current_project(),
             "message": f"Session loaded from {project_path}",
         }
     except Exception as e:
         return {"success": False, "error": str(e), "message": "Failed to load session"}
 
 
-def reset_session() -> Dict[str, Any]:
+async def reset_session() -> Dict[str, Any]:
     """Reset to defaults."""
     try:
         session = SessionManager()
         # Reset to current directory name
         current_project = os.path.basename(os.getcwd())
-        session.set_current_project(current_project)
+
+        # Set current project
+        await session.set_current_project(current_project)
 
         # Reset project config to defaults
         from ..session_tools import reset_project_config
 
-        reset_project_config()
+        await reset_project_config()
 
         return {"success": True, "project": current_project, "message": "Session reset to defaults"}
     except Exception as e:
