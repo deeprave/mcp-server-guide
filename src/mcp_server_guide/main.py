@@ -117,30 +117,37 @@ def resolve_config_file_path(kwargs: Dict[str, Any], config_obj: Config) -> str 
         Resolved config file path or None
     """
     config_file_path = None
-    global_config = False
+    use_global_path = False
 
-    # Check for global config flag first
-    if "global_config" in kwargs and kwargs["global_config"] is not None:
-        global_config = kwargs["global_config"]
-    elif os.environ.get("MG_CONFIG_GLOBAL"):
-        global_config = True
+    # Precedence order (highest to lowest):
+    # 1. --config FILENAME (always wins)
+    # 2. --global-config flag (CLI overrides env, sets default to global path)
+    # 3. MG_CONFIG environment variable
+    # 4. MG_CONFIG_GLOBAL environment variable (sets default to global path)
+    # 5. Default config file
 
-    # Check for custom config file path (overrides global)
     if "config" in kwargs and kwargs["config"] is not None:
+        # Highest priority: explicit --config argument
         config_file_path = kwargs["config"]
-        global_config = False  # Custom config overrides global
+    elif "global_config" in kwargs and kwargs["global_config"]:
+        # Second priority: --global-config CLI flag (overrides MG_CONFIG)
+        use_global_path = True
     elif os.environ.get("MG_CONFIG"):
+        # Third priority: MG_CONFIG environment variable
         config_file_path = os.environ.get("MG_CONFIG")
-        global_config = False  # Env config overrides global
-    elif global_config:
-        # Use global config path
+    elif os.environ.get("MG_CONFIG_GLOBAL"):
+        # Fourth priority: MG_CONFIG_GLOBAL environment variable
+        use_global_path = True
+
+    # Set config path based on global flag or use default
+    if use_global_path:
         config_file_path = config_obj.get_global_config_path()
-    else:
-        # Use default config file
+    elif config_file_path is None:
+        # Fallback to default config file
         config_file_path = config_filename()
 
     # Handle directory vs file logic and apply client-relative resolution
-    if config_file_path and not global_config:
+    if config_file_path and not use_global_path:
         # Use new client-relative resolution for non-global configs
         resolved_path = resolve_config_path_with_client_defaults(config_file_path)
 
@@ -149,7 +156,7 @@ def resolve_config_file_path(kwargs: Dict[str, Any], config_obj: Config) -> str 
             config_file_path = str(resolved_path / config_filename().lstrip("."))
         else:
             config_file_path = str(resolved_path)
-    elif config_file_path and global_config:
+    elif config_file_path and use_global_path:
         # Global configs use absolute path resolution
         config_file_path = str(Path(config_file_path).expanduser().resolve())
 
@@ -339,14 +346,12 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
             logger.info("MCP server shutdown due to interruption (exit code 0)")
         except Exception as e:
             logger.error(f"FATAL: MCP server crashed during runtime: {e}", exc_info=True)
-            logger.error("This indicates a runtime failure after successful initialization")
             # Force flush before re-raising
             for handler in logger.handlers:
                 handler.flush()
             raise
         return "MCP server started in stdio mode"
     else:
-        logger.warning(f"Unsupported server mode: {mode}")
         logger.error(f"Program exiting due to unsupported mode: {mode}")
         raise ValueError(f"Unsupported mode: {mode}")
 
@@ -473,7 +478,6 @@ def main() -> click.Command:
             logger.debug("Starting MCP server")
             try:
                 result = start_mcp_server(mode_type, resolved_config)
-                logger.info("MCP server started successfully")
             except Exception as e:
                 logger.error(f"FATAL: Failed to start MCP server: {e}", exc_info=True)
                 logger.error("=== MCP SERVER STARTUP FAILED ===")

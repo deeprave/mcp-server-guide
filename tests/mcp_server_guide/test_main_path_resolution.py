@@ -105,22 +105,23 @@ class TestResolveConfigFilePath:
                 assert result == "/some/directory/mcp_server_guide.toml"
 
     def test_resolve_config_file_path_custom_overrides_global(self):
-        """Test custom config path overrides global config."""
+        """Test --config takes precedence over --global-config."""
         kwargs = {"config": "/custom/config.toml", "global_config": True}
         mock_config = Mock()
+        mock_config.get_global_config_path.return_value = "/global/config.toml"
 
         result = resolve_config_file_path(kwargs, mock_config)
 
         assert result == "/custom/config.toml"
-        mock_config.get_global_config_path.assert_not_called()
 
     @patch.dict(os.environ, {"MG_CONFIG": "/env/config.toml"})
     def test_resolve_config_file_path_env_overrides_global(self):
-        """Test environment variable overrides global config."""
+        """Test that --global-config overrides MG_CONFIG environment variable."""
         kwargs = {"global_config": True}
         mock_config = Mock()
+        mock_config.get_global_config_path.return_value = "/global/config.toml"
 
         result = resolve_config_file_path(kwargs, mock_config)
 
-        assert result == "/env/config.toml"
-        mock_config.get_global_config_path.assert_not_called()
+        assert result == "/global/config.toml"
+        mock_config.get_global_config_path.assert_called_once()

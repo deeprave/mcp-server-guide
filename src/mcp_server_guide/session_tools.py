@@ -51,7 +51,8 @@ class SessionManager:
 
         # Check if we're in a test environment by looking for pytest
         import sys
-        if 'pytest' in sys.modules:
+
+        if "pytest" in sys.modules:
             # In tests, don't use fallbacks if ClientPath is not initialized
             return None
 

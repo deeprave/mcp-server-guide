@@ -170,7 +170,7 @@ class Config:
         """Get platform-specific global config path."""
         from .naming import config_filename
 
-        filename = config_filename()
+        filename = config_filename(is_global=True)
         if os.name == "nt":  # Windows
             appdata = os.environ.get("APPDATA", "")
             return os.path.join(appdata, "mcp-server-guide", filename)

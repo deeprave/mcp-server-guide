@@ -102,6 +102,7 @@ def log_tool_usage(func: Any) -> Any:
                 error_handler.handle_error(e, f"tool '{tool_name}'")
                 # Re-raise the exception for proper error handling
                 raise
+
         return async_wrapper
     else:
         # Sync wrapper for sync functions
@@ -127,6 +128,7 @@ def log_tool_usage(func: Any) -> Any:
                 error_handler.handle_error(e, f"tool '{tool_name}'")
                 # Re-raise the exception for proper error handling
                 raise
+
         return sync_wrapper
 
 

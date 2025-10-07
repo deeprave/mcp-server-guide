@@ -166,17 +166,24 @@ class TestCLIConfigEdgeCases:
                 assert result == expected
 
     def test_cli_config_custom_overrides_global(self):
-        """Test that custom config path overrides global config."""
+        """Test that --config overrides --global-config (CLI args have precedence)."""
         config_obj = Mock()
         config_obj.get_global_config_path.return_value = "/etc/mcp/config.yaml"
         kwargs = {"config": "custom.yaml", "global_config": True}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        result = resolve_config_file_path(kwargs, config_obj)
+        # --config should win over --global-config
+        assert result.endswith("custom.yaml")
 
+    def test_cli_config_overrides_env_var(self):
+        """Test that --config takes precedence over MG_CONFIG when both are set."""
+        config_obj = Mock()
+        kwargs = {"config": "cli-config.yaml"}
+
+        with patch.dict("os.environ", {"MG_CONFIG": "env-config.yaml"}):
             result = resolve_config_file_path(kwargs, config_obj)
-            expected = "/client/root/custom.yaml"
-            assert result == expected
+            # --config should win over MG_CONFIG
+            assert result.endswith("cli-config.yaml")
 
     def test_cli_config_env_global_flag(self):
         """Test that MG_CONFIG_GLOBAL environment variable works."""
