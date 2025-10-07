@@ -312,7 +312,7 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
     from .server import mcp, create_server_with_config
 
-    logger.debug("=== Starting MCP server initialization ===")
+    logger.debug("Starting MCP server configuration")
     logger.debug(f"Mode: {mode}")
     logger.debug(f"Config keys: {list(config.keys())}")
 
@@ -332,7 +332,6 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
         logger.info("Starting MCP server in stdio mode")
         # Start MCP server in stdio mode
         try:
-            logger.debug("About to call mcp.run() - this is where crashes often occur")
             mcp.run()
             logger.info("MCP server shutdown normally (exit code 0)")
         except (BrokenPipeError, KeyboardInterrupt):

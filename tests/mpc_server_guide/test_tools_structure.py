@@ -58,3 +58,7 @@ async def test_config_tools_comprehensive():
     config = await get_project_config("test_project")
     assert isinstance(config, dict)
     assert config["docroot"] == "/test/path"
+
+    # Test get_project_config with a non-existent project
+    non_existent_config = await get_project_config("non_existent_project")
+    assert isinstance(non_existent_config, dict)  # Should return empty dict or default config

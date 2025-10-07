@@ -1,6 +1,6 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
-from unittest.mock import patch
+from unittest.mock import patch, Mock, AsyncMock
 from mcp_server_guide.tools import get_current_project, get_guide, get_project_config, switch_project
 
 
@@ -8,6 +8,17 @@ async def test_get_current_project():
     """Test getting current project name."""
     result = await get_current_project()
     assert isinstance(result, str) or result is None  # Can be None if not set
+
+
+async def test_get_current_project_none():
+    """Test get_current_project returns None when no project is set."""
+    with patch("mcp_server_guide.tools.project_tools.SessionManager") as mock_session_class:
+        mock_session = Mock()
+        mock_session.get_current_project = AsyncMock(return_value=None)
+        mock_session_class.return_value = mock_session
+
+        result = await get_current_project()
+        assert result is None
 
 
 async def test_get_guide_default_project():

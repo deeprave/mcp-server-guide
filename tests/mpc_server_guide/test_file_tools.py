@@ -101,3 +101,13 @@ async def test_list_files_successful_operation():
                 assert "file1.md" in result
                 assert "file2.md" in result
                 assert "subdir" not in result  # Should only include files
+
+
+async def test_list_files_empty_directory():
+    """Test list_files with empty directory."""
+    with patch("pathlib.Path.exists", return_value=True):
+        with patch("pathlib.Path.is_dir", return_value=True):
+            with patch("pathlib.Path.iterdir", return_value=[]):
+                result = await list_files("guide", "test_project")
+                assert isinstance(result, list)
+                assert len(result) == 0

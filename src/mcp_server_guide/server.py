@@ -27,18 +27,6 @@ async def server_lifespan(server: FastMCP) -> Any:
     logger.info("=== Starting MCP server initialization ===")
 
     try:
-        # Configure built-in categories from deferred CLI config
-        from .main import _deferred_builtin_config, configure_builtin_categories
-
-        deferred_config = _deferred_builtin_config.get()
-        if deferred_config:
-            logger.debug("Configuring built-in categories from deferred CLI config")
-            try:
-                await configure_builtin_categories(deferred_config)
-                logger.debug("Built-in categories configured successfully")
-            except Exception as e:
-                logger.warning(f"Failed to configure built-in categories: {e}")
-
         logger.info("MCP server initialized successfully")
         yield
 
@@ -74,6 +62,19 @@ async def ensure_client_roots_initialized() -> None:
             await ClientPath.initialize(session)
             logger.debug("Client working directory initialized successfully")
 
+            # Now that client context is available, configure builtin categories
+            from .main import _deferred_builtin_config, configure_builtin_categories
+
+            deferred_config = _deferred_builtin_config.get()
+            if deferred_config:
+                logger.debug("Configuring built-in categories from deferred CLI config")
+                try:
+                    await configure_builtin_categories(deferred_config)
+                    logger.debug("Built-in categories configured successfully")
+                except Exception as e:
+                    logger.error(f"Failed to configure built-in categories: {e}")
+                    raise
+
         except Exception as e:
             logger.error(f"Failed to initialize client working directory: {e}", exc_info=True)
             raise RuntimeError(f"Cannot initialize client working directory: {e}") from e
@@ -84,22 +85,49 @@ mcp = FastMCP(name="Developer Guide MCP", lifespan=server_lifespan)
 
 def log_tool_usage(func: Any) -> Any:
     """Decorator to log tool usage and responses with comprehensive error handling."""
+    import inspect
 
-    @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        tool_name = getattr(func, "__name__", "unknown_tool")
-        logger.debug(f"Tool '{tool_name}' called with args: {args}, kwargs: {kwargs}")
-        try:
-            result = func(*args, **kwargs)
-            logger.debug(f"Tool '{tool_name}' completed successfully")
-            return result
-        except Exception as e:
-            # Use ErrorHandler for comprehensive error logging with traceback
-            error_handler.handle_error(e, f"tool '{tool_name}'")
-            # Re-raise the original exception for MCP framework handling
-            raise
+    if inspect.iscoroutinefunction(func):
+        # Async wrapper for async functions
+        @functools.wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            tool_name = getattr(func, "__name__", "unknown_tool")
+            logger.debug(f"Tool '{tool_name}' called with args: {args}, kwargs: {kwargs}")
+            try:
+                result = await func(*args, **kwargs)
+                logger.debug(f"Tool '{tool_name}' completed successfully")
+                return result
+            except Exception as e:
+                # Use ErrorHandler for comprehensive error logging with traceback
+                error_handler.handle_error(e, f"tool '{tool_name}'")
+                # Re-raise the exception for proper error handling
+                raise
+        return async_wrapper
+    else:
+        # Sync wrapper for sync functions
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            tool_name = getattr(func, "__name__", "unknown_tool")
 
-    return wrapper
+            # Debug log for non-async functions with caller info
+            try:
+                caller_frame = inspect.stack()[1]
+                caller_info = f"{caller_frame.filename}:{caller_frame.lineno} in {caller_frame.function}"
+                logger.debug(f"NON-ASYNC TOOL CALL: '{tool_name}' called from {caller_info}")
+            except Exception:
+                logger.debug(f"NON-ASYNC TOOL CALL: '{tool_name}' (caller info unavailable)")
+
+            logger.debug(f"Tool '{tool_name}' called with args: {args}, kwargs: {kwargs}")
+            try:
+                result = func(*args, **kwargs)
+                logger.debug(f"Tool '{tool_name}' completed successfully")
+                return result
+            except Exception as e:
+                # Use ErrorHandler for comprehensive error logging with traceback
+                error_handler.handle_error(e, f"tool '{tool_name}'")
+                # Re-raise the exception for proper error handling
+                raise
+        return sync_wrapper
 
 
 class ExtMcpToolDecorator:
@@ -679,7 +707,7 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     # Use the same session manager instance (singleton)
     try:
         # Session manager is already initialized as singleton
-        logger.info("MCP server initialized successfully")
+        logger.debug("Server configuration completed")
     except Exception as e:
         logger.error(f"Unexpected error during server initialization: {e}", exc_info=True)
 
