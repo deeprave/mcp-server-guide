@@ -27,7 +27,7 @@ def mcp_name() -> str:
 def config_filename(is_global: bool = False) -> str:
     """Return the configuration filename."""
     if is_global:
-        return f"{mcp_name()}.config.json"
+        return "config.json"
     return f".{mcp_name()}.config.json"
 
 

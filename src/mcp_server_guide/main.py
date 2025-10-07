@@ -540,10 +540,15 @@ def main() -> click.Command:
     for option in all_grouped_options:
         default_val = option.default() if callable(option.default) else option.default
 
+        # Override default for config option to None so it doesn't interfere with --global-config
+        if option.name == "config":
+            default_val = None
+
         # Handle boolean flags
         if option.name == "global_config":
             cli_main = click.option(
                 "--global-config/--no-global-config",
+                is_flag=True,
                 envvar=option.env_var,
                 default=False,
                 help=option.description,
