@@ -313,4 +313,5 @@ async def set_local_file(key: str, local_path: str) -> Dict[str, Any]:
 
 # Backward compatibility exports
 _session_state = _session_manager.session_state
-_current_project = _session_manager.get_current_project()
+# Note: _current_project cannot be set at module level since get_current_project() is async
+_current_project = None

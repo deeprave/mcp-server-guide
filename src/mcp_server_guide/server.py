@@ -4,6 +4,8 @@ import functools
 from typing import Dict, Any, Optional, List
 from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
+from mcp.types import Resource
+from pydantic import AnyUrl
 from pathlib import Path
 from .session_tools import SessionManager
 from .file_source import FileSource, FileAccessor
@@ -532,45 +534,86 @@ async def daic_prompt(arg: Optional[str] = None) -> str:
     return f"{DAIC_DISABLED} - {arg.strip()}"
 
 
+def _get_auto_load_categories(config: Dict[str, Any]) -> List[tuple[str, Dict[str, Any]]]:
+    """Get categories with auto_load: true."""
+    return [
+        (name, category_config)
+        for name, category_config in config.get("categories", {}).items()
+        if category_config.get("auto_load", False)
+    ]
+
+
 # MCP Resource Handlers
-async def list_resources() -> List[Dict[str, Any]]:
+async def list_resources() -> List[Resource]:
     """List resources for auto_load categories."""
+    from mcp.types import Resource
+
     session = SessionManager()
     current_project = await session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
     config = session.session_state.get_project_config(current_project)
-    categories = config.get("categories", {})
-
-    # Filter categories with auto_load: true
-    auto_load_categories = [
-        (name, category_config)
-        for name, category_config in categories.items()
-        if category_config.get("auto_load", False)
-    ]
+    auto_load_categories = _get_auto_load_categories(config)
 
     # Generate resources for each auto_load category
     resources = []
+
+    # Add aggregate resource for all auto-load categories
+    if auto_load_categories:
+        aggregate_resource = Resource(
+            uri=AnyUrl("guide://category/"),
+            name="all-guides",
+            description="All auto-load guide categories combined",
+            mimeType="text/markdown",
+        )
+        resources.append(aggregate_resource)
+
+    # Add individual category resources
     for category_name, category_config in auto_load_categories:
-        resource = {
-            "uri": f"guide://{category_name}",
-            "name": category_config.get("description", category_name),
-            "mimeType": "text/markdown",
-        }
+        resource = Resource(
+            uri=AnyUrl(f"guide://category/{category_name}"),
+            name=category_name,
+            description=category_config.get("description", category_name),
+            mimeType="text/markdown",
+        )
         resources.append(resource)
 
     return resources
 
 
+async def _get_available_categories() -> List[Dict[str, Any]]:
+    """Get available categories for testing purposes."""
+    session = SessionManager()
+    current_project = await session.get_current_project_safe()
+
+    # Get project config to find categories with auto_load: true
+    config = session.session_state.get_project_config(current_project)
+    auto_load_categories = _get_auto_load_categories(config)
+
+    return [
+        {"name": name, "description": category_config.get("description", name)}
+        for name, category_config in auto_load_categories
+    ]
+
+
 async def read_resource(uri: str) -> str:
     """Read resource content by URI."""
-    # Parse guide://category_name URIs
-    if not uri.startswith("guide://"):
+    # Parse guide://category/{name} URIs
+    if not uri.startswith("guide://category/"):
         raise ValueError(f"Invalid URI scheme: {uri}")
 
-    category_name = uri[8:]  # Remove "guide://" prefix
+    category_name = uri.removeprefix("guide://category/")
 
-    # Use existing get_category_content function
+    # Handle aggregate resource (empty category name)
+    if category_name == "":
+        # Use existing get_all_guides function for combined content
+        result = await tools.get_all_guides(None)
+        if result.get("success"):
+            return str(result.get("content", ""))
+        else:
+            raise Exception(f"Failed to load all guides: {result.get('error', 'Unknown error')}")
+
+    # Use existing get_category_content function for individual categories
     result = await tools.get_category_content(category_name, None)
 
     if result.get("success"):
@@ -582,6 +625,7 @@ async def read_resource(uri: str) -> str:
 # Register resource handlers with MCP server (type: ignore for method assignment)
 mcp.list_resources = list_resources  # type: ignore[method-assign,assignment]
 mcp.read_resource = read_resource  # type: ignore[method-assign,assignment]
+mcp._get_available_categories = _get_available_categories  # type: ignore[attr-defined]
 
 
 def create_server(
