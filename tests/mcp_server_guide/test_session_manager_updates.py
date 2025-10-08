@@ -52,24 +52,23 @@ class TestSessionManagerUpdates:
     async def test_session_manager_uses_current_project_manager(self, tmp_path, chdir):
         """Test that SessionManager uses CurrentProjectManager instead of storing current_project in config."""
         config_file = tmp_path / ".mcp-server-guide.config.json"
-        current_file = tmp_path / ".mcp-server-guide.current"
 
         # Create existing config WITHOUT current_project field
         existing_config = {"projects": {"existing-project": {"language": "python"}}}
         config_file.write_text(json.dumps(existing_config, indent=2))
 
-        # Set current project via CurrentProjectManager
-        current_file.write_text("test-project")
+        # Create a directory with the expected project name
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
 
         original_cwd = os.getcwd()
         try:
-            chdir(tmp_path)
+            chdir(project_dir)  # Change to the project directory
 
             session = SessionManager()
-            # Set directory to ensure CurrentProjectManager works properly
-            session.set_directory(str(tmp_path))  # NOT awaited
+            # Use PWD-based approach - no need to set directory
 
-            # Should read current project from .current file, not config
+            # Should read current project from PWD (directory name)
             current_project = await session.get_current_project()
             assert current_project == "test-project"
 

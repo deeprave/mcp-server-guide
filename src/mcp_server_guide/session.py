@@ -3,7 +3,25 @@
 import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .session_tools import SessionManager
+
+
+# Global session instance
+_session_manager: Optional["SessionManager"] = None
+
+
+def get_session() -> Optional["SessionManager"]:
+    """Get the current session manager instance."""
+    return _session_manager
+
+
+def set_session(session: "SessionManager") -> None:
+    """Set the current session manager instance."""
+    global _session_manager
+    _session_manager = session
 
 
 @dataclass
@@ -22,13 +40,7 @@ class ProjectContext:
 
 def resolve_session_path(path: str, project_context: str) -> str:
     """Resolve path with context-aware file URL schemes for session configuration."""
-    if path.startswith("local:"):
-        # Explicit client filesystem access (regardless of deployment mode)
-        local_path = path[6:]  # Remove "local:"
-        return resolve_client_path(local_path)
-    else:
-        # Everything else follows server process context (context-aware default)
-        return resolve_server_path(path, project_context)
+    return resolve_server_path(path, project_context)
 
 
 def resolve_server_path(path: str, project_context: str) -> str:
@@ -64,9 +76,7 @@ def validate_session_path(path: str) -> bool:
     if not path:
         return False
 
-    if path.startswith("local:"):
-        return True  # Assume valid, will be validated at access time
-    elif path.startswith("file:///"):
+    if path.startswith("file:///"):
         # Absolute file URL - should have content after file:///
         return len(path) > 8  # More than just "file:///"
     elif path.startswith("file://"):

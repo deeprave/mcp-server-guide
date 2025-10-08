@@ -63,32 +63,31 @@ class TestResolveConfigFilePath:
 
     def test_resolve_config_file_path_no_global_override(self):
         """Test config file path resolution with global_config=False."""
-        kwargs = {"global_config": False}  # Using new combined flag
+
+        kwargs = {"global_config": False}
         mock_config = Mock()
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        with patch("mcp_server_guide.main.config_filename") as mock_filename:
+            mock_filename.return_value = ".mcp_server_guide.toml"
 
-            with patch("mcp_server_guide.main.config_filename") as mock_filename:
-                mock_filename.return_value = ".mcp_server_guide.toml"
+            result = resolve_config_file_path(kwargs, mock_config)
 
-                result = resolve_config_file_path(kwargs, mock_config)
-
-                # Should use client-relative path, not global config
-                expected = "/client/root/.mcp_server_guide.toml"
-                assert result == expected
-                mock_config.get_global_config_path.assert_not_called()
+            # Should use PWD-based path, not global config
+            # Verify it's an absolute path ending with the config filename
+            assert result.endswith("/.mcp_server_guide.toml")
+            assert Path(result).is_absolute()
+            mock_config.get_global_config_path.assert_not_called()
 
     def test_resolve_config_file_path_relative_to_absolute(self):
-        """Test config file path resolution converts relative to client-relative."""
+        """Test config file path resolution converts relative to PWD-relative."""
+
         kwargs = {"config": "relative/config.toml"}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        result = resolve_config_file_path(kwargs, Mock())
 
-            result = resolve_config_file_path(kwargs, Mock())
-
-            assert result == "/client/root/relative/config.toml"
+        # Should convert relative path to absolute path
+        assert result.endswith("/relative/config.toml")
+        assert Path(result).is_absolute()
 
     def test_resolve_config_file_path_directory_to_file(self):
         """Test config file path resolution converts directory to file."""

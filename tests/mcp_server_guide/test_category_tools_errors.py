@@ -79,9 +79,9 @@ class TestAddCategoryErrors:
             mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
             # Mock session_state.get_project_config
-            mock_session.session_state.get_project_config = AsyncMock(return_value={
-                "categories": {"test_cat": {"dir": "existing", "patterns": ["*.txt"]}}
-            })
+            mock_session.session_state.get_project_config = AsyncMock(
+                return_value={"categories": {"test_cat": {"dir": "existing", "patterns": ["*.txt"]}}}
+            )
             mock_session.session_state.set_project_config = AsyncMock()
             mock_session_class.return_value = mock_session
 
@@ -103,12 +103,14 @@ class TestGetCategoryContentErrors:
             mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
             # Mock session_state.get_project_config
-            mock_session.session_state.get_project_config = AsyncMock(return_value={
-                "categories": {
-                    "test_cat": {"dir": "test"}  # No patterns
-                },
-                "docroot": ".",
-            })
+            mock_session.session_state.get_project_config = AsyncMock(
+                return_value={
+                    "categories": {
+                        "test_cat": {"dir": "test"}  # No patterns
+                    },
+                    "docroot": ".",
+                }
+            )
             mock_session_class.return_value = mock_session
 
             result = await get_category_content("test_cat")
@@ -126,10 +128,12 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
                 # Mock session_state.get_project_config
-                mock_session.session_state.get_project_config = AsyncMock(return_value={
-                    "categories": {"test_cat": {"dir": "nonexistent", "patterns": ["*.md"]}},
-                    "docroot": temp_dir,
-                })
+                mock_session.session_state.get_project_config = AsyncMock(
+                    return_value={
+                        "categories": {"test_cat": {"dir": "nonexistent", "patterns": ["*.md"]}},
+                        "docroot": temp_dir,
+                    }
+                )
                 mock_session_class.return_value = mock_session
 
                 result = await get_category_content("test_cat")
@@ -154,10 +158,12 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
                 # Mock session_state.get_project_config
-                mock_session.session_state.get_project_config = AsyncMock(return_value={
-                    "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
-                    "docroot": temp_dir,
-                })
+                mock_session.session_state.get_project_config = AsyncMock(
+                    return_value={
+                        "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
+                        "docroot": temp_dir,
+                    }
+                )
                 mock_session_class.return_value = mock_session
 
                 # Mock aiofiles.open to raise exception
@@ -185,10 +191,12 @@ class TestGetCategoryContentErrors:
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
-                mock_session.session_state.get_project_config = AsyncMock(return_value={
-                    "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
-                    "docroot": temp_dir,
-                })
+                mock_session.session_state.get_project_config = AsyncMock(
+                    return_value={
+                        "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
+                        "docroot": temp_dir,
+                    }
+                )
                 mock_session_class.return_value = mock_session
 
                 # Mock aiofiles.open to always fail
@@ -216,10 +224,12 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
 
                 # Mock session_state.get_project_config
-                mock_session.session_state.get_project_config = AsyncMock(return_value={
-                    "categories": {"test_cat": {"dir": "test", "patterns": ["*.nonexistent"]}},
-                    "docroot": temp_dir,
-                })
+                mock_session.session_state.get_project_config = AsyncMock(
+                    return_value={
+                        "categories": {"test_cat": {"dir": "test", "patterns": ["*.nonexistent"]}},
+                        "docroot": temp_dir,
+                    }
+                )
                 mock_session_class.return_value = mock_session
 
                 result = await get_category_content("test_cat")

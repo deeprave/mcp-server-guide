@@ -8,7 +8,6 @@ try:
 except importlib.metadata.PackageNotFoundError:
     MCP_GUIDE_VERSION = "unknown"
 
-# Module-level constant for backward compatibility
 CONFIG_FILENAME = ".mcp-server-guide.config.json"
 
 

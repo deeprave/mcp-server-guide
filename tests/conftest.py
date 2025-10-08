@@ -79,11 +79,8 @@ def complete_test_isolation(request, monkeypatch):
     os.chdir(test_subdir)
     os.environ["PWD"] = str(test_subdir)
 
-    # Mock ClientPath to be initialized with test directory
-    from mcp_server_guide.client_path import ClientPath
-
-    monkeypatch.setattr(ClientPath, "_initialized", True)
-    monkeypatch.setattr(ClientPath, "_primary_root", test_subdir)
+    # No need to mock ClientPath since it's been removed
+    # PWD-based project detection will handle directory context
 
     try:
         yield str(test_subdir)
@@ -95,9 +92,7 @@ def complete_test_isolation(request, monkeypatch):
         elif "PWD" in os.environ:
             del os.environ["PWD"]
         SessionManager._instance = None
-        # Reset ClientPath
-        ClientPath._initialized = False
-        ClientPath._primary_root = None
+        # No need to reset ClientPath since it's been removed
 
 
 @pytest.fixture

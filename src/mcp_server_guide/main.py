@@ -9,7 +9,6 @@ from contextvars import ContextVar
 from .config import Config
 from .logging_config import get_logger
 from .naming import config_filename
-from .client_path import ClientPath
 from .path_resolver import LazyPath
 
 logger = get_logger()
@@ -42,10 +41,7 @@ def resolve_config_path_with_client_defaults(config_path: str) -> Path:
         return Path(config_path).resolve()
 
     # Handle URI-style prefixes using LazyPath
-    if any(
-        config_path.startswith(prefix)
-        for prefix in ["client://", "local://", "server://", "http://", "https://", "file://"]
-    ):
+    if any(config_path.startswith(prefix) for prefix in ["http://", "https://", "file://"]):
         lazy_path = LazyPath(config_path)
         return lazy_path.resolve_sync()
 
@@ -56,9 +52,10 @@ def resolve_config_path_with_client_defaults(config_path: str) -> Path:
             raise ValueError(f"Unsupported URL scheme: {scheme}://")
 
     # Default: treat as client-relative path
-    client_root = ClientPath.get_primary_root()
-    if client_root is not None:
-        return client_root / config_path
+    # Use PWD-based resolution instead of ClientPath
+
+    if "PWD" in os.environ:
+        return Path(os.environ["PWD"]) / config_path
 
     # Fallback: server-side resolution
     return Path(config_path).expanduser().resolve()

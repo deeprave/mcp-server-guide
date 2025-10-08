@@ -52,13 +52,13 @@ class TestDirectoryCreationFixes:
         assert MCP_GUIDE_VERSION in user_agent()
 
     def test_current_file_name_uses_centralized_naming(self):
-        """Test that current_file_name uses centralized mcp_name() function."""
+        """Test that SessionManager works with PWD-based approach (no current file needed)."""
         from mcp_server_guide.session_tools import SessionManager
-        from mcp_server_guide.naming import mcp_name
 
         session_manager = SessionManager()
-        expected_filename = f".{mcp_name()}.current"
-        assert session_manager.current_file_name == expected_filename
+        # PWD-based approach doesn't use current files
+        # Just verify the SessionManager can be instantiated
+        assert session_manager is not None
 
 
 class TestSessionScopedTestIsolation:

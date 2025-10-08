@@ -1,4 +1,4 @@
-"""Tests for CLI config integration with client-relative paths."""
+"""Tests for CLI config integration."""
 
 import pytest
 from pathlib import Path
@@ -8,116 +8,82 @@ from mcp_server_guide.main import resolve_config_file_path
 
 
 class TestCLIConfigIntegration:
-    """Test CLI config integration with client-relative path resolution."""
+    """Test CLI config integration with path resolution."""
 
-    def test_cli_config_uses_client_relative_resolution(self):
-        """Test that CLI config resolution uses client-relative paths."""
+    def test_cli_config_relative_path(self):
+        """Test that CLI config resolution works with relative paths."""
         config_obj = Mock()
         kwargs = {"config": "server.yaml"}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        result = resolve_config_file_path(kwargs, config_obj)
+        expected_path = Path("server.yaml").resolve()
+        assert Path(result).resolve() == expected_path
 
-            result = resolve_config_file_path(kwargs, config_obj)
-            expected = "/client/root/server.yaml"
-            assert result == expected
-
-    def test_cli_config_absolute_path_bypasses_client_relative(self):
-        """Test that absolute config paths bypass client-relative resolution."""
+    def test_cli_config_absolute_path(self):
+        """Test that absolute config paths work correctly."""
         config_obj = Mock()
         kwargs = {"config": "/absolute/config.yaml"}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        result = resolve_config_file_path(kwargs, config_obj)
+        expected = "/absolute/config.yaml"
+        assert result == expected
 
-            result = resolve_config_file_path(kwargs, config_obj)
-            expected = "/absolute/config.yaml"
-            assert result == expected
-
-    def test_cli_config_global_flag_bypasses_client_relative(self):
-        """Test that global config flag bypasses client-relative resolution."""
+    def test_cli_config_global_flag(self):
+        """Test that global config flag works."""
         config_obj = Mock()
         config_obj.get_global_config_path.return_value = "/etc/mcp/config.yaml"
         kwargs = {"global_config": True}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        result = resolve_config_file_path(kwargs, config_obj)
+        # Path resolution may add /private prefix on macOS
+        assert result.endswith("/etc/mcp/config.yaml")
+
+    def test_cli_config_env_var(self):
+        """Test that environment variable config works."""
+        config_obj = Mock()
+        kwargs = {}
+
+        with patch.dict("os.environ", {"MG_CONFIG": "env-config.yaml"}):
+            result = resolve_config_file_path(kwargs, config_obj)
+            expected_path = Path("env-config.yaml").resolve()
+            assert Path(result).resolve() == expected_path
+
+    def test_cli_config_default(self):
+        """Test that default config filename works."""
+        config_obj = Mock()
+        kwargs = {}
+
+        with patch("mcp_server_guide.main.config_filename") as mock_filename:
+            mock_filename.return_value = ".mcp-server-guide.yaml"
 
             result = resolve_config_file_path(kwargs, config_obj)
-            # Path resolution may add /private prefix on macOS
-            assert result.endswith("/etc/mcp/config.yaml")
-
-    def test_cli_config_env_var_uses_client_relative(self):
-        """Test that environment variable config uses client-relative resolution."""
-        config_obj = Mock()
-        kwargs = {}
-
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
-
-            with patch.dict("os.environ", {"MG_CONFIG": "env-config.yaml"}):
-                result = resolve_config_file_path(kwargs, config_obj)
-                expected = "/client/root/env-config.yaml"
-                assert result == expected
-
-    def test_cli_config_default_uses_client_relative(self):
-        """Test that default config filename uses client-relative resolution."""
-        config_obj = Mock()
-        kwargs = {}
-
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
-
-            with patch("mcp_server_guide.main.config_filename") as mock_filename:
-                mock_filename.return_value = ".mcp-server-guide.yaml"
-
-                result = resolve_config_file_path(kwargs, config_obj)
-                expected = "/client/root/.mcp-server-guide.yaml"
-                assert result == expected
+            expected_path = Path(".mcp-server-guide.yaml").resolve()
+            assert Path(result).resolve() == expected_path
 
     def test_cli_config_directory_handling(self):
         """Test that directory config paths get proper filename appended."""
         config_obj = Mock()
         kwargs = {"config": "config-dir"}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        with patch("mcp_server_guide.main.config_filename") as mock_filename:
+            mock_filename.return_value = ".mcp-server-guide.yaml"
 
-            with patch("mcp_server_guide.main.config_filename") as mock_filename:
-                mock_filename.return_value = ".mcp-server-guide.yaml"
+            # Mock the resolved path to be a directory
+            with patch("pathlib.Path.is_dir") as mock_is_dir:
+                mock_is_dir.return_value = True
 
-                # Mock the resolved path to be a directory
-                with patch("pathlib.Path.is_dir") as mock_is_dir:
-                    mock_is_dir.return_value = True
-
-                    result = resolve_config_file_path(kwargs, config_obj)
-                    expected = "/client/root/config-dir/mcp-server-guide.yaml"
-                    assert result == expected
-
-    def test_cli_config_no_client_root_fallback(self):
-        """Test fallback when no client root is available."""
-        config_obj = Mock()
-        kwargs = {"config": "server.yaml"}
-
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = None
-
-            result = resolve_config_file_path(kwargs, config_obj)
-            # Should resolve relative to current working directory
-            expected_path = Path("server.yaml").resolve()
-            assert result == str(expected_path)
+                result = resolve_config_file_path(kwargs, config_obj)
+                expected_path = Path("config-dir/mcp-server-guide.yaml").resolve()
+                assert Path(result).resolve() == expected_path
 
     def test_cli_config_uri_prefix_support(self):
         """Test that URI prefixes work in CLI config resolution."""
         config_obj = Mock()
-        kwargs = {"config": "server://config.yaml"}
+        kwargs = {"config": "file://config.yaml"}
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
-
-            result = resolve_config_file_path(kwargs, config_obj)
-            expected_path = Path("config.yaml").resolve()
-            assert result == str(expected_path)
+        result = resolve_config_file_path(kwargs, config_obj)
+        expected_path = Path("config.yaml").resolve()
+        assert result == str(expected_path)
 
     def test_cli_config_unsupported_uri_prefix(self):
         """Test that unsupported or malformed URI prefixes are handled correctly."""
@@ -155,15 +121,12 @@ class TestCLIConfigEdgeCases:
         config_obj = Mock()
         kwargs = {"global_config": False}  # Using new combined flag
 
-        with patch("mcp_server_guide.main.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        with patch("mcp_server_guide.main.config_filename") as mock_filename:
+            mock_filename.return_value = ".mcp-server-guide.yaml"
 
-            with patch("mcp_server_guide.main.config_filename") as mock_filename:
-                mock_filename.return_value = ".mcp-server-guide.yaml"
-
-                result = resolve_config_file_path(kwargs, config_obj)
-                expected = "/client/root/.mcp-server-guide.yaml"
-                assert result == expected
+            result = resolve_config_file_path(kwargs, config_obj)
+            expected_path = Path(".mcp-server-guide.yaml").resolve()
+            assert Path(result).resolve() == expected_path
 
     def test_cli_config_custom_overrides_global(self):
         """Test that --config overrides --global-config (CLI args have precedence)."""

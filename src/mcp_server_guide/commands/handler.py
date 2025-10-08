@@ -33,7 +33,6 @@ class CommandHandler:
         if subcommand is not None:
             return await self._execute_colon_command(command, subcommand, args, params)
 
-        # Handle legacy commands
         if command == "guide":
             return await self._execute_guide_command(args)
         elif command == "guide-new":

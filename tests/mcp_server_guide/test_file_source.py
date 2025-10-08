@@ -7,16 +7,16 @@ from mcp_server_guide.file_source import FileSource, FileAccessor, FileSourceTyp
 def test_file_source_creation():
     """Test FileSource creation with different types."""
     # Local file source
-    local_source = FileSource(FileSourceType.LOCAL, "/client/path")
-    assert local_source.type == FileSourceType.LOCAL
+    local_source = FileSource(FileSourceType.FILE, "/client/path")
+    assert local_source.type == FileSourceType.FILE
     assert local_source.base_path == "/client/path"
     assert local_source.cache_enabled is True
     assert local_source.cache_ttl == 3600
 
-    # Server file source
-    server_source = FileSource(FileSourceType.SERVER, "/server/path")
-    assert server_source.type == FileSourceType.SERVER
-    assert server_source.base_path == "/server/path"
+    # Local file source (replaces SERVER)
+    local_source = FileSource(FileSourceType.FILE, "/local/path")
+    assert local_source.type == FileSourceType.FILE
+    assert local_source.base_path == "/local/path"
 
     # HTTP file source
     http_source = FileSource(FileSourceType.HTTP, "https://example.com/docs/")
@@ -25,22 +25,29 @@ def test_file_source_creation():
 
 
 async def test_file_source_from_url_integration():
-    """Test FileSource.from_url() integrates with Issue 002 URLs."""
-    # Local prefix (Issue 002)
+    """Test FileSource.from_url() with supported URLs."""
+    # File URLs
+    source = FileSource.from_url("file://./docs/guide.md")
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "./docs/guide.md"
+
+    # HTTP URLs
+    source = FileSource.from_url("http://example.com/guide.md")
+    assert source.type == FileSourceType.HTTP
+    assert source.base_path == "http://example.com/guide.md"
+
+    # Regular paths (no prefixes)
+    source = FileSource.from_url("./docs/guide.md")
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "./docs/guide.md"
+
+    # Legacy single-colon prefixes are treated as regular paths
     source = FileSource.from_url("local:./docs/guide.md")
-    assert source.type == FileSourceType.LOCAL
-    assert source.base_path == "./docs/guide.md"
-
-    # Server prefix (Issue 002)
-    source = FileSource.from_url("server:./docs/guide.md")
-    assert source.type == FileSourceType.SERVER
-    assert source.base_path == "./docs/guide.md"
-
-    # File URLs (Issue 002)
-    # Note: file:// URLs use context detection, so we can't predict exact type
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "local:./docs/guide.md"  # Prefix is kept as part of path
     # but we can verify they create valid sources
     source = FileSource.from_url("file:///absolute/path/guide.md")
-    assert source.type in [FileSourceType.LOCAL, FileSourceType.SERVER]
+    assert source.type == FileSourceType.FILE
     assert source.base_path == "/absolute/path/guide.md"
 
     # HTTP URLs (Issue 003)
@@ -50,7 +57,7 @@ async def test_file_source_from_url_integration():
 
     # Default context-aware (Issue 002)
     source = FileSource.from_url("./guide.md")
-    assert source.type in [FileSourceType.LOCAL, FileSourceType.SERVER]
+    assert source.type == FileSourceType.FILE
     assert source.base_path == "./guide.md"
 
 
@@ -59,12 +66,12 @@ async def test_file_accessor_resolve_path():
     accessor = FileAccessor()
 
     # Local source
-    local_source = FileSource(FileSourceType.LOCAL, "/client/docs")
+    local_source = FileSource(FileSourceType.FILE, "/client/docs")
     resolved = accessor.resolve_path("guide.md", local_source)
     assert resolved == "/client/docs/guide.md"
 
     # Server source
-    server_source = FileSource(FileSourceType.SERVER, "/server/docs")
+    server_source = FileSource(FileSourceType.FILE, "/server/docs")
     resolved = accessor.resolve_path("guide.md", server_source)
     assert resolved == "/server/docs/guide.md"
 
@@ -84,13 +91,13 @@ async def test_file_accessor_exists():
     assert exists is True
 
     # Local source - depends on actual filesystem
-    local_source = FileSource(FileSourceType.LOCAL, "/nonexistent/path")
+    local_source = FileSource(FileSourceType.FILE, "/nonexistent/path")
     exists = accessor.exists("guide.md", local_source)
     # This will be False since the path doesn't exist
     assert exists is False
 
     # Server source - behaves like local filesystem check
-    server_source = FileSource(FileSourceType.SERVER, "/nonexistent/path")
+    server_source = FileSource(FileSourceType.FILE, "/nonexistent/path")
     exists = accessor.exists("guide.md", server_source)
     # This will be False since the path doesn't exist
     assert exists is False
@@ -131,21 +138,21 @@ async def test_file_source_context_detection():
     # Context detection should return a valid FileSourceType
     context = FileSource.detect_deployment_context()
     assert isinstance(context, FileSourceType)
-    assert context in [FileSourceType.LOCAL, FileSourceType.SERVER]
+    assert context == FileSourceType.FILE
 
 
 async def test_integration_with_issue_002_session():
     """Test FileSource integration with Issue 002 session paths."""
     # FileSource should integrate with session resolution
     source = FileSource.from_session_path("local:./guide.md", "test-project")
-    assert source.type == FileSourceType.LOCAL
+    assert source.type == FileSourceType.FILE
 
 
 async def test_file_source_dataclass_behavior():
     """Test FileSource dataclass behavior."""
     # Test with required parameters
-    source1 = FileSource(type=FileSourceType.LOCAL, base_path="/test/path")
-    assert source1.type == FileSourceType.LOCAL
+    source1 = FileSource(type=FileSourceType.FILE, base_path="/test/path")
+    assert source1.type == FileSourceType.FILE
     assert source1.base_path == "/test/path"
     assert source1.cache_ttl == 3600  # default
     assert source1.cache_enabled is True  # default
@@ -175,7 +182,7 @@ async def test_file_source_from_url():
 
     # Test local path - will use context detection, so check it returns a valid source
     source2 = FileSource.from_url("/local/path")
-    assert source2.type in [FileSourceType.LOCAL, FileSourceType.SERVER, FileSourceType.HTTP]  # Any valid type
+    assert source2.type in [FileSourceType.FILE, FileSourceType.HTTP]  # Any valid type
     assert source2.base_path == "/local/path"
 
     # Test unsupported prefix - should raise ValueError
@@ -186,14 +193,14 @@ async def test_file_source_from_url():
 async def test_file_source_comprehensive():
     """Test comprehensive FileSource functionality."""
     # Test different source types
-    local_source = FileSource(type=FileSourceType.LOCAL, base_path="/docs")
-    assert local_source.type == FileSourceType.LOCAL
+    local_source = FileSource(type=FileSourceType.FILE, base_path="/docs")
+    assert local_source.type == FileSourceType.FILE
 
     http_source = FileSource(type=FileSourceType.HTTP, base_path="https://api.example.com")
     assert http_source.type == FileSourceType.HTTP
 
-    server_source = FileSource(type=FileSourceType.SERVER, base_path="server://internal")
-    assert server_source.type == FileSourceType.SERVER
+    server_source = FileSource(type=FileSourceType.FILE, base_path="internal/path")
+    assert server_source.type == FileSourceType.FILE
 
     # Test cache settings
     assert local_source.cache_enabled is True

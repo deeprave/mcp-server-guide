@@ -16,13 +16,15 @@ def mock_session_with_save():
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        session_instance.session_state.get_project_config = AsyncMock(return_value={
-            "categories": {
-                "guide": {"dir": "guide/", "patterns": ["guidelines.md"], "description": ""},
-                "lang": {"dir": "lang/", "patterns": ["python.md"], "description": ""},
-                "context": {"dir": "context/", "patterns": ["context.md"], "description": ""},
+        session_instance.session_state.get_project_config = AsyncMock(
+            return_value={
+                "categories": {
+                    "guide": {"dir": "guide/", "patterns": ["guidelines.md"], "description": ""},
+                    "lang": {"dir": "lang/", "patterns": ["python.md"], "description": ""},
+                    "context": {"dir": "context/", "patterns": ["context.md"], "description": ""},
+                }
             }
-        })
+        )
         session_instance.session_state.set_project_config = AsyncMock()
         session_instance.save_to_file = AsyncMock()
         # Mock the save_to_file method
@@ -44,11 +46,11 @@ async def test_add_category_triggers_auto_save(mock_session_with_save):
 async def test_update_category_triggers_auto_save(mock_session_with_save):
     """Test that updating a category triggers auto-save."""
     # Set up existing custom category
-    mock_session_with_save.session_state.get_project_config = AsyncMock(return_value={
-        "categories": {
-            "custom_test": {"dir": "test/", "patterns": ["*.md"], "description": "Old description"}
+    mock_session_with_save.session_state.get_project_config = AsyncMock(
+        return_value={
+            "categories": {"custom_test": {"dir": "test/", "patterns": ["*.md"], "description": "Old description"}}
         }
-    })
+    )
 
     result = await update_category("custom_test", "test/", ["*.md"], description="Updated description")
 
@@ -60,11 +62,9 @@ async def test_update_category_triggers_auto_save(mock_session_with_save):
 async def test_remove_category_triggers_auto_save(mock_session_with_save):
     """Test that removing a category triggers auto-save."""
     # Add a custom category first to the mock config
-    mock_session_with_save.session_state.get_project_config = AsyncMock(return_value={
-        "categories": {
-            "custom": {"dir": "custom/", "patterns": ["*.md"], "description": ""}
-        }
-    })
+    mock_session_with_save.session_state.get_project_config = AsyncMock(
+        return_value={"categories": {"custom": {"dir": "custom/", "patterns": ["*.md"], "description": ""}}}
+    )
 
     # This test should FAIL initially, demonstrating the missing functionality
     result = await remove_category("custom")

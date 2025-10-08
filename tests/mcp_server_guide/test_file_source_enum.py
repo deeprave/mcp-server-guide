@@ -9,37 +9,28 @@ class TestFileSourceType:
 
     def test_enum_values(self):
         """Test that enum has expected values."""
-        assert FileSourceType.LOCAL
-        assert FileSourceType.SERVER
+        assert FileSourceType.FILE
+        assert FileSourceType.FILE
         assert FileSourceType.HTTP
 
     def test_enum_string_representation(self):
         """Test enum string representation."""
-        assert str(FileSourceType.LOCAL) == "local"
-        assert str(FileSourceType.SERVER) == "server"
+        assert str(FileSourceType.FILE) == "file"
         assert str(FileSourceType.HTTP) == "http"
 
     def test_enum_value_access(self):
         """Test accessing enum values."""
-        assert FileSourceType.LOCAL.value == "local"
-        assert FileSourceType.SERVER.value == "server"
+        assert FileSourceType.FILE.value == "file"
         assert FileSourceType.HTTP.value == "http"
-
-    def test_client_alias(self):
-        """Test that CLIENT is an alias for LOCAL."""
-        assert FileSourceType.CLIENT == FileSourceType.LOCAL
-        assert FileSourceType.CLIENT.value == "local"
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert FileSourceType.LOCAL == FileSourceType.LOCAL
-        assert FileSourceType.LOCAL != FileSourceType.SERVER
-        assert FileSourceType.CLIENT == FileSourceType.LOCAL
+        assert FileSourceType.FILE == FileSourceType.FILE
+        assert FileSourceType.FILE != FileSourceType.HTTP
 
     def test_enum_from_string(self):
         """Test creating enum from string values."""
-        assert FileSourceType("local") == FileSourceType.LOCAL
-        assert FileSourceType("server") == FileSourceType.SERVER
+        assert FileSourceType("file") == FileSourceType.FILE
         assert FileSourceType("http") == FileSourceType.HTTP
 
     def test_enum_invalid_string_raises_error(self):
@@ -50,7 +41,6 @@ class TestFileSourceType:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         values = list(FileSourceType)
-        assert FileSourceType.LOCAL in values
-        assert FileSourceType.SERVER in values
+        assert FileSourceType.FILE in values
         assert FileSourceType.HTTP in values
         # CLIENT should not appear as separate value since it's an alias

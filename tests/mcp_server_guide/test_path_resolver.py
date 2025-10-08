@@ -43,35 +43,41 @@ class TestLazyPath:
         assert resolved == expected
 
     @pytest.mark.asyncio
-    async def test_resolve_client_path_success(self):
-        """Test resolving client: prefixed paths successfully."""
-        with patch("mcp_server_guide.path_resolver.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+    async def test_resolve_relative_path_success(self):
+        """Test resolving relative paths successfully."""
+        import os
+        from pathlib import Path
 
-            lazy_path = LazyPath("client:relative/path")
+        # Change to a test directory
+        original_cwd = Path.cwd()
+        test_dir = Path("/tmp/test_client_path").resolve()  # Resolve symlinks
+        test_dir.mkdir(exist_ok=True)
+        os.chdir(test_dir)
+
+        try:
+            lazy_path = LazyPath("relative/path")
             resolved = await lazy_path.resolve()
 
-            expected = Path("/client/root/relative/path")
+            expected = test_dir / "relative/path"
             assert resolved == expected
-            assert lazy_path._client_root == Path("/client/root")
-
-    @pytest.mark.asyncio
-    async def test_resolve_client_path_no_root(self):
-        """Test error when no client root available."""
-        with patch("mcp_server_guide.path_resolver.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = None
-
-            lazy_path = LazyPath("client:relative/path")
-
-            with pytest.raises(ValueError, match="Cannot resolve client path.*no client working directory"):
-                await lazy_path.resolve()
+        finally:
+            os.chdir(original_cwd)
+            if test_dir.exists():
+                test_dir.rmdir()
 
     @pytest.mark.asyncio
     async def test_resolve_caching(self):
         """Test that resolution is cached."""
-        with patch("mcp_server_guide.path_resolver.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+        import os
+        from pathlib import Path
 
+        # Change to a test directory
+        original_cwd = Path.cwd()
+        test_dir = Path("/tmp/test_caching")
+        test_dir.mkdir(exist_ok=True)
+        os.chdir(test_dir)
+
+        try:
             lazy_path = LazyPath("client:test")
 
             # First resolution
@@ -80,7 +86,11 @@ class TestLazyPath:
             result2 = await lazy_path.resolve()
 
             assert result1 == result2
-            assert mock_root.call_count == 1  # Only called once due to caching
+            assert result1 is result2  # Same object reference (cached)
+        finally:
+            os.chdir(original_cwd)
+            if test_dir.exists():
+                test_dir.rmdir()
 
     def test_resolve_sync_cached(self):
         """Test sync resolution when already cached."""
@@ -134,18 +144,18 @@ class TestLazyPath:
             expected = Path("test/path").expanduser().resolve()
             assert result == expected
 
-    def test_resolve_sync_loop_running_client_path(self):
-        """Test sync resolution fallback when loop is running - client path."""
+    def test_resolve_sync_loop_running_relative_path(self):
+        """Test sync resolution fallback when loop is running - relative path."""
         mock_loop = Mock()
         mock_loop.is_running.return_value = True
 
         with patch("asyncio.get_event_loop", return_value=mock_loop):
-            with patch("pathlib.Path.cwd", return_value=Path("/current")):
-                lazy_path = LazyPath("client:relative/path")
-                result = lazy_path.resolve_sync()
+            lazy_path = LazyPath("relative/path")
+            result = lazy_path.resolve_sync()
 
-                expected = Path("/current/relative/path")
-                assert result == expected
+            # Should resolve relative to actual current directory
+            expected = Path("relative/path").expanduser().resolve()
+            assert result == expected
 
 
 class TestCreateLazyPath:
@@ -176,16 +186,27 @@ class TestEdgeCases:
         assert result == expected
 
     @pytest.mark.asyncio
-    async def test_client_path_empty_relative(self):
-        """Test client path with empty relative part."""
-        with patch("mcp_server_guide.path_resolver.ClientPath.get_primary_root") as mock_root:
-            mock_root.return_value = Path("/client/root")
+    async def test_current_directory_path(self):
+        """Test current directory path resolution."""
+        import os
+        from pathlib import Path
 
-            lazy_path = LazyPath("client:")
+        # Change to a test directory
+        original_cwd = Path.cwd()
+        test_dir = Path("/tmp/test_empty_relative").resolve()  # Resolve symlinks
+        test_dir.mkdir(exist_ok=True)
+        os.chdir(test_dir)
+
+        try:
+            lazy_path = LazyPath(".")
             resolved = await lazy_path.resolve()
 
-            expected = Path("/client/root/")
+            expected = test_dir  # Current directory
             assert resolved == expected
+        finally:
+            os.chdir(original_cwd)
+            if test_dir.exists():
+                test_dir.rmdir()
 
     def test_resolve_sync_runtime_error_fallback(self):
         """Test RuntimeError handling in resolve_sync."""

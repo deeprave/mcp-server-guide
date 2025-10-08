@@ -1,7 +1,7 @@
 """Tests for SessionManager functionality and project configuration management."""
 
 import pytest
-from unittest.mock import patch, MagicMock, PropertyMock, AsyncMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from mcp_server_guide.session_tools import (
     SessionManager,
     set_project_config,
@@ -36,86 +36,34 @@ class TestSessionManagerCore:
         """Test get_current_project method."""
         session_manager = SessionManager()
 
-        # Mock the directory and current_file properties using property mock
-        with (
-            patch.object(session_manager, "is_directory_set", return_value=True),
-            patch.object(type(session_manager), "current_file", new_callable=PropertyMock) as mock_current_file,
-            patch("aiofiles.open") as mock_aiofiles_open,
-        ):
-            # Create a mock file object
-            mock_file = MagicMock()
-            mock_file.exists.return_value = True
-            mock_current_file.return_value = mock_file
+        # Test with _current_project set
+        session_manager._current_project = "test-project"
+        result = await session_manager.get_current_project()
+        assert result == "test-project"
 
-            # Mock aiofiles context manager
-            mock_file_handle = MagicMock()
-            mock_file_handle.read = AsyncMock(return_value="test-project")
-            mock_aiofiles_open.return_value.__aenter__.return_value = mock_file_handle
-
+        # Test with PWD fallback
+        session_manager._current_project = None
+        with patch.dict("os.environ", {"PWD": "/path/to/my-project"}):
             result = await session_manager.get_current_project()
-            assert result == "test-project"
+            assert result == "my-project"
 
-    def test_is_directory_set(self):
-        """Test is_directory_set method."""
-        session_manager = SessionManager()
-
-        with patch.object(type(session_manager), "directory", new_callable=PropertyMock) as mock_directory:
-            mock_directory.return_value = None
-            assert session_manager.is_directory_set() is False
-
-            mock_directory.return_value = "/some/path"
-            assert session_manager.is_directory_set() is True
-
-    def test_set_directory(self):
-        """Test set_directory method."""
-        import tempfile
-        from pathlib import Path
-
-        session_manager = SessionManager()
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            session_manager.set_directory(temp_dir)
-            assert session_manager._override_directory == Path(temp_dir).resolve()
-
-    def test_set_directory_with_path_object(self):
-        """Test set_directory method with pathlib.Path input."""
-        import tempfile
-        from pathlib import Path
-
-        session_manager = SessionManager()
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            session_manager.set_directory(Path(temp_dir))
-            assert session_manager._override_directory == Path(temp_dir).resolve()
-
-    def test_set_directory_invalid_input(self):
-        """Test set_directory method with invalid inputs."""
-        import pytest
-
-        session_manager = SessionManager()
-
-        # Test non-existent directory
-        with pytest.raises(ValueError, match="does not exist"):
-            session_manager.set_directory("/non/existent/directory")
-
-        # Test incorrect type
-        with pytest.raises(TypeError):
-            session_manager.set_directory(123)
+        # Test with no PWD
+        session_manager._current_project = None
+        with patch.dict("os.environ", {}, clear=True):
+            result = await session_manager.get_current_project()
+            assert result is None
 
     async def test_set_current_project(self):
         """Test set_current_project method."""
         session_manager = SessionManager()
 
-        with (
-            patch.object(session_manager, "is_directory_set", return_value=True),
-            patch.object(session_manager, "get_current_project", return_value="old-project"),
-            patch.object(type(session_manager), "current_file", new_callable=PropertyMock) as mock_current_file,
-        ):
-            mock_file = MagicMock()
-            mock_current_file.return_value = mock_file
+        # Test setting a valid project name
+        await session_manager.set_current_project("new-project")
+        assert session_manager._current_project == "new-project"
 
-            await session_manager.set_current_project("new-project")
-            mock_file.write_text.assert_called_once_with("new-project", encoding="utf-8")
+        # Test that get_current_project returns the set value
+        result = await session_manager.get_current_project()
+        assert result == "new-project"
 
     async def test_set_current_project_error_cases(self):
         """Test set_current_project method error handling."""
@@ -123,15 +71,17 @@ class TestSessionManagerCore:
 
         session_manager = SessionManager()
 
-        # Test missing directory
-        with patch.object(session_manager, "is_directory_set", return_value=False):
-            with pytest.raises(ValueError, match="Directory must be set before setting current project"):
-                await session_manager.set_current_project("test-project")
+        # Test empty project name
+        with pytest.raises(ValueError, match="Project name must be a non-empty string"):
+            await session_manager.set_current_project("")
 
-        # Test invalid project name (empty string)
-        with patch.object(session_manager, "is_directory_set", return_value=True):
-            with pytest.raises(ValueError, match="Project name must be a non-empty string"):
-                await session_manager.set_current_project("")
+        # Test None project name
+        with pytest.raises(ValueError, match="Project name must be a non-empty string"):
+            await session_manager.set_current_project(None)
+
+        # Test non-string project name
+        with pytest.raises(ValueError, match="Project name must be a non-empty string"):
+            await session_manager.set_current_project(123)
 
 
 class TestProjectConfigManagement:

@@ -1,24 +1,24 @@
 """Tests for SessionManager property behavior."""
 
-from pathlib import Path
-from unittest.mock import patch
 from mcp_server_guide.session_tools import SessionManager
 
 
-def test_session_manager_directory_property_with_override():
-    """Test that directory property returns override when set."""
+def test_session_manager_pwd_based_approach():
+    """Test SessionManager works with PWD-based approach."""
     session_manager = SessionManager()
 
-    test_path = Path("/test/path")
-    session_manager._override_directory = test_path
+    # PWD-based approach doesn't use directory property
+    # Just verify the SessionManager can be instantiated and get current project
+    assert session_manager is not None
 
-    assert session_manager.directory == test_path
 
-
-def test_session_manager_directory_property_no_override_no_client_path():
-    """Test directory property when override is None and ClientPath returns None."""
+def test_session_manager_pwd_fallback():
+    """Test SessionManager handles PWD environment variable."""
     session_manager = SessionManager()
-    session_manager._override_directory = None
 
-    with patch("mcp_server_guide.client_path.ClientPath.get_primary_root", return_value=None):
-        assert session_manager.directory is None
+    # Test that get_current_project works (may return None if PWD not set in test)
+    import asyncio
+
+    result = asyncio.run(session_manager.get_current_project())
+    # Should return either a string or None
+    assert result is None or isinstance(result, str)

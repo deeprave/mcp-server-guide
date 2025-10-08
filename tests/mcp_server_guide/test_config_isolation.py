@@ -82,7 +82,7 @@ class TestConfigIsolation:
 
                 # Verify loaded data
                 session = SessionManager()
-                session.set_directory(temp_dir)  # Set directory to temp_dir
+                # Use PWD-based approach - no need to set directory
                 current_project = await session.get_current_project()
                 assert current_project == "loaded-project"
                 project_config = await session.session_state.get_project_config("loaded-project")
@@ -120,7 +120,7 @@ class TestConfigIsolation:
 
                 # Should have loaded the custom config
                 session = SessionManager()
-                session.set_directory(temp_dir)  # Set directory to temp_dir
+                # Use PWD-based approach - no need to set directory
                 current_project = await session.get_current_project()
                 # Note: In test context, the project name defaults to directory name
                 # The actual config loading is tested elsewhere

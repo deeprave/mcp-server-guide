@@ -13,25 +13,25 @@ class TestDeploymentContextDetection:
         """Test that SERVER_MODE environment variable triggers server context."""
         with patch.dict(os.environ, {"SERVER_MODE": "true"}):
             context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.SERVER
+            assert context == FileSourceType.FILE
 
     def test_detect_deployment_context_docker_container_set(self):
         """Test that DOCKER_CONTAINER environment variable triggers server context."""
         with patch.dict(os.environ, {"DOCKER_CONTAINER": "true"}):
             context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.SERVER
+            assert context == FileSourceType.FILE
 
     def test_detect_deployment_context_both_variables_set(self):
         """Test that both environment variables still trigger server context."""
         with patch.dict(os.environ, {"SERVER_MODE": "1", "DOCKER_CONTAINER": "1"}):
             context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.SERVER
+            assert context == FileSourceType.FILE
 
     def test_detect_deployment_context_no_variables_defaults_local(self):
         """Test that no environment variables defaults to local context."""
         with patch.dict(os.environ, {}, clear=True):
             context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.LOCAL
+            assert context == FileSourceType.FILE
 
     def test_detect_deployment_context_malformed_server_mode(self):
         """Test that any non-empty SERVER_MODE value triggers server context."""
@@ -39,35 +39,35 @@ class TestDeploymentContextDetection:
         for value in ["unexpected", "foobar", "123"]:
             with patch.dict(os.environ, {"SERVER_MODE": value}, clear=True):
                 context = FileSource.detect_deployment_context()
-                assert context == FileSourceType.SERVER
+                assert context == FileSourceType.FILE
 
         # Empty string should default to LOCAL (falsy value)
         with patch.dict(os.environ, {"SERVER_MODE": ""}, clear=True):
             context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.LOCAL
+            assert context == FileSourceType.FILE
 
     def test_get_context_default_uses_detected_context(self):
         """Test that get_context_default uses detected deployment context."""
         with patch.dict(os.environ, {"SERVER_MODE": "true"}):
             source = FileSource.get_context_default("/test/path")
-            assert source.type == FileSourceType.SERVER
+            assert source.type == FileSourceType.FILE
             assert source.base_path == "/test/path"
 
 
 class TestSessionPathParsing:
     """Test session path parsing edge cases."""
 
-    def test_from_session_path_client_double_slash_prefix(self):
-        """Test client:// prefix handling."""
-        source = FileSource.from_session_path("client://test/path", "project")
-        assert source.type == FileSourceType.LOCAL
+    def test_from_session_path_regular_path(self):
+        """Test regular path handling."""
+        source = FileSource.from_session_path("test/path", "project")
+        assert source.type == FileSourceType.FILE
         assert source.base_path == "test/path"
 
-    def test_from_session_path_server_double_slash_prefix(self):
-        """Test server:// prefix handling."""
-        source = FileSource.from_session_path("server://test/path", "project")
-        assert source.type == FileSourceType.SERVER
-        assert source.base_path == "test/path"
+    def test_from_session_path_another_regular_path(self):
+        """Test another regular path handling."""
+        source = FileSource.from_session_path("server/test/path", "project")
+        assert source.type == FileSourceType.FILE
+        assert source.base_path == "server/test/path"
 
     def test_from_session_path_http_url(self):
         """Test HTTP URL handling in session paths."""
@@ -87,13 +87,13 @@ class TestFileUrlProcessing:
 
     def test_from_file_url_with_leading_slash_removal(self):
         """Test file:// URL processing removes extra leading slash."""
-        with patch.object(FileSource, "detect_deployment_context", return_value=FileSourceType.LOCAL):
+        with patch.object(FileSource, "detect_deployment_context", return_value=FileSourceType.FILE):
             source = FileSource._from_file_url("file://relative/path")
             assert source.base_path == "relative/path"
 
     def test_from_file_url_file_prefix_only(self):
         """Test file: prefix handling."""
-        with patch.object(FileSource, "detect_deployment_context", return_value=FileSourceType.LOCAL):
+        with patch.object(FileSource, "detect_deployment_context", return_value=FileSourceType.FILE):
             source = FileSource._from_file_url("file:test/path")
             assert source.base_path == "test/path"
 
@@ -101,7 +101,7 @@ class TestFileUrlProcessing:
         """Test file URL uses server context when environment indicates server."""
         with patch.dict(os.environ, {"SERVER_MODE": "true"}):
             source = FileSource._from_file_url("file:///absolute/path")
-            assert source.type == FileSourceType.SERVER
+            assert source.type == FileSourceType.FILE
             assert source.base_path == "/absolute/path"
 
 
@@ -163,12 +163,12 @@ class TestIntegrationScenarios:
         """Test file URL processing in server deployment context."""
         with patch.dict(os.environ, {"DOCKER_CONTAINER": "true"}):
             source = FileSource.from_url("file:///app/config.json")
-            assert source.type == FileSourceType.SERVER
+            assert source.type == FileSourceType.FILE
             assert source.base_path == "/app/config.json"
 
     def test_local_development_context_default(self):
         """Test local development context with default path."""
         with patch.dict(os.environ, {}, clear=True):
             source = FileSource.get_context_default("config.json")
-            assert source.type == FileSourceType.LOCAL
+            assert source.type == FileSourceType.FILE
             assert source.base_path == "config.json"

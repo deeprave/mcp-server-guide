@@ -97,7 +97,7 @@ async def test_set_local_file():
     result = await set_local_file("guide", "/path/to/local/file.md")
 
     assert result["success"] is True
-    assert "Set guide to 'local:/path/to/local/file.md'" in result["message"]
+    assert "Set guide to '/path/to/local/file.md'" in result["message"]
 
 
 async def test_session_manager_save_to_file():

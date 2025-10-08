@@ -12,7 +12,6 @@ from .file_source import FileSource, FileAccessor
 from .logging_config import get_logger
 from .naming import config_filename
 from .error_handler import ErrorHandler
-from .client_path import ClientPath
 from . import tools
 
 logger = get_logger()
@@ -37,49 +36,6 @@ async def server_lifespan(server: FastMCP) -> Any:
         raise
     finally:
         logger.info("MCP server shutting down")
-
-
-async def ensure_client_roots_initialized() -> None:
-    """Ensure ClientPath is initialized, calling initialize if needed.
-
-    This function is called automatically before any tool/prompt execution via decorator.
-    It uses the current MCP context to initialize ClientPath exactly once.
-
-    Raises:
-        RuntimeError: If client working directory cannot be initialized
-    """
-    if ClientPath.is_initialized():
-        return
-
-    async with ClientPath.get_init_lock():
-        # Double-check after acquiring lock
-        if ClientPath.is_initialized():
-            return
-
-        try:
-            context = mcp.get_context()
-            session = context.session
-
-            logger.debug("Initializing client working directory from MCP session...")
-            await ClientPath.initialize(session)
-            logger.debug("Client working directory initialized successfully")
-
-            # Now that client context is available, configure builtin categories
-            from .main import _deferred_builtin_config, configure_builtin_categories
-
-            deferred_config = _deferred_builtin_config.get()
-            if deferred_config:
-                logger.debug("Configuring built-in categories from deferred CLI config")
-                try:
-                    await configure_builtin_categories(deferred_config)
-                    logger.debug("Built-in categories configured successfully")
-                except Exception as e:
-                    logger.error(f"Failed to configure built-in categories: {e}")
-                    raise
-
-        except Exception as e:
-            logger.error(f"Failed to initialize client working directory: {e}", exc_info=True)
-            raise RuntimeError(f"Cannot initialize client working directory: {e}") from e
 
 
 mcp = FastMCP(name="Developer Guide MCP", lifespan=server_lifespan)
@@ -157,7 +113,6 @@ class ExtMcpToolDecorator:
 
                 @functools.wraps(func)
                 async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-                    await ensure_client_roots_initialized()
                     return await func(*args, **kwargs)
 
                 wrapped_func = async_wrapper
@@ -177,12 +132,7 @@ guide = ExtMcpToolDecorator(mcp, prefix="guide_")
 
 
 # Register MCP Tools
-@guide.tool()
-async def guide_set_directory(directory: str) -> Dict[str, Any]:
-    """Set the working directory for the MCP server."""
-    from .tools.session_management import set_directory
-
-    return await set_directory(directory)
+# Note: set_directory removed as part of Issue 044 - PWD-based project detection
 
 
 @guide.tool()
@@ -362,8 +312,7 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
 @mcp.prompt("guide")
 async def guide_prompt(category: Optional[str] = None) -> str:
     """Get all auto-load guides or specific category."""
-    # Client roots automatically initialized by first tool/prompt call
-    await ensure_client_roots_initialized()
+    # No initialization needed - PWD-based project detection handles context
 
     if category:
         result = await tools.get_category_content(category, None)
@@ -385,8 +334,7 @@ async def guide_category_prompt(
     action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
 ) -> str:
     """Manage categories (new, edit, del)."""
-    # Ensure client roots are initialized within MCP request context
-    await ensure_client_roots_initialized()
+    # No initialization needed - PWD-based project detection handles context
 
     if action == "new":
         # Check for duplicate category name
@@ -466,46 +414,40 @@ DAIC_ENABLED = "DAIC mode: ENABLED"
 DAIC_DESC = "Discussion-Alignment-Implementation-Check"
 DAIC_DISABLED = "DAIC mode: DISABLED"
 
+# Agent instruction constants for file operations
+DAIC_ENABLE_INSTRUCTION = "\n\nPlease remove the .consent file from the project root to enable DAIC mode."
+DAIC_DISABLE_INSTRUCTION = (
+    "\n\nPlease create a .consent file in the project root to disable DAIC mode and allow implementation."
+)
+
+
+async def check_daic_status() -> bool:
+    """Check if DAIC mode is enabled."""
+    result = await daic_status()
+    return result is True
+
 
 async def daic_status(state: bool | None = None) -> bool | None:
     """Set or check the current DAIC status."""
-    # Ensure client roots are initialized
-    await ensure_client_roots_initialized()
+    from pathlib import Path
 
-    from .client_path import ClientPath
+    # Check for .consent file in current working directory (PWD-based)
+    consent_file = Path.cwd() / ".consent"
 
-    client_dir = ClientPath.get_primary_root()
-    if client_dir is None:
-        logger.debug("Cannot determine DAIC status: no client working directory")
-        return None
-
-    consent_file = client_dir / ".consent"
-    logger.debug(f"DAIC consent file path: {consent_file}")
-
-    async def check_status() -> bool | None:
-        exists = consent_file.exists()
-        logger.debug(f"Consent file exists: {exists}, DAIC enabled: {not exists}")
-        return not exists
-
-    match state:
-        case False:
-            # Disable DAIC by creating the .consent file
-            try:
-                consent_file.touch()
-                logger.debug(f"Created consent file: {consent_file}")
-            except Exception as e:
-                logger.error(f"Failed to create consent file {consent_file}: {e}")
-                return None
-        case True:
-            # Enable DAIC by removing the .consent file
-            try:
-                consent_file.unlink(missing_ok=True)
-                logger.debug(f"Removed consent file: {consent_file}")
-            except Exception as e:
-                logger.error(f"Failed to remove consent file {consent_file}: {e}")
-                return None
-
-    return await check_status()
+    if state is not None:
+        # Setting state - create or remove consent file
+        if state:
+            # Enable DAIC - remove consent file if it exists
+            if consent_file.exists():
+                consent_file.unlink()
+        else:
+            # Disable DAIC - create consent file
+            consent_file.touch()
+        return state
+    else:
+        # Getting state - check if consent file exists
+        # DAIC is enabled when consent file does NOT exist
+        return not consent_file.exists()
 
 
 @mcp.prompt("daic")
@@ -515,23 +457,19 @@ async def daic_prompt(arg: Optional[str] = None) -> str:
     if arg is not None:
         arg = arg.strip()
     if not arg:
-        # Return current state
-        match await daic_status():
-            case None:
-                return "Error: Client working directory not available"
-            case True:
-                return f"{DAIC_ENABLED} ({DAIC_DESC})"
-            case False:
-                return f"{DAIC_DISABLED} (Implementation allowed)"
+        # Return current state - check actual consent file status
+        is_enabled = await daic_status()
+        if is_enabled:
+            return f"{DAIC_ENABLED} ({DAIC_DESC})"
+        else:
+            return f"{DAIC_DISABLED} (Implementation allowed)"
 
     if arg.lower() in {"on", "enable", "true", "1", "yes"}:
-        # Enable DAIC
-        await daic_status(True)
-        return f"{DAIC_ENABLED} ({DAIC_DESC})"
+        # Enable DAIC - instruct agent to remove .consent file
+        return f"{DAIC_ENABLED} ({DAIC_DESC}){DAIC_ENABLE_INSTRUCTION}"
 
-    # Disable DAIC and return the formatted message
-    await daic_status(False)
-    return f"{DAIC_DISABLED} - {arg.strip()}"
+    # Disable DAIC - instruct agent to create .consent file
+    return f"{DAIC_DISABLED} - {arg.strip()}{DAIC_DISABLE_INSTRUCTION}"
 
 
 def _get_auto_load_categories(config: Dict[str, Any]) -> List[tuple[str, Dict[str, Any]]]:
@@ -668,14 +606,14 @@ def create_server(
 
             result = await get_category_content(category, project_context)
             if result.get("success") and result.get("search_dir"):
-                return FileSource(FileSourceType.SERVER, result["search_dir"])
+                return FileSource(FileSourceType.FILE, result["search_dir"])
 
         # Fallback for unknown keys
         session_path = config.get(config_key)
         if session_path:
             return FileSource.from_session_path(session_path, project_context)
         default_path = server.config.get(config_key, "./")  # type: ignore[attr-defined]
-        return FileSource(FileSourceType.SERVER, default_path)
+        return FileSource(FileSourceType.FILE, default_path)
 
     server._get_file_source = _get_file_source  # type: ignore[attr-defined]
 

@@ -54,12 +54,14 @@ async def test_update_category_with_description(mock_session):
 async def test_list_categories_includes_descriptions(mock_session):
     """Test that list_categories includes descriptions."""
     # Setup categories with descriptions
-    mock_session.get_or_create_project_config = AsyncMock(return_value={
-        "categories": {
-            "guide": {"dir": "guide/", "patterns": ["guidelines"], "description": "Development guidelines"},
-            "testing": {"dir": "test/", "patterns": ["*.md"], "description": "Test documentation"},
+    mock_session.get_or_create_project_config = AsyncMock(
+        return_value={
+            "categories": {
+                "guide": {"dir": "guide/", "patterns": ["guidelines"], "description": "Development guidelines"},
+                "testing": {"dir": "test/", "patterns": ["*.md"], "description": "Test documentation"},
+            }
         }
-    })
+    )
 
     result = await list_categories()
 
@@ -72,15 +74,17 @@ async def test_list_categories_includes_descriptions(mock_session):
 async def test_list_categories_handles_missing_descriptions(mock_session):
     """Test that list_categories handles categories without descriptions."""
     # Setup category without description
-    mock_session.get_or_create_project_config = AsyncMock(return_value={
-        "categories": {
-            "testing": {
-                "dir": "test/",
-                "patterns": ["*.md"],
-                # No description field
+    mock_session.get_or_create_project_config = AsyncMock(
+        return_value={
+            "categories": {
+                "testing": {
+                    "dir": "test/",
+                    "patterns": ["*.md"],
+                    # No description field
+                }
             }
         }
-    })
+    )
 
     result = await list_categories()
 

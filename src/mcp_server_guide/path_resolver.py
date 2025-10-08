@@ -3,7 +3,6 @@
 import asyncio
 from pathlib import Path
 from typing import Optional, Union, TYPE_CHECKING
-from .client_path import ClientPath
 from .logging_config import get_logger
 
 if TYPE_CHECKING:
@@ -22,7 +21,7 @@ class LazyPath:
         self._file_source: Optional["FileSource"] = None
 
     async def resolve(self) -> Path:
-        """Resolve the path, handling client: prefixes."""
+        """Resolve the path."""
         if self._resolved_path is not None:
             return self._resolved_path
 
@@ -30,27 +29,14 @@ class LazyPath:
         if self._is_uri_style_path():
             return await self._resolve_uri_path()
 
-        # Handle legacy client: prefix
-        if self.path_str.startswith("client:"):
-            # Client-side path - need client working directory
-            if self._client_root is None:
-                self._client_root = ClientPath.get_primary_root()
-
-            if self._client_root is None:
-                raise ValueError(f"Cannot resolve client path '{self.path_str}': no client working directory available")
-
-            # Remove client: prefix and resolve relative to client root
-            relative_path = self.path_str[7:]  # Remove "client:"
-            self._resolved_path = self._client_root / relative_path
-        else:
-            # Server-side path - resolve relative to current directory
-            self._resolved_path = Path(self.path_str).expanduser().resolve()
+        # Server-side path - resolve relative to current directory
+        self._resolved_path = Path(self.path_str).expanduser().resolve()
 
         return self._resolved_path
 
     def _is_uri_style_path(self) -> bool:
         """Check if path uses URI-style prefix."""
-        uri_prefixes = ["client://", "local://", "server://", "http://", "https://", "file://"]
+        uri_prefixes = ["http://", "https://", "file://"]
         return any(self.path_str.startswith(prefix) for prefix in uri_prefixes)
 
     async def _resolve_uri_path(self) -> Path:
@@ -62,13 +48,10 @@ class LazyPath:
         if file_source.type == FileSourceType.HTTP:
             # HTTP URIs resolve to themselves as Path objects
             self._resolved_path = Path(file_source.base_path)
-        elif file_source.type == FileSourceType.LOCAL:
-            # Local/client paths need client working directory
+        elif file_source.type == FileSourceType.FILE:
+            # Local/client paths use current working directory
             if self._client_root is None:
-                self._client_root = ClientPath.get_primary_root()
-
-            if self._client_root is None:
-                raise ValueError(f"Cannot resolve client path '{self.path_str}': no client working directory available")
+                self._client_root = Path.cwd()
 
             self._resolved_path = self._client_root / file_source.base_path
         else:  # SERVER
@@ -114,7 +97,7 @@ class LazyPath:
 
             if file_source.type == FileSourceType.HTTP:
                 self._resolved_path = Path(file_source.base_path)
-            elif file_source.type == FileSourceType.LOCAL:
+            elif file_source.type == FileSourceType.FILE:
                 # Use current directory as fallback for client paths
                 self._resolved_path = Path.cwd() / file_source.base_path
             else:  # SERVER
@@ -125,9 +108,6 @@ class LazyPath:
                 else:
                     # Relative path
                     self._resolved_path = Path(file_source.base_path).expanduser().resolve()
-        elif self.path_str.startswith("client:"):
-            relative_path = self.path_str[7:]
-            self._resolved_path = Path.cwd() / relative_path
         else:
             self._resolved_path = Path(self.path_str).expanduser().resolve()
 
@@ -149,10 +129,8 @@ class LazyPath:
         from .file_source import FileSourceType
 
         # Convert FileSource back to URI format
-        if file_source.type == FileSourceType.LOCAL:
-            path_str = f"client://{file_source.base_path}"
-        elif file_source.type == FileSourceType.SERVER:
-            path_str = f"server://{file_source.base_path}"
+        if file_source.type == FileSourceType.FILE:
+            path_str = file_source.base_path  # Use path as-is for FILE type
         elif file_source.type == FileSourceType.HTTP:
             path_str = file_source.base_path  # HTTP URLs are stored as-is
         else:

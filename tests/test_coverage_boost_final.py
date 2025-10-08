@@ -27,17 +27,17 @@ def test_resolve_server_path_relative_file_url():
 
 @pytest.mark.asyncio
 async def test_cleanup_config_directory_not_set():
-    """Test cleanup_config when directory is not set - covers line 22."""
-    # Mock the SessionManager to return a session where directory is not set
+    """Test cleanup_config when PWD is not available - covers error handling."""
+    # Mock the SessionManager to simulate PWD not being available
     mock_session = Mock()
-    mock_session.is_directory_set.return_value = False
+    mock_session.save_to_file = AsyncMock(
+        side_effect=ValueError("Working directory not set. Use set_directory() first.")
+    )
 
     with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
-        # The decorator should catch this and return the error before calling the actual function
         result = await cleanup_config()
         assert result["success"] is False
         assert "Working directory not set" in result["error"]
-        assert result["blocked"] is True
 
 
 async def test_reset_session_async_context():

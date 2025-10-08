@@ -71,10 +71,14 @@ async def test_category_content_directory_not_exists():
         # Set up session with non-existent directory
         with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
             mock_session.return_value.get_current_project_safe = AsyncMock(return_value="test-project")
-            mock_session.return_value.session_state.get_project_config = AsyncMock(return_value={
-                "docroot": temp_dir,
-                "categories": {"test": {"dir": "nonexistent/", "patterns": ["*.md"], "description": "Test category"}},
-            })
+            mock_session.return_value.session_state.get_project_config = AsyncMock(
+                return_value={
+                    "docroot": temp_dir,
+                    "categories": {
+                        "test": {"dir": "nonexistent/", "patterns": ["*.md"], "description": "Test category"}
+                    },
+                }
+            )
 
             result = await get_category_content("test", "test-project")
 

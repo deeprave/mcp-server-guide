@@ -104,7 +104,7 @@ async def test_server_handles_mixed_sources():
 
         session = SessionManager()
         await session.set_current_project("mixed-project")
-        await session.session_state.set_project_config("mixed-project", "guide", f"local:{readme_path}")  # Local file
+        await session.session_state.set_project_config("mixed-project", "guide", str(readme_path))  # Local file
         await session.session_state.set_project_config(
             "mixed-project", "language", "https://example.com/lang.md"
         )  # HTTP file
@@ -180,17 +180,19 @@ async def test_server_integration_with_session_paths():
         # Test various path formats from Issue 002
         await session.session_state.set_project_config("integration-project", "guide", "local:./local-guide.md")
         await session.session_state.set_project_config("integration-project", "language", "server:./server-lang.md")
-        await session.session_state.set_project_config("integration-project", "context", "https://example.com/context.md")
+        await session.session_state.set_project_config(
+            "integration-project", "context", "https://example.com/context.md"
+        )
 
         with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
             guide_source = await server._get_file_source("guide", "integration-project")
             from mcp_server_guide.file_source import FileSourceType
 
-            assert guide_source.type == FileSourceType.LOCAL
+            assert guide_source.type == FileSourceType.FILE
 
             lang_source = await server._get_file_source("language", "integration-project")
-            assert lang_source.type == FileSourceType.SERVER
+            assert lang_source.type == FileSourceType.FILE
 
             context_source = await server._get_file_source("context", "integration-project")
             assert context_source.type == FileSourceType.HTTP
