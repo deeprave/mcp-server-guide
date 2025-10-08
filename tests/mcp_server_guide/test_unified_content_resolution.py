@@ -84,13 +84,15 @@ async def test_get_all_guides_uses_unified_system():
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_session.session_state.get_project_config.return_value = {
+        config_data = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "auto_load": True},
                 "lang": {"dir": "lang/", "patterns": ["*.md"], "auto_load": True},
                 "context": {"dir": "context/", "patterns": ["*.md"], "auto_load": True},
             }
         }
+        mock_session.session_state.get_project_config.return_value = config_data
+        mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category_content:
             # Mock responses for each category

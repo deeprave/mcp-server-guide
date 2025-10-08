@@ -552,7 +552,7 @@ async def list_resources() -> List[Resource]:
     current_project = await session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
-    config = session.session_state.get_project_config(current_project)
+    config = await session.get_or_create_project_config(current_project)
     auto_load_categories = _get_auto_load_categories(config)
 
     # Generate resources for each auto_load category
@@ -587,7 +587,7 @@ async def _get_available_categories() -> List[Dict[str, Any]]:
     current_project = await session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
-    config = session.session_state.get_project_config(current_project)
+    config = await session.session_state.get_project_config(current_project)
     auto_load_categories = _get_auto_load_categories(config)
 
     return [
@@ -649,13 +649,13 @@ def create_server(
     async def _get_file_source(config_key: str, project_context: str) -> FileSource:
         """Get file source for a configuration key."""
         if hasattr(server, "_session_manager") and server._session_manager is not None:
-            config = server._session_manager.session_state.get_project_config(project_context)  # type: ignore[attr-defined]
+            config = await server._session_manager.session_state.get_project_config(project_context)  # type: ignore[attr-defined]
         else:
             # Fallback to default config
             from .session_tools import SessionManager
 
             session_manager = SessionManager()
-            config = session_manager.session_state.get_project_config(project_context)
+            config = await session_manager.session_state.get_project_config(project_context)
 
         # Map config_key to category names for unified system
         category_mapping = {"guide": "guide", "language": "lang", "context": "context"}

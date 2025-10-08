@@ -12,7 +12,7 @@ def mock_session():
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        session_instance.session_state.get_project_config.return_value = {
+        session_instance.session_state.get_project_config = AsyncMock(return_value={
             "categories": {
                 "guide": {
                     "dir": "guide/",
@@ -33,7 +33,8 @@ def mock_session():
                     "auto_load": False,
                 },
             }
-        }
+        })
+        session_instance.session_state.set_project_config = AsyncMock()
         session_instance.save_to_file = AsyncMock()
         yield session_instance
 

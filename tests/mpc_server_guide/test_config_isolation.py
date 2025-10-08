@@ -85,7 +85,7 @@ class TestConfigIsolation:
                 session.set_directory(temp_dir)  # Set directory to temp_dir
                 current_project = await session.get_current_project()
                 assert current_project == "loaded-project"
-                project_config = session.session_state.get_project_config("loaded-project")
+                project_config = await session.session_state.get_project_config("loaded-project")
                 assert project_config["language"] == "rust"
 
             finally:

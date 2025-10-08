@@ -1,5 +1,6 @@
 """Tests for get_all_guides auto_load filtering."""
 
+import pytest
 from unittest.mock import Mock, patch, AsyncMock
 from mcp_server_guide.tools.content_tools import get_all_guides
 
@@ -11,7 +12,7 @@ async def test_get_all_guides_returns_only_auto_load_true_categories():
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_session.session_state.get_project_config.return_value = {
+        config_data = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide", "auto_load": True},
                 "lang": {"dir": "lang/", "patterns": ["*.md"], "description": "Language"},  # No auto_load = False
@@ -19,6 +20,8 @@ async def test_get_all_guides_returns_only_auto_load_true_categories():
                 "custom": {"dir": "custom/", "patterns": ["*.md"], "description": "Custom", "auto_load": False},
             }
         }
+        mock_session.session_state.get_project_config.return_value = config_data
+        mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
             mock_get_content.return_value = {"success": True, "content": "Test content"}
@@ -48,12 +51,14 @@ async def test_get_all_guides_returns_empty_dict_when_no_auto_load_true_categori
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_session.session_state.get_project_config.return_value = {
+        config_data = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide"},  # No auto_load = False
                 "lang": {"dir": "lang/", "patterns": ["*.md"], "description": "Language"},  # No auto_load = False
             }
         }
+        mock_session.session_state.get_project_config.return_value = config_data
+        mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
             result = await get_all_guides()
@@ -72,12 +77,14 @@ async def test_get_all_guides_error_handling_when_category_loading_fails():
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_session.session_state.get_project_config.return_value = {
+        config_data = {
             "categories": {
                 "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide", "auto_load": True},
                 "context": {"dir": "context/", "patterns": ["*.md"], "description": "Context", "auto_load": True},
             }
         }
+        mock_session.session_state.get_project_config.return_value = config_data
+        mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
             # Make guide succeed and context fail
@@ -96,3 +103,48 @@ async def test_get_all_guides_error_handling_when_category_loading_fails():
             assert result["guide"] == "Guide content"
             assert "context" in result
             assert "Error:" in result["context"]
+
+
+@pytest.mark.asyncio
+async def test_get_all_guides_empty_config():
+    """Test handling when get_or_create_project_config returns an empty dict."""
+    with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+        mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
+        mock_session.get_or_create_project_config = AsyncMock(return_value={})
+
+        with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
+            result = await get_all_guides()
+
+            assert result == {}  # Should return empty dict
+            mock_get_content.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_all_guides_no_categories_key():
+    """Test handling when get_or_create_project_config returns a dict without 'categories' key."""
+    with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+        mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
+        mock_session.get_or_create_project_config = AsyncMock(return_value={"docroot": "."})
+
+        with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get_content:
+            result = await get_all_guides()
+
+            assert result == {}  # Should return empty dict
+            mock_get_content.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_all_guides_exception_in_get_or_create_project_config():
+    """Test handling when get_or_create_project_config raises an exception."""
+    with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+        mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
+        mock_session.get_or_create_project_config = AsyncMock(side_effect=Exception("Config error"))
+
+        with pytest.raises(Exception, match="Config error"):
+            await get_all_guides()

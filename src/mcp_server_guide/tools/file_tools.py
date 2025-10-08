@@ -12,7 +12,7 @@ async def list_files(file_type: str, project: Optional[str] = None) -> List[str]
     if project is None:
         project = await session.get_current_project_safe()
 
-    config = session.session_state.get_project_config(project)
+    config = await session.session_state.get_project_config(project)
 
     # Map file types to config keys - only docroot remains
     type_mapping = {"docs": "docroot"}

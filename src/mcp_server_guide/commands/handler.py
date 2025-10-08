@@ -102,7 +102,8 @@ class CommandHandler:
                 if not category or not re.match(r"^[\w-]+$", category):
                     return {
                         "success": False,
-                        "error": f"Invalid category name: '{category}'. Only letters, numbers, dash, and underscore are allowed.",
+                        "error": f"Invalid category name: '{category}'. "
+                        "Only letters, numbers, dash, and underscore are allowed.",
                     }
                 result = await get_category_content(category, None)
                 if result.get("success"):
@@ -237,7 +238,8 @@ class CommandHandler:
         if not category or not re.match(r"^[\w-]+$", category):
             return {
                 "success": False,
-                "error": f"Invalid category name: '{category}'. Only letters, numbers, dash, and underscore are allowed.",
+                "error": f"Invalid category name: '{category}'. "
+                "Only letters, numbers, dash, and underscore are allowed.",
             }
 
         try:
@@ -307,7 +309,8 @@ class CommandHandler:
         if not category or not re.match(r"^[\w-]+$", category):
             return {
                 "success": False,
-                "error": f"Invalid category name: '{category}'. Only letters, numbers, dash, and underscore are allowed.",
+                "error": f"Invalid category name: '{category}'. "
+                "Only letters, numbers, dash, and underscore are allowed.",
             }
 
         try:

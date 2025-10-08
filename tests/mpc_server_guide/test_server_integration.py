@@ -26,7 +26,7 @@ async def test_server_resolves_http_resources():
         # Mock session with HTTP guide
         session = SessionManager()
         await session.set_current_project("test-project")
-        session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
+        await session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -57,7 +57,7 @@ async def test_server_caches_http_resources():
 
         session = SessionManager()
         await session.set_current_project("test-project")
-        session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
+        await session.session_state.set_project_config("test-project", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -104,8 +104,8 @@ async def test_server_handles_mixed_sources():
 
         session = SessionManager()
         await session.set_current_project("mixed-project")
-        session.session_state.set_project_config("mixed-project", "guide", f"local:{readme_path}")  # Local file
-        session.session_state.set_project_config(
+        await session.session_state.set_project_config("mixed-project", "guide", f"local:{readme_path}")  # Local file
+        await session.session_state.set_project_config(
             "mixed-project", "language", "https://example.com/lang.md"
         )  # HTTP file
 
@@ -138,7 +138,7 @@ async def test_server_fallback_on_http_error():
 
         session = SessionManager()
         await session.set_current_project("fallback-project")
-        session.session_state.set_project_config("fallback-project", "guide", "https://example.com/guide.md")
+        await session.session_state.set_project_config("fallback-project", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -178,9 +178,9 @@ async def test_server_integration_with_session_paths():
         await session.set_current_project("integration-project")
 
         # Test various path formats from Issue 002
-        session.session_state.set_project_config("integration-project", "guide", "local:./local-guide.md")
-        session.session_state.set_project_config("integration-project", "language", "server:./server-lang.md")
-        session.session_state.set_project_config("integration-project", "context", "https://example.com/context.md")
+        await session.session_state.set_project_config("integration-project", "guide", "local:./local-guide.md")
+        await session.session_state.set_project_config("integration-project", "language", "server:./server-lang.md")
+        await session.session_state.set_project_config("integration-project", "context", "https://example.com/context.md")
 
         with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
@@ -204,7 +204,7 @@ async def test_server_respects_cache_settings():
 
         session = SessionManager()
         await session.set_current_project("cache-test")
-        session.session_state.set_project_config("cache-test", "guide", "https://example.com/guide.md")
+        await session.session_state.set_project_config("cache-test", "guide", "https://example.com/guide.md")
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:

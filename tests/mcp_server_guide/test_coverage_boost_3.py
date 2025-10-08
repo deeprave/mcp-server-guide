@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from src.mcp_server_guide.tools.content_tools import search_content
 from src.mcp_server_guide.tools.category_tools import get_category_content
 
@@ -70,10 +70,11 @@ async def test_category_content_directory_not_exists():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Set up session with non-existent directory
         with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
-            mock_session.return_value.get_effective_config.return_value = {
+            mock_session.return_value.get_current_project_safe = AsyncMock(return_value="test-project")
+            mock_session.return_value.session_state.get_project_config = AsyncMock(return_value={
                 "docroot": temp_dir,
                 "categories": {"test": {"dir": "nonexistent/", "patterns": ["*.md"], "description": "Test category"}},
-            }
+            })
 
             result = await get_category_content("test", "test-project")
 

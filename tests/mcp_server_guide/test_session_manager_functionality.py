@@ -192,7 +192,7 @@ class TestGetProjectConfig:
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
             mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-            mock_session.session_state.get_project_config.return_value = {"key": "value"}
+            mock_session.session_state.get_project_config = AsyncMock(return_value={"key": "value"})
             mock_session_class.return_value = mock_session
 
             result = await get_project_config()
@@ -205,15 +205,15 @@ class TestGetProjectConfig:
 class TestListProjectConfigs:
     """Test list_project_configs function missing coverage."""
 
-    def test_list_project_configs_success(self):
+    async def test_list_project_configs_success(self):
         """Test list_project_configs successful execution."""
         with patch("mcp_server_guide.session_tools.SessionManager") as mock_session_class:
             mock_session = MagicMock()
             mock_session.session_state.projects = ["project1", "project2"]
-            mock_session.session_state.get_project_config.side_effect = lambda p: {f"{p}_key": f"{p}_value"}
+            mock_session.session_state.get_project_config = AsyncMock(side_effect=lambda p: {f"{p}_key": f"{p}_value"})
             mock_session_class.return_value = mock_session
 
-            result = list_project_configs()
+            result = await list_project_configs()
 
             assert result["success"] is True
             assert result["projects"] == {

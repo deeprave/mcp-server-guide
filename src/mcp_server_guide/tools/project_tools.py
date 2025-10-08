@@ -23,7 +23,7 @@ async def switch_project(name: str) -> Dict[str, Any]:
 
     if not project_exists:
         # Auto-create built-in categories for new project
-        _create_builtin_categories(session, name)
+        await _create_builtin_categories(session, name)
 
     # Save session state after switching
     await save_session()
@@ -31,7 +31,7 @@ async def switch_project(name: str) -> Dict[str, Any]:
     return {"success": True, "project": name, "message": f"Switched to project: {name}"}
 
 
-def _create_builtin_categories(session: SessionManager, project_name: str) -> None:
+async def _create_builtin_categories(session: SessionManager, project_name: str) -> None:
     """Create built-in categories with default values and auto_load = true."""
     builtin_defaults = {
         "guide": {
@@ -60,7 +60,7 @@ def _create_builtin_categories(session: SessionManager, project_name: str) -> No
         categories[name] = config
 
     # Set categories in project config
-    session.session_state.set_project_config(project_name, "categories", categories)
+    await session.session_state.set_project_config(project_name, "categories", categories)
 
 
 async def list_projects() -> List[str]:

@@ -143,7 +143,7 @@ async def add_category(
         project = await session.get_current_project_safe()
 
     # Get current config
-    config = session.session_state.get_project_config(project)
+    config = await session.session_state.get_project_config(project)
     categories = config.get("categories", {})
 
     if name in categories:
@@ -153,7 +153,7 @@ async def add_category(
     categories[name] = category_config
 
     # Update session
-    session.session_state.set_project_config(project, "categories", categories)
+    await session.session_state.set_project_config(project, "categories", categories)
 
     # Auto-save
     await _auto_save_session(session)
@@ -210,7 +210,7 @@ async def update_category(
         project = await session.get_current_project_safe()
 
     # Get current config
-    config = session.session_state.get_project_config(project)
+    config = await session.session_state.get_project_config(project)
     categories = config.get("categories", {})
 
     if name not in categories:
@@ -229,7 +229,7 @@ async def update_category(
     categories[name] = category_config
 
     # Update session
-    session.session_state.set_project_config(project, "categories", categories)
+    await session.session_state.set_project_config(project, "categories", categories)
 
     # Auto-save
     await _auto_save_session(session)
@@ -256,7 +256,7 @@ async def remove_category(name: str, project: Optional[str] = None) -> Dict[str,
         project = await session.get_current_project_safe()
 
     # Get current config
-    config = session.session_state.get_project_config(project)
+    config = await session.session_state.get_project_config(project)
     categories = config.get("categories", {})
 
     if name not in categories:
@@ -266,7 +266,7 @@ async def remove_category(name: str, project: Optional[str] = None) -> Dict[str,
     removed_category = categories.pop(name)
 
     # Update session
-    session.session_state.set_project_config(project, "categories", categories)
+    await session.session_state.set_project_config(project, "categories", categories)
 
     # Auto-save
     await _auto_save_session(session)
@@ -285,8 +285,8 @@ async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
     if project is None:
         project = await session.get_current_project_safe()
 
-    # Get current config
-    config = session.session_state.get_project_config(project)
+    # Get current config with auto-save for new projects
+    config = await session.get_or_create_project_config(project)
     categories = config.get("categories", {})
 
     # Separate built-in and custom categories
@@ -309,7 +309,7 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
         project = await session.get_current_project_safe()
 
     # Get current config
-    config = session.session_state.get_project_config(project)
+    config = await session.session_state.get_project_config(project)
     categories = config.get("categories", {})
 
     if name not in categories:

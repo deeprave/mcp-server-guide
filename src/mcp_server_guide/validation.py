@@ -97,7 +97,8 @@ def validate_category(category_name: str, category_data: Dict[str, Any]) -> None
     # Validate category name pattern
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", category_name):
         raise ConfigValidationError(
-            f"Invalid category name '{category_name}'. Must start with letter and contain only letters, numbers, underscores, and hyphens."
+            f"Invalid category name '{category_name}'. Must start with letter and "
+            "contain only letters, numbers, underscores, and hyphens."
         )
 
     # Validate category data against schema

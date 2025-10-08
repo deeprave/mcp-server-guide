@@ -1,5 +1,6 @@
 """Session-scoped project configuration management."""
 
+import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any
@@ -81,23 +82,27 @@ class SessionState:
 
     def __init__(self) -> None:
         self.projects: Dict[str, Dict[str, Any]] = {}
+        self._projects_lock = asyncio.Lock()
         self._defaults = {
             "docroot": ".",
         }
 
-    def get_project_config(self, project_name: str) -> Dict[str, Any]:
+    async def get_project_config(self, project_name: str) -> Dict[str, Any]:
         """Get configuration for a project."""
-        project_config = self.projects.get(project_name, {})
+        # Ensure project exists in session state with thread-safe access
+        async with self._projects_lock:
+            if project_name not in self.projects:
+                self.projects[project_name] = {}
+            project_config = self.projects[project_name].copy()
 
-        # Merge with defaults
+        # Merge with defaults (outside lock for performance)
         config = self._defaults.copy()
         config.update(project_config)
-
         return config
 
-    def set_project_config(self, project_name: str, config_key: str, value: str | Dict[str, Any] | None) -> None:
+    async def set_project_config(self, project_name: str, config_key: str, value: str | Dict[str, Any] | None) -> None:
         """Set configuration value for a project."""
-        if project_name not in self.projects:
-            self.projects[project_name] = {}
-
-        self.projects[project_name][config_key] = value
+        async with self._projects_lock:
+            if project_name not in self.projects:
+                self.projects[project_name] = {}
+            self.projects[project_name][config_key] = value

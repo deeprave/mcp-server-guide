@@ -28,7 +28,7 @@ class TestSessionManagerUpdates:
 
             # Create session manager and make changes
             session = SessionManager()
-            session.session_state.set_project_config("project-a", "language", "typescript")
+            await session.session_state.set_project_config("project-a", "language", "typescript")
 
             # Save session - should UPDATE not OVERWRITE
             await session.save_to_file(str(config_file))
@@ -96,7 +96,7 @@ class TestSessionManagerUpdates:
             chdir(tmp_path)
 
             session = SessionManager()
-            session.session_state.set_project_config("new-project", "language", "go")
+            await session.session_state.set_project_config("new-project", "language", "go")
 
             # Save to non-existent file
             await session.save_to_file(str(config_file))
@@ -130,7 +130,7 @@ class TestSessionManagerUpdates:
 
             # Should handle corrupted file gracefully
             # Either backup and recreate, or merge with defaults
-            session.session_state.set_project_config("test-project", "language", "python")
+            await session.session_state.set_project_config("test-project", "language", "python")
             await session.save_to_file(str(config_file))
 
             # File should now be valid JSON
@@ -159,10 +159,10 @@ class TestSessionManagerUpdates:
             session = SessionManager()
 
             # Operation 1: Update existing project
-            session.session_state.set_project_config("project-1", "guidesdir", "guides/")
+            await session.session_state.set_project_config("project-1", "guidesdir", "guides/")
 
             # Operation 2: Add new project
-            session.session_state.set_project_config("project-3", "language", "go")
+            await session.session_state.set_project_config("project-3", "language", "go")
 
             # Save all changes
             await session.save_to_file(str(config_file))

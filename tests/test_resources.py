@@ -17,6 +17,7 @@ class TestResourceHandlers:
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
         mock_session.session_state = Mock()
         mock_session.session_state.get_project_config = Mock(return_value={"categories": {}})
+        mock_session.get_or_create_project_config = AsyncMock(return_value={"categories": {}})
 
         with patch("src.mcp_server_guide.server.SessionManager", return_value=mock_session):
             resources = await list_resources()
@@ -29,9 +30,9 @@ class TestResourceHandlers:
         mock_session = Mock()
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
         mock_session.session_state = Mock()
-        mock_session.session_state.get_project_config = Mock(
-            return_value={"categories": {"test-category": {"description": "Test category", "auto_load": True}}}
-        )
+        config_data = {"categories": {"test-category": {"description": "Test category", "auto_load": True}}}
+        mock_session.session_state.get_project_config = Mock(return_value=config_data)
+        mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
         with patch("src.mcp_server_guide.server.SessionManager", return_value=mock_session):
             resources = await list_resources()

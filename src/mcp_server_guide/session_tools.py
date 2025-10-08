@@ -1,5 +1,6 @@
 """MCP tools for session-scoped project configuration."""
 
+import asyncio
 import os
 from typing import Dict, Any, Optional, Union
 from pathlib import Path
@@ -16,12 +17,16 @@ class SessionManager:
     _instance: Optional["SessionManager"] = None
     session_state: SessionState
     _override_directory: Optional[Path]
+    _project_locks: Dict[str, asyncio.Lock]
+    _locks_lock: asyncio.Lock
 
     def __new__(cls) -> "SessionManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.session_state = SessionState()
             cls._instance._override_directory = None
+            cls._instance._project_locks = {}
+            cls._instance._locks_lock = asyncio.Lock()
             logger.debug("Session manager initialized")
         return cls._instance
 
@@ -210,6 +215,35 @@ class SessionManager:
             raise ValueError("Working directory not set. Use set_directory() first.")
         return project
 
+    async def get_or_create_project_config(self, project: str) -> Dict[str, Any]:
+        """Get project config and auto-save if project was newly created."""
+        from .naming import config_filename
+
+        # Get or create project-specific lock to prevent race conditions
+        async with self._locks_lock:
+            if project not in self._project_locks:
+                self._project_locks[project] = asyncio.Lock()
+            project_lock = self._project_locks[project]
+
+        # Use project-specific lock for atomic operations
+        async with project_lock:
+            # Check if project exists before getting config
+            existing_project_config = self.session_state.projects.get(project)
+            project_existed = existing_project_config is not None
+
+            # Get config (may create project in memory)
+            config = await self.session_state.get_project_config(project)
+
+            # Auto-save if project was just created
+            if not project_existed:
+                try:
+                    await self.save_to_file(config_filename())
+                    logger.debug(f"Auto-saved newly created project '{project}'")
+                except Exception as e:
+                    logger.warning(f"Auto-save failed for new project '{project}': {e}")
+
+            return config
+
     async def load_project_from_path(self, project_path: Any) -> None:
         """Load project configuration from path."""
         logger.debug(f"Loading project configuration from {project_path}")
@@ -222,11 +256,11 @@ class SessionManager:
             # Load config into session state
             for key, value in config.to_dict().items():
                 if key != "project":
-                    self.session_state.set_project_config(config.project, key, value)
+                    await self.session_state.set_project_config(config.project, key, value)
 
-    def get_effective_config(self, project_name: str) -> Dict[str, Any]:
+    async def get_effective_config(self, project_name: str) -> Dict[str, Any]:
         """Get effective configuration combining file and session overrides with resolved paths."""
-        config = self.session_state.get_project_config(project_name)
+        config = await self.session_state.get_project_config(project_name)
 
         # Resolve docroot to absolute path
         docroot = config.get("docroot", ".")
@@ -253,7 +287,7 @@ async def set_project_config(key: str, value: str) -> Dict[str, Any]:
 
     try:
         current_project = await session_manager.get_current_project_safe()
-        session_manager.session_state.set_project_config(current_project, key, value)
+        await session_manager.session_state.set_project_config(current_project, key, value)
         return {"success": True, "message": f"Set {key} to '{value}' for project {current_project}"}
     except ValueError as e:
         return {"success": False, "error": str(e)}
@@ -265,19 +299,19 @@ async def get_project_config() -> Dict[str, Any]:
 
     try:
         current_project = await session_manager.get_current_project_safe()
-        config = session_manager.session_state.get_project_config(current_project)
+        config = await session_manager.session_state.get_project_config(current_project)
         return {"success": True, "project": current_project, "config": config}
     except ValueError as e:
         return {"success": False, "error": str(e)}
 
 
-def list_project_configs() -> Dict[str, Any]:
+async def list_project_configs() -> Dict[str, Any]:
     """List all project configurations."""
     session_manager = SessionManager()
 
     projects = {}
     for project_name in session_manager.session_state.projects:
-        projects[project_name] = session_manager.session_state.get_project_config(project_name)
+        projects[project_name] = await session_manager.session_state.get_project_config(project_name)
 
     return {"success": True, "projects": projects}
 

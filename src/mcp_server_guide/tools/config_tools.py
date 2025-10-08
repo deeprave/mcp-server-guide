@@ -12,7 +12,7 @@ async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     if project is None:
         project = await session.get_current_project_safe()
 
-    config = session.session_state.get_project_config(project)
+    config = await session.get_or_create_project_config(project)
     # Only set project name if not already explicitly set in config
     if "project" not in config:
         config["project"] = project
@@ -103,16 +103,17 @@ async def set_project_config(
 
     # Check if trying to change an immutable project key
     if config_key == "project":
-        current_config = session.session_state.get_project_config(project)
+        current_config = await session.get_or_create_project_config(project)
         if "project" in current_config and current_config["project"] != value:
             return {
                 "success": False,
-                "error": f"Project key is immutable. Cannot change from '{current_config['project']}' to '{value}'. Create a new project instead.",
+                "error": f"Project key is immutable. Cannot change from "
+                f"'{current_config['project']}' to '{value}'. Create a new project instead.",
                 "key": config_key,
                 "value": value,
             }
 
-    session.session_state.set_project_config(project, config_key, value)
+    await session.session_state.set_project_config(project, config_key, value)
 
     # Auto-save configuration changes (except project changes)
     if config_key != "project":
@@ -142,7 +143,7 @@ async def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
     if project is None:
         project = await session.get_current_project_safe()
 
-    return session.get_effective_config(project)
+    return await session.get_effective_config(project)
 
 
 __all__ = [

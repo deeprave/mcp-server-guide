@@ -36,9 +36,9 @@ async def test_create_builtin_categories():
     """Test the _create_builtin_categories helper function."""
     session = SessionManager()
 
-    _create_builtin_categories(session, "test-helper-project")
+    await _create_builtin_categories(session, "test-helper-project")
 
-    config = session.session_state.get_project_config("test-helper-project")
+    config = await session.session_state.get_project_config("test-helper-project")
     categories = config.get("categories", {})
 
     # Verify all categories created with correct defaults

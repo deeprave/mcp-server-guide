@@ -37,7 +37,7 @@ async def test_get_project_config():
     # Set up some project data first
     session = SessionManager()
     await session.set_current_project("test-project")
-    session.session_state.set_project_config("test-project", "language", "python")
+    await session.session_state.set_project_config("test-project", "language", "python")
 
     # This should return current project config
     result = await get_project_config()
@@ -52,11 +52,11 @@ async def test_list_project_configs():
     """Test list_project_configs function."""
     # Set up some project data first
     session = SessionManager()
-    session.session_state.set_project_config("test-project", "language", "python")
-    session.session_state.set_project_config("other-project", "language", "javascript")
+    await session.session_state.set_project_config("test-project", "language", "python")
+    await session.session_state.set_project_config("other-project", "language", "javascript")
 
     # This should return all project configs
-    result = list_project_configs()
+    result = await list_project_configs()
 
     assert result["success"] is True
     assert "projects" in result
@@ -70,7 +70,7 @@ async def test_set_project_config():
     # Set up project data first
     session = SessionManager()
     await session.set_current_project("test-project")
-    session.session_state.set_project_config("test-project", "language", "python")
+    await session.session_state.set_project_config("test-project", "language", "python")
 
     # Reset the project
     result = await set_project_config("language", "go")
@@ -107,7 +107,7 @@ async def test_session_manager_save_to_file():
 
         session = SessionManager()
         await session.set_current_project("test-project")
-        session.session_state.set_project_config("test-project", "language", "python")
+        await session.session_state.set_project_config("test-project", "language", "python")
 
         # Save to file
         await session.save_to_file(config_file)
@@ -124,9 +124,9 @@ async def test_session_manager_get_effective_config():
     """Test SessionManager.get_effective_config method."""
     session = SessionManager()
     await session.set_current_project("test-project")
-    session.session_state.set_project_config("test-project", "language", "python")
+    await session.session_state.set_project_config("test-project", "language", "python")
 
     # Get effective config - it merges with defaults so just check language
-    config = session.get_effective_config("test-project")
+    config = await session.get_effective_config("test-project")
 
     assert config["language"] == "python"

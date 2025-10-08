@@ -31,7 +31,7 @@ async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
         project = await session.get_current_project_safe()
 
     # Get project config to find categories with auto_load: true
-    config = session.session_state.get_project_config(project)
+    config = await session.get_or_create_project_config(project)
     categories = config.get("categories", {})
 
     # Filter categories with auto_load: true
