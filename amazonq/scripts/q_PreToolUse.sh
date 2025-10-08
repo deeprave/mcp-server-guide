@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 EXEMPT_PATHS=(
+    ".consent"
     ".todo/*"
     "/tmp/*"
     "tasks/*"

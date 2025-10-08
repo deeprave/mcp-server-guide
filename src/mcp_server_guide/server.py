@@ -329,8 +329,8 @@ async def guide_prompt(category: Optional[str] = None) -> str:
             return "No guides available."
 
 
-@mcp.prompt("guide-category")
-async def guide_category_prompt(
+@mcp.prompt("category")
+async def category_prompt(
     action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
 ) -> str:
     """Manage categories (new, edit, del)."""
@@ -398,16 +398,6 @@ async def guide_category_prompt(
 
     else:
         return f"Error: Unknown action '{action}'. Use 'new', 'edit', or 'del'."
-
-
-@mcp.prompt("g-category")
-async def g_category_prompt(
-    action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
-) -> str:
-    """Manage categories - shorthand."""
-    # Delegate to guide_category_prompt
-    result = await guide_category_prompt(action, name, dir, patterns, auto_load)
-    return str(result)
 
 
 DAIC_ENABLED = "DAIC mode: ENABLED"

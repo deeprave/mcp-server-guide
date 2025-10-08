@@ -11,12 +11,11 @@ class TestMCPPrompts:
     async def test_list_prompts_returns_expected_prompts(self):
         """Test that list_prompts handler returns our defined prompts."""
         prompts = await mcp.list_prompts()
-        assert len(prompts) == 4
+        assert len(prompts) == 3
 
         prompt_names = [p.name for p in prompts]
         assert "guide" in prompt_names
-        assert "guide-category" in prompt_names
-        assert "g-category" in prompt_names
+        assert "category" in prompt_names
         assert "daic" in prompt_names
 
     async def test_get_prompt_with_unknown_name_raises_error(self):
@@ -40,34 +39,25 @@ class TestMCPPrompts:
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
 
-    async def test_guide_category_prompt_with_new_action(self):
-        """Test guide-category prompt with new action."""
+    async def test_category_prompt_with_new_action(self):
+        """Test category prompt with new action."""
         # This should fail initially as we haven't implemented the handler yet
         result = await mcp.get_prompt(
-            "guide-category", {"action": "new", "name": "test-category", "dir": "test/", "patterns": "*.md"}
+            "category", {"action": "new", "name": "test-category", "dir": "test/", "patterns": "*.md"}
         )
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
 
-    async def test_guide_category_prompt_with_edit_action(self):
-        """Test guide-category prompt with edit action."""
+    async def test_category_prompt_with_edit_action(self):
+        """Test category prompt with edit action."""
         # This should fail initially as we haven't implemented the handler yet
-        result = await mcp.get_prompt(
-            "guide-category", {"action": "edit", "name": "test-category", "patterns": "*.md,*.txt"}
-        )
+        result = await mcp.get_prompt("category", {"action": "edit", "name": "test-category", "patterns": "*.md,*.txt"})
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
 
-    async def test_guide_category_prompt_with_del_action(self):
-        """Test guide-category prompt with del action."""
+    async def test_category_prompt_with_del_action(self):
+        """Test category prompt with del action."""
         # This should fail initially as we haven't implemented the handler yet
-        result = await mcp.get_prompt("guide-category", {"action": "del", "name": "test-category"})
-        assert isinstance(result, GetPromptResult)
-        assert len(result.messages) > 0
-
-    async def test_g_category_alias_prompt(self):
-        """Test g-category alias prompt."""
-        # This should fail initially as we haven't implemented the handler yet
-        result = await mcp.get_prompt("g-category", {"action": "new", "name": "test-category"})
+        result = await mcp.get_prompt("category", {"action": "del", "name": "test-category"})
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
