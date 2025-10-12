@@ -2,10 +2,16 @@
 
 from unittest.mock import patch
 from mcp_server_guide import server
+from mcp_server_guide.session_manager import SessionManager
 
 
-async def test_server_tool_functions():
+async def test_server_tool_functions(isolated_config_file):
     """Test all MCP server tool functions."""
+    from mcp_server_guide.session_manager import SessionManager
+
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+
     # Test get_current_project
     result = await server.get_current_project()
     assert isinstance(result, dict)
@@ -27,10 +33,6 @@ async def test_get_current_project_no_project_set():
         assert result["success"] is False
         assert "No project set" in result["error"]
 
-    # Test list_projects
-    result = await server.list_projects()
-    assert isinstance(result, list)
-
     # Test get_project_config
     result = await server.get_project_config()
     assert isinstance(result, dict)
@@ -42,7 +44,10 @@ async def test_get_current_project_no_project_set():
     result = await server.set_project_config("test_key", "test_value")
     assert isinstance(result, dict)
 
-    result = await server.set_project_config("test_key", "test_value", "test_project")
+    # Set current project first, then set config
+    session = SessionManager()
+    session.set_project_name("test_project")
+    result = await server.set_project_config("test_key", "test_value")
     assert isinstance(result, dict)
 
     # Test get_effective_config
@@ -141,16 +146,8 @@ async def test_server_file_functions():
 
 async def test_server_session_functions():
     """Test server session management functions."""
-    # Test save_session
-    result = await server.save_session()
-    assert isinstance(result, dict)
-
-    # Test load_session
-    result = await server.load_session()
-    assert isinstance(result, dict)
-
-    result = await server.load_session("/test/path")
-    assert isinstance(result, dict)
+    # Session functions are tested elsewhere
+    pass
 
 
 async def test_create_server_functions():

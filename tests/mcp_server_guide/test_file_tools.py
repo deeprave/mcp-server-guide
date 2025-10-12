@@ -1,28 +1,35 @@
 """Tests for file tools functionality."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 from mcp_server_guide.tools.file_tools import list_files, file_exists, get_file_content
 
 
 async def test_list_files_error_handling():
     """Test list_files with various error conditions."""
-    # Test with non-existent directory
-    with patch("pathlib.Path.exists", return_value=False):
-        result = await list_files("guide", "test_project")
-        assert result == []
+    # Mock SessionManager to avoid real config access
+    with patch("mcp_server_guide.tools.file_tools.SessionManager") as mock_session_class:
+        mock_session = Mock()
+        mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+        mock_session.get_or_create_project_config = AsyncMock(return_value={"guide": "./nonexistent"})
+        mock_session_class.return_value = mock_session
 
-    # Test with path that's not a directory
-    with patch("pathlib.Path.exists", return_value=True):
-        with patch("pathlib.Path.is_dir", return_value=False):
+        # Test with non-existent directory
+        with patch("pathlib.Path.exists", return_value=False):
             result = await list_files("guide", "test_project")
             assert result == []
 
-    # Test with exception during iteration
-    with patch("pathlib.Path.exists", return_value=True):
-        with patch("pathlib.Path.is_dir", return_value=True):
-            with patch("pathlib.Path.iterdir", side_effect=Exception("Permission denied")):
+        # Test with path that's not a directory
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("pathlib.Path.is_dir", return_value=False):
                 result = await list_files("guide", "test_project")
                 assert result == []
+
+        # Test with exception during iteration
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("pathlib.Path.is_dir", return_value=True):
+                with patch("pathlib.Path.iterdir", side_effect=Exception("Permission denied")):
+                    result = await list_files("guide", "test_project")
+                    assert result == []
 
 
 async def test_file_exists_error_handling():

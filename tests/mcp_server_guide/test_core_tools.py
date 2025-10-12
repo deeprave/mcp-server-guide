@@ -1,6 +1,6 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
-from unittest.mock import patch, Mock, AsyncMock
+from unittest.mock import patch, Mock
 from mcp_server_guide.tools import get_current_project, get_guide, get_project_config, switch_project
 
 
@@ -14,7 +14,7 @@ async def test_get_current_project_none():
     """Test get_current_project returns None when no project is set."""
     with patch("mcp_server_guide.tools.project_tools.SessionManager") as mock_session_class:
         mock_session = Mock()
-        mock_session.get_current_project = AsyncMock(return_value=None)
+        mock_session.get_project_name = Mock(return_value=None)  # NOT async
         mock_session_class.return_value = mock_session
 
         result = await get_current_project()
@@ -53,8 +53,13 @@ async def test_get_project_config_specific():
     assert "project" in result
 
 
-async def test_switch_project():
+async def test_switch_project(isolated_config_file):
     """Test switching to different project."""
+    from mcp_server_guide.session_manager import SessionManager
+
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+
     result = await switch_project("test-project")
     assert isinstance(result, dict)
     assert result["success"] is True

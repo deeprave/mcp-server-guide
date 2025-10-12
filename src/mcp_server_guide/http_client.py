@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 import requests
 from .logging_config import get_logger
+from .naming import user_agent
 
 logger = get_logger()
 
@@ -27,9 +28,9 @@ class HttpClient:
 
     def __init__(self, timeout: int = 30, headers: Optional[Dict[str, str]] = None):
         self.timeout = timeout
-        self.headers = {"User-Agent": "mcp-server-guide/1.0"}
+        self.headers = {"User-Agent": user_agent()}
         if headers:
-            self.headers.update(headers)
+            self.headers |= headers
         logger.debug(f"HTTP client initialized with timeout={timeout}")
 
     def get(self, url: str) -> HttpResponse:
@@ -40,9 +41,9 @@ class HttpClient:
             response.raise_for_status()
             logger.debug(f"HTTP GET successful: {url} ({len(response.text)} chars)")
             return HttpResponse(content=response.text, headers=dict(response.headers))
-        except Exception as e:
+        except requests.RequestException as e:
             logger.warning(f"HTTP GET failed for {url}: {e}")
-            raise HttpError(f"HTTP GET failed for {url}: {e}")
+            raise HttpError(f"HTTP GET failed for {url}: {e}") from e
 
     def get_conditional(
         self, url: str, if_modified_since: Optional[str] = None, if_none_match: Optional[str] = None
@@ -68,7 +69,7 @@ class HttpClient:
             response.raise_for_status()
             return HttpResponse(content=response.text, headers=dict(response.headers))
         except Exception as e:
-            raise HttpError(f"HTTP conditional GET failed for {url}: {e}")
+            raise HttpError(f"HTTP conditional GET failed for {url}: {e}") from e
 
     def exists(self, url: str) -> bool:
         """Check if HTTP resource exists via HEAD request."""

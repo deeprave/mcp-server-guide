@@ -1,24 +1,34 @@
-# MCP Rules Server
+# MCP Guide Server
 
-This is a MCP server that provides developer support by providing a common resource for AI agents with hybrid file access, HTTP caching, and persistent project configuration.
+This is a MCP server that provides developer support by providing a common resource for AI agents.
 
 ## What is this MCP Server for?
 
-This is a developer convenience. It centralises how AI agent instructions are served, regardless which one you happen to be using.
+This MCP is more than a developer convenience. It centralises how AI agent instructions are served, regardless which one you happen to be using.
 
 This MCP server works with:
-  - AmazonQ
-  - Claude Code
-  - github copilot (in VSCode & Jetbrains IDEs)
-  - gemini
+
+- AmazonQ
+- Claude Code
+- github copilot (in VSCode & Jetbrains IDEs)
+- gemini
 
 Since I use multiple (often switching between the first three), I needed a common place I could store AI agent instructions. I used symlinks at first, but this became a little unwieldy to manage, copying files between directories and keeping them updated whenever they changed.
 
 Every AI client has its own idea of where to source instructions by default, and some of the implementations or versions from the same vendor often disagree with each other or just aren't consistent. This was my solution. This also keeps these docs in a central location plus it can keep them out of the project itself.
 
+## The Objective
+
+Prompts are key to keeping an agentic agent within working guidelines. Without them, the agent will implement your instructions (usually) plus some, based on the temperature and tuning of its LLM. When provided with an idea, the agent will immediately start making changes regardless of it having incomplete context and knowledge of past events.
+
+This MCP is a step towards providing the AI with guardrails that it cannot (or should not) ignore. This solution is not guaranteed, and AI will sometimes completely ignore instructions.
+
 ### The Implementation
 
+Document are served to the AI for its consumption. These take the form of general guidelines,
+
 Documents are organized using a **unified categories system** with three built-in categories:
+
 - **guide**: General developer guidelines (TDD methodology, coding standards, workflow requirements)
 - **lang**: Programming language-specific guidelines (syntax, best practices, tooling, project structure)
 - **context**: Project-specific information (issue management, specifications, workflow details)
@@ -54,21 +64,26 @@ mcp-server-guide -d /docs -g guides/ -l langs/ -L python -c contexts/
 
 ### CLI Options
 
-| Short | Long           | Environment Variable | Default              | Description                           |
-| ----- | -------------- | -------------------- | -------------------- | ------------------------------------- |
-| `-d`  | `--docroot`    | `MG_DOCROOT`         | `.`                  | Document root directory               |
-| `-c`  | `--config`     | `MG_CONFIG`          | `.mcp-server-guide.config.json` | Configuration file path |
-|       | `--global`     | `MG_CONFIG_GLOBAL`   | `false`              | Use global configuration file         |
-| `-g`  | `--guidesdir`  | `MG_GUIDEDIR`        | `guide/`             | Guidelines directory (configures 'guide' category) |
-| `-G`  | `--guide`      | `MG_GUIDE`           | `guidelines`         | Guidelines file (configures 'guide' category) |
-| `-l`  | `--langsdir`   | `MG_LANGDIR`         | `lang/`              | Languages directory (configures 'lang' category) |
-| `-L`  | `--lang`       | `MG_LANGUAGE`        | `none` (auto-detect) | Language file (configures 'lang' category) |
-|       | `--contextdir` | `MG_CONTEXTDIR`      | `context/`           | Context directory (configures 'context' category) |
-| `-C`  | `--context`    | `MG_CONTEXT`         | `project-context`    | Project context file (configures 'context' category) |
+
+| Short | Long           | Environment Variable | Default                           | Description                                          |
+| ----- | -------------- | -------------------- | --------------------------------- | ---------------------------------------------------- |
+| `-d`  | `--docroot`    | `MG_DOCROOT`         | `.`                               | Document root directory                              |
+| `-c`  | `--config`     | `MG_CONFIG`          | `[platform location]/config.json` | Configuration file path                              |
+| `-g`  | `--guidesdir`  | `MG_GUIDEDIR`        | `guide/`                          | Guidelines directory (configures 'guide' category)   |
+| `-G`  | `--guide`      | `MG_GUIDE`           | `guidelines`                      | Guidelines file (configures 'guide' category)        |
+| `-l`  | `--langsdir`   | `MG_LANGDIR`         | `lang/`                           | Languages directory (configures 'lang' category)     |
+| `-L`  | `--lang`       | `MG_LANGUAGE`        | `none` (auto-detect)              | Language file (configures 'lang' category)           |
+|       | `--contextdir` | `MG_CONTEXTDIR`      | `context/`                        | Context directory (configures 'context' category)    |
+| `-C`  | `--context`    | `MG_CONTEXT`         | `project-context`                 | Project context file (configures 'context' category) |
+
+**platform location is one of**
+
+- On Unix-like systems (incl MacOS, Linux): ~/.config/mcp-server-guide/
+- On Windows: %APPDATA%/mcp-server-guide/
 
 ### Language Auto-Detection
 
-The server automatically detects your project's programming language when `--lang` is not specified or set to `none`. Supports 15+ languages:
+On first startup on an unknown project, the server automatically detects your project's programming language when `--lang` is not specified or set to `none`. Supports 15+ languages:
 
 - **Build file detection**: `Cargo.toml` → Rust, `pyproject.toml` → Python, `go.mod` → Go
 - **Multi-language projects**: `build.gradle` → Java/Kotlin/Scala (analyzes source files)
@@ -93,183 +108,4 @@ mcp-server-guide --docroot /different/path
 
 ### Configuration Files
 
-The server supports flexible configuration file management:
-
-```bash
-# Use custom config file
-mcp-server-guide --config /path/to/my-config.json
-
-# Use global config (platform-specific)
-mcp-server-guide --global
-
-# Set via environment
-export MG_CONFIG="/path/to/config.json"
-export MG_CONFIG_GLOBAL="1"
-```
-
-**Global config locations:**
-- Unix: `$HOME/.config/mcp-server-guide/config.json`
-- Windows: `%APPDATA%/mcp-server-guide/config.json`
-
-### Path Resolution
-
-The server supports both absolute and relative paths:
-
-- **Absolute paths** (starting with `/`) are used as-is
-- **Relative paths** are resolved relative to the document root
-- **File paths** without extensions automatically get `.md` extension
-- **Directory paths** ending with `/` preserve the trailing slash
-
-Examples:
-
-```bash
-# Absolute paths
-mcp-server-guide --guide /absolute/path/to/guidelines.md
-
-# Relative paths (resolved relative to docroot)
-mcp-server-guide --docroot /docs --guide team/guidelines  # → /docs/team/guidelines.md
-
-# Directory paths
-mcp-server-guide --guidesdir custom_guides/  # Preserves trailing slash
-```
-
-## Examples
-
-### Basic Usage
-
-```bash
-# Start with all defaults (language auto-detected)
-mcp-server-guide
-
-# Custom documentation root
-mcp-server-guide --docroot /path/to/docs
-
-# Configure built-in categories using legacy CLI arguments
-mcp-server-guide \
-  --docroot /docs \
-  --guidesdir team_guides/ \
-  --guide coding_standards \
-  --langsdir programming_languages/ \
-  --lang python \
-  --contextdir projects/ \
-  --context my_project
-```
-
-### Environment-Based Configuration
-
-```bash
-# Set up environment
-export MG_DOCROOT="/company/docs"
-export MG_GUIDEDIR="/company/docs/guidelines"
-export MG_LANGDIR="/company/docs/languages"
-export MG_LANGUAGE="typescript"
-
-# Start server with environment config
-mcp-server-guide
-
-# Override specific options
-mcp-server-guide --lang python
-```
-
-### Development Workflow
-
-```bash
-# Development environment
-export MG_DOCROOT="./docs"
-export MG_GUIDEDIR="./docs/dev-guides"
-
-# Start development server
-mcp-server-guide
-
-# Production environment with legacy CLI args
-mcp-server-guide \
-  --docroot /prod/docs \
-  --guidesdir /prod/docs/guidelines \
-  --contextdir /prod/docs/projects
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Issue**: `No such option: --langdir`
-**Solution**: Use `--langsdir` (note the 's') for consistency with other directory options.
-
-**Issue**: Configuration not taking effect
-**Solution**: Check configuration precedence - CLI args override environment variables. Use `mcp-server-guide --help` to see all available options.
-
-**Issue**: File not found errors
-**Solution**: Ensure all specified paths exist. The server validates file and directory existence at startup.
-
-**Issue**: Path resolution problems
-**Solution**:
-
-- Use absolute paths for explicit control
-- Ensure relative paths are correct relative to `--docroot`
-- Check that file extensions are correct (`.md` is added automatically for files without extensions)
-
-### Debugging
-
-Enable verbose output to see resolved configuration:
-
-```bash
-# The server shows the final resolved configuration
-mcp-server-guide --docroot /custom --guide my-guide
-# Output: Starting MCP server with config: {'docroot': '/custom', 'guide': 'my-guide', ...}
-```
-
-### Validation
-
-The server validates all paths at startup:
-
-- Files must exist and be actual files
-- Directories must exist and be actual directories
-- Invalid configurations will cause startup to fail with descriptive errors
-
-## Migration Guide
-
-### Environment Variables
-If you were using any environment variables, update the prefix:
-- `MCP_*` → `MG_*` (e.g., `MCP_DOCROOT` → `MG_DOCROOT`)
-
-### Configuration Fields
-- `projdir` → `contextdir` (directory renamed)
-- `project` → `context` (file renamed)
-
-### Language Detection
-- Language now defaults to `none` (auto-detect) instead of empty
-- Auto-detection supports 15+ languages based on project files
-- Set `--lang none` to explicitly enable auto-detection
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov
-
-# Run specific test categories
-uv run pytest tests/mcp_server_guide/  # Unit tests
-uv run pytest tests/test_integration.py  # Integration tests
-```
-
-### Code Quality
-
-```bash
-# Linting
-uv run ruff check src tests
-
-# Type checking
-uv run mypy src
-
-# Formatting
-uv run ruff format src tests
-```
-
-## Technical Documentation
-
-For technical details about the architecture and implementation, see [ARCHITECTURE.md](ARCHITECTURE.md).
+The server supports flexible configuration file management in yaml format

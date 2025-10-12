@@ -35,13 +35,17 @@ class TestDirectoryCreationFixes:
 
         assert mcp_name() == "mcp-server-guide"
 
-    def test_config_filename_uses_mcp_name_function(self):
-        """Test that CONFIG_FILENAME uses centralized mcp_name() function."""
-        from mcp_server_guide.project_config import CONFIG_FILENAME
+    def test_global_config_path_uses_mcp_name_function(self):
+        """Test that global config path uses centralized mcp_name() function."""
+        from mcp_server_guide.project_config import ProjectConfigManager
         from mcp_server_guide.naming import mcp_name
 
-        expected_filename = f".{mcp_name()}.config.json"
-        assert CONFIG_FILENAME == expected_filename
+        manager = ProjectConfigManager()
+        config_path = manager.get_config_filename()
+
+        # Should contain mcp_name in the path
+        assert mcp_name() in str(config_path)
+        assert str(config_path).endswith("config.yaml")
 
     def test_user_agent_uses_version_constant(self):
         """Test that user_agent() uses centralized version constant."""
@@ -53,7 +57,7 @@ class TestDirectoryCreationFixes:
 
     def test_current_file_name_uses_centralized_naming(self):
         """Test that SessionManager works with PWD-based approach (no current file needed)."""
-        from mcp_server_guide.session_tools import SessionManager
+        from mcp_server_guide.session_manager import SessionManager
 
         session_manager = SessionManager()
         # PWD-based approach doesn't use current files

@@ -51,7 +51,7 @@ def lock_update(file_path: Path, func: Callable[..., T], *args: Any, **kwargs: A
     """Execute function with file locking to prevent concurrent updates."""
     pid = os.getpid()
     hostname = os.uname().nodename.split(".")[0]
-    lock_file = file_path.with_suffix(file_path.suffix + ".lock")
+    lock_file = file_path.with_suffix(f"{file_path.suffix}.lock")
 
     while True:
         # Attempt to create the lock file

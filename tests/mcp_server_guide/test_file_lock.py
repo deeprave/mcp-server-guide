@@ -14,7 +14,7 @@ from mcp_server_guide.file_lock import lock_update, is_process_running
 async def test_lock_update_creates_lock_file():
     """Test that lock_update creates a lock file."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
 
         def dummy_func(file_path):
             return "success"
@@ -30,7 +30,7 @@ async def test_lock_update_creates_lock_file():
 async def test_lock_file_contains_hostname_and_pid():
     """Test that lock file contains hostname:pid format."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         def check_lock_content(file_path):
@@ -58,7 +58,7 @@ async def test_lock_file_contains_hostname_and_pid():
 async def test_lock_update_executes_function_with_args():
     """Test that lock_update executes function with args and kwargs."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
 
         def test_func(file_path, arg1, arg2, kwarg1=None, kwarg2=None):
             return {"file_path": str(file_path), "arg1": arg1, "arg2": arg2, "kwarg1": kwarg1, "kwarg2": kwarg2}
@@ -72,7 +72,7 @@ async def test_lock_update_executes_function_with_args():
 async def test_lock_file_removed_after_successful_execution():
     """Test that lock file is removed after successful execution."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         lock_existed_during_execution = False
@@ -94,7 +94,7 @@ async def test_lock_file_removed_after_successful_execution():
 async def test_lock_file_removed_after_exception():
     """Test that lock file is removed even when function raises exception."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         def failing_func(file_path):
@@ -126,7 +126,7 @@ async def test_is_process_running_detects_dead_process():
 async def test_stale_lock_different_hostname_dead_process():
     """Test that stale lock is detected for different hostname with dead process."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         # Create a stale lock file with different hostname and dead PID
@@ -147,15 +147,17 @@ async def test_project_config_save_uses_locking():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         project_path = Path(temp_dir)
-        config = ProjectConfig(project="test-project", docroot="/test")
+        config = ProjectConfig(docroot="/test", categories={})
 
         manager = ProjectConfigManager()
+        # Set config file to temp directory to avoid overwriting actual config
+        manager.set_config_filename(project_path / "test_config.yaml")
 
         # This should use locking internally
-        manager.save_config(project_path, config)
+        manager.save_config("test-project", config)
 
-        # Verify config was saved
-        config_file = project_path / manager.CONFIG_FILENAME
+        # Verify config was saved to temp location
+        config_file = Path(manager.get_config_filename())
         assert config_file.exists()
 
         # Verify no lock file remains
@@ -163,7 +165,7 @@ async def test_project_config_save_uses_locking():
         assert not lock_file.exists()
     """Test that stale lock is detected for old mtime."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        config_file = Path(temp_dir) / "config.json"
+        config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
         # Create a lock file with current hostname and PID but old mtime
@@ -192,12 +194,14 @@ async def test_concurrent_config_updates_prevented():
     with tempfile.TemporaryDirectory() as temp_dir:
         project_path = Path(temp_dir)
         manager = ProjectConfigManager()
+        # Set config file to temp directory to avoid overwriting actual config
+        manager.set_config_filename(project_path / "test_config.yaml")
 
         results = []
 
         def save_config(project_name):
-            config = ProjectConfig(project=project_name, docroot="/test")
-            manager.save_config(project_path, config)
+            config = ProjectConfig(docroot="/test", categories={})
+            manager.save_config(project_name, config)
             results.append(project_name)
 
         # Start two concurrent saves
@@ -216,7 +220,7 @@ async def test_concurrent_config_updates_prevented():
         assert "project2" in results
 
         # Final config should be one of them (last writer wins)
-        config_file = project_path / manager.CONFIG_FILENAME
+        config_file = Path(manager.get_config_filename())
         assert config_file.exists()
 
         # No lock file should remain
@@ -226,8 +230,8 @@ async def test_concurrent_config_updates_prevented():
 
 async def test_invalid_lock_file_format_handled(tmp_path):
     """Test that invalid lock file format is handled gracefully."""
-    config_file = tmp_path / "config.json"
-    lock_file = tmp_path / "config.json.lock"
+    config_file = tmp_path / "config.yaml"
+    lock_file = tmp_path / "config.yaml.lock"  # Match the file_path suffix
 
     # Create lock file with invalid format
     lock_file.write_text("invalid-format")
@@ -244,7 +248,7 @@ async def test_invalid_lock_file_format_handled(tmp_path):
 
 async def test_lock_file_read_errors_handled(tmp_path, monkeypatch):
     """Test that lock file read errors are handled gracefully."""
-    config_file = tmp_path / "config.json"
+    config_file = tmp_path / "config.yaml"
     lock_file = tmp_path / "config.json.lock"
 
     # Create lock file

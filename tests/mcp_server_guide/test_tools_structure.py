@@ -1,26 +1,18 @@
 """Tests for MCP tools structure and functionality."""
 
+from mcp_server_guide.session_manager import SessionManager
 from mcp_server_guide.tools.config_tools import (
     get_project_config,
     set_project_config,
-)
-from mcp_server_guide.tools.session_management import (
-    save_session,
-    load_session,
-    reset_session,
 )
 
 
 async def test_tools_return_expected_types():
     """Test that all tools return expected data types."""
-    # Test session management tools
-    session = await save_session()
-    assert isinstance(session, dict)
-    assert "success" in session
-
     # Test config tools
-    config = await get_project_config()
-    assert isinstance(config, dict)
+    result = await get_project_config()
+    assert isinstance(result, dict)
+    assert "success" in result
 
 
 async def test_tools_with_parameters():
@@ -34,30 +26,24 @@ async def test_tools_with_parameters():
 
 async def test_session_management_comprehensive():
     """Test comprehensive session management functionality."""
-    # Save session
-    result = await save_session()
-    assert result["success"] is True
-
-    # Load session
-    result = await load_session()
-    assert result["success"] is True
-
-    # Reset session
-    result = await reset_session()  # Now properly awaited
-    assert result["success"] is True
+    # Session management functionality removed
+    pass
 
 
 async def test_config_tools_comprehensive():
     """Test comprehensive configuration tools functionality."""
-    # Set config
-    result = await set_project_config("docroot", "/test/path", "test_project")
+    # Set the current project first, then set config
+    session = SessionManager()
+    session.set_project_name("test_project")
+    result = await set_project_config("docroot", "/test/path")
     assert result["success"] is True
     assert result["project"] == "test_project"
 
     # Get config
-    config = await get_project_config("test_project")
-    assert isinstance(config, dict)
-    assert config["docroot"] == "/test/path"
+    result = await get_project_config("test_project")
+    assert isinstance(result, dict)
+    assert result["success"] is True
+    assert result["config"]["docroot"] == "/test/path"
 
     # Test get_project_config with a non-existent project
     non_existent_config = await get_project_config("non_existent_project")

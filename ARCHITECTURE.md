@@ -59,22 +59,26 @@ Configuration values are resolved in the following order (highest to lowest prio
 ## **File Source Types**
 
 ### **Local Files (`local:`)**
+
 - Accesses files on the client filesystem
 - Direct file system operations
 - No caching required
 
 ### **Server Files (`server:`)**
+
 - Accesses files on the server filesystem
 - Direct file system operations
 - No caching required
 
 ### **HTTP Resources (`https:`)**
+
 - Fetches files from remote HTTP servers
 - HTTP-aware caching with validation headers
 - Conditional requests (If-Modified-Since, If-None-Match)
 - Network error fallback to cached content
 
 ### **Context-Aware Files (`file://`)**
+
 - Automatically detects deployment context
 - Routes to local or server based on environment
 - Seamless switching between development and production
@@ -82,12 +86,14 @@ Configuration values are resolved in the following order (highest to lowest prio
 ## **HTTP Caching System**
 
 ### **Cache Validation**
+
 - Uses `Last-Modified` and `ETag` headers for validation
 - Respects `Cache-Control` directives
 - Makes conditional requests to minimize bandwidth
 - Falls back to cached content on network errors
 
 ### **Cache Storage**
+
 - JSON-based persistent cache files
 - SHA256 hashing for cache keys
 - Configurable cache directory and size limits
@@ -96,12 +102,14 @@ Configuration values are resolved in the following order (highest to lowest prio
 ## **Project Configuration**
 
 ### **Configuration Files**
+
 - `.mcp-server-guide.config.json` in project root
 - JSON format with structured data
 - Automatic project root detection
 - Real-time file watching for changes
 
 ### **Configuration Schema**
+
 ```json
 {
   "project": "string",
@@ -118,12 +126,14 @@ Configuration values are resolved in the following order (highest to lowest prio
 ## **Session State Management**
 
 ### **Session Persistence**
+
 - Singleton SessionManager pattern
 - In-memory session state with project switching
 - Integration with persistent configuration
 - Effective configuration merging
 
 ### **Project Context**
+
 - Automatic project detection from directory structure
 - Context-aware file path resolution
 - Session-specific configuration overrides
@@ -131,18 +141,21 @@ Configuration values are resolved in the following order (highest to lowest prio
 ## **Development**
 
 ### **Testing Strategy**
+
 - Test-Driven Development (TDD) approach
 - Unit tests for individual components
 - Integration tests for system interactions
 - 93% test coverage across all modules
 
 ### **Code Quality**
+
 - Type hints throughout codebase
 - Linting with ruff
 - Formatting with ruff
 - Pre-commit hooks for quality assurance
 
 ### **Module Structure**
+
 ```
 src/mcp_server_-_guide/
 ├── __init__.py

@@ -1,9 +1,10 @@
 """Tests for error handling and exception scenarios in session management and config tools."""
 
+import contextlib
 import tempfile
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, MagicMock, AsyncMock, Mock
 
-from src.mcp_server_guide.session_tools import SessionManager
+from src.mcp_server_guide.session_manager import SessionManager
 from src.mcp_server_guide.tools.config_tools import set_project_config_values, set_project_config
 
 
@@ -14,7 +15,7 @@ async def test_session_manager_read_error():
         # Use PWD-based approach - no need to set directory
 
         # Test that get_current_project works without errors
-        result = await manager.get_current_project()
+        result = manager.get_project_name()
         # Should return a valid project name or None
         assert result is None or isinstance(result, str)
 
@@ -23,17 +24,14 @@ async def test_session_manager_write_error():
     """Test SessionManager handles write errors."""
     with tempfile.TemporaryDirectory() as _:
         manager = SessionManager()
-        # Use PWD-based approach - no need to set directory
+        # Use a PWD-based approach
 
         # Test that set_current_project works without errors
-        try:
+        with contextlib.suppress(Exception):
             # Test basic functionality
-            await manager.set_current_project("test-project")
-            result = await manager.get_current_project()
+            manager.set_project_name("test-project")
+            result = manager.get_project_name()
             assert result == "test-project"
-        except Exception:
-            # If there are any errors, they should be handled gracefully
-            pass
 
 
 async def test_set_project_config_values_exception():
@@ -45,7 +43,7 @@ async def test_set_project_config_values_exception():
             mock_session.return_value = mock_instance
             mock_instance.get_current_project_safe = AsyncMock(return_value="test-project")
             mock_instance.save_to_file = AsyncMock(side_effect=Exception("Save failed"))
-            mock_instance.session_state.set_project_config = AsyncMock()
+            mock_instance.session_state.set_project_config = Mock()
             mock_instance.get_or_create_project_config = AsyncMock(return_value={"docroot": "."})
             mock_get_config.return_value = {"docroot": "."}
 
@@ -62,7 +60,7 @@ async def test_set_project_config_exception():
         mock_session.return_value = mock_instance
         mock_instance.get_current_project_safe = AsyncMock(return_value="test-project")
         mock_instance.save_to_file = AsyncMock(side_effect=Exception("Save failed"))
-        mock_instance.session_state.set_project_config = AsyncMock()
+        mock_instance.session_state.set_project_config = Mock()
 
         # This should trigger the exception handling but still succeed
         result = await set_project_config("language", "python")

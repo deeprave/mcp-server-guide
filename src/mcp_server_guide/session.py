@@ -1,12 +1,11 @@
 """Session-scoped project configuration management."""
 
-import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .session_tools import SessionManager
+    from .session_manager import SessionManager
 
 
 # Global session instance
@@ -48,27 +47,13 @@ def resolve_server_path(path: str, project_context: str) -> str:
     # Handle file:// URL normalization
     if path.startswith("file:///"):
         # Absolute file URL: file:///absolute/path → /absolute/path
-        return "/" + path[8:]  # Remove "file:///" and add back leading /
+        return f"/{path[8:]}"
     elif path.startswith("file://"):
         # Relative file URL: file://relative/path → relative/path
         path = path[7:]
 
     # Apply basic path resolution (simplified for now)
-    if path.startswith("/"):
-        return path  # Absolute path
-    else:
-        # Relative path - resolve relative to current working directory
-        return str(Path.cwd() / path)
-
-
-def resolve_client_path(path: str) -> str:
-    """Resolve path relative to client's working directory."""
-    # Simplified implementation - in real MCP this would communicate with client
-    if path.startswith("/"):
-        return path  # Absolute path
-    else:
-        # For now, assume client working directory is same as server
-        return str(Path.cwd() / path)
+    return path if path.startswith("/") else str(Path.cwd() / path)
 
 
 def validate_session_path(path: str) -> bool:
@@ -88,31 +73,33 @@ def validate_session_path(path: str) -> bool:
 
 
 class SessionState:
-    """Manages session-scoped project configurations."""
+    """Manages session-scoped project configuration for a single project."""
 
-    def __init__(self) -> None:
-        self.projects: Dict[str, Dict[str, Any]] = {}
-        self._projects_lock = asyncio.Lock()
-        self._defaults = {
-            "docroot": ".",
-        }
+    def __init__(self, project_name: Optional[str] = None) -> None:
+        self.project_name: str | None = project_name
+        self.project_config: Dict[str, Any] = {}
 
-    async def get_project_config(self, project_name: str) -> Dict[str, Any]:
-        """Get configuration for a project."""
-        # Ensure project exists in session state with thread-safe access
-        async with self._projects_lock:
-            if project_name not in self.projects:
-                self.projects[project_name] = {}
-            project_config = self.projects[project_name].copy()
+    def reset_project_config(self, project_name: Optional[str] = None) -> None:
+        """Reset the current project configuration."""
+        self.project_name = project_name or ""
+        self.project_config = {}
 
-        # Merge with defaults (outside lock for performance)
-        config = self._defaults.copy()
-        config.update(project_config)
-        return config
+    def get_project_name(self) -> Optional[str]:
+        """Get the current project name."""
+        return self.project_name
 
-    async def set_project_config(self, project_name: str, config_key: str, value: str | Dict[str, Any] | None) -> None:
-        """Set configuration value for a project."""
-        async with self._projects_lock:
-            if project_name not in self.projects:
-                self.projects[project_name] = {}
-            self.projects[project_name][config_key] = value
+    def set_project_name(self, project_name: str) -> None:
+        """Set the current project name."""
+        self.project_name = project_name
+
+    def get_project_config(self) -> Dict[str, Any]:
+        """Get configuration for the current project."""
+        return self.project_config
+
+    def merge_project_config(self, config_key: str, value: str | Dict[str, Any] | None) -> None:
+        """Set configuration value for the current project."""
+        self.project_config[config_key] |= value
+
+    def set_project_config(self, config_key: str, value: str | Dict[str, Any] | None) -> None:
+        """Set configuration value for the current project."""
+        self.project_config[config_key] = value

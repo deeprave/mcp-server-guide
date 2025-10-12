@@ -1,5 +1,6 @@
 """Tests for session tools functionality."""
 
+from mcp_server_guide.session_manager import SessionManager
 from mcp_server_guide.tools.config_tools import (
     get_project_config,
     set_project_config,
@@ -7,26 +8,33 @@ from mcp_server_guide.tools.config_tools import (
 )
 
 
-async def test_set_project_config_values_tool():
+async def test_set_project_config_values_tool(isolated_config_file):
     """Test batch project config setting tool."""
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+    session_manager.set_project_name("test-project")
+
     # Test batch setting multiple values
-    config_dict = {"docroot": "/test/path", "project": "test-project"}
+    config_dict = {"docroot": "/test/path"}
 
     result = await set_project_config_values(config_dict)
 
     assert result["success"] is True
-    assert result["project"] is not None
-    assert "2/2" in result["message"]  # Should show successful count
+    assert result["project"] == "test-project"
+    assert "1/1" in result["message"]  # Should show successful count
 
     # Verify the values were set
-    config = await get_project_config()
-    assert config["docroot"] == "/test/path"
-    assert config["project"] == "test-project"
-    assert config["project"] == "test-project"
+    result = await get_project_config()
+    assert result["success"] is True
+    assert result["config"]["docroot"] == "/test/path"
+    assert result["project"] == "test-project"
 
 
-async def test_set_project_config_values_partial_failure():
+async def test_set_project_config_values_partial_failure(isolated_config_file):
     """Test batch config setting with some failures."""
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+
     # Mix valid and invalid keys - all keys should succeed in our implementation
     config_dict = {
         "docroot": "/test/guides",
@@ -38,58 +46,42 @@ async def test_set_project_config_values_partial_failure():
     assert result["success"] is True  # All should succeed
 
 
-async def test_set_project_config_tool():
+async def test_set_project_config_tool(isolated_config_file):
     """Test set_project_config MCP tool."""
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+
     # Should set configuration for current project
     result = await set_project_config("docroot", "/test/path")
     assert result["success"] is True
     assert "/test/path" in result["message"]
 
 
-async def test_get_project_config_tool():
+async def test_get_project_config_tool(isolated_config_file):
     """Test get_project_config MCP tool."""
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+    session_manager.set_project_name("test-project")
+
     # Set some config first
     await set_project_config("docroot", "/test/path")
-    await set_project_config("project", "test-project")
 
     # Get config
-    config = await get_project_config()
-    assert config["docroot"] == "/test/path"
-    assert config["project"] == "test-project"
-
-
-async def test_list_project_configs_tool():
-    """Test list_project_configs MCP tool."""
-    # Set config for multiple projects
-    await set_project_config("docroot", "/test/path")
-
-    await set_project_config("project", "test-project")
+    result = await get_project_config()
+    assert result["success"] is True
+    assert result["config"]["docroot"] == "/test/path"
+    assert result["project"] == "test-project"
 
     # List all configs
-    config = await get_project_config()
-    assert "docroot" in config
+    result = await get_project_config()
+    assert "config" in result
+    assert "docroot" in result["config"]
 
 
-async def test_reset_project_config_tool():
-    """Test reset_project_config MCP tool."""
-    # Set some config first
-    await set_project_config("guide", "python-web")
-
-    # Reset config
-    from mcp_server_guide.tools.session_management import reset_session
-
-    result = await reset_session()  # Now properly awaited
-    assert result["success"] is True
-
-    # Verify config was reset
-    config = await get_project_config()
-    # Should have default values, not the custom one we set
-    assert config.get("guide") != "python-web"
-
-
-async def test_session_manager_initialization():
+async def test_session_manager_initialization(isolated_config_file):
     """Test SessionManager singleton initialization."""
-    from mcp_server_guide.session_tools import SessionManager
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
 
     # Get two instances
     session1 = SessionManager()
@@ -99,13 +91,13 @@ async def test_session_manager_initialization():
     assert session1 is session2
 
     # Should have a current project
-    assert await session1.get_current_project() is not None
+    assert session1.get_project_name() is not None
 
 
-async def test_project_context_switching():
+async def test_project_context_switching(isolated_config_file):
     """Test project context switching with configuration."""
-    # Set config for project A
-    await set_project_config("docroot", "/project-a")
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
 
     # Switch to project B
     from mcp_server_guide.tools.project_tools import switch_project
@@ -113,9 +105,10 @@ async def test_project_context_switching():
     result = await switch_project("project-b")
     assert result["success"] is True
 
-    # Set different config for project B
+    # Set config for current project
     await set_project_config("docroot", "/project-b")
 
-    # Verify each project has its own config
-    config_b = await get_project_config("project-b")
-    assert config_b.get("docroot") == "/project-b"
+    # Verify project has the config
+    result = await get_project_config("project-b")
+    assert result["success"] is True
+    assert result["config"]["docroot"] == "/project-b"

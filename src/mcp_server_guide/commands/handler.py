@@ -60,7 +60,7 @@ class CommandHandler:
             Dict with success status and content or error
         """
         # Both /guide: and /g: work the same way
-        if command not in ["guide", "g"]:
+        if command not in ["guide"]:
             return {"success": False, "error": f"Unknown command: {command}"}
 
         # Handle help subcommand
@@ -263,16 +263,11 @@ class CommandHandler:
             help_content = {
                 "commands": {
                     "/guide": "Show all guides",
-                    "/guide:<category>": "Show specific category content",
-                    "/g:<category>": "Show specific category content (shorthand)",
-                    "/guide:help": "Show this help",
-                    "/g:help": "Show this help (shorthand)",
-                    "/guide:new <name> [params]": "Create new category",
-                    "/g:new <name> [params]": "Create new category (shorthand)",
-                    "/guide:edit <name> [params]": "Edit existing category",
-                    "/g:edit <name> [params]": "Edit existing category (shorthand)",
-                    "/guide:del <name>": "Delete category",
-                    "/g:del <name>": "Delete category (shorthand)",
+                    "/guide <category>": "Show specific category content",
+                    "/guide help": "Show this help",
+                    "/category new <name> [params]": "Create new category",
+                    "/category edit <name> [params]": "Edit existing category",
+                    "/category del <name>": "Delete category",
                 },
                 "categories": {
                     "builtin": [cat["name"] for cat in categories_result.get("builtin_categories", [])],
@@ -280,14 +275,13 @@ class CommandHandler:
                 },
                 "examples": [
                     "/guide",
-                    "/guide:lang",
-                    "/g:context",
-                    "/guide:new typescript dir=lang/ts patterns=*.ts,*.tsx",
-                    "/g:edit typescript patterns=*.ts,*.tsx,*.d.ts",
-                    "/guide:del typescript",
+                    "/guide lang",
+                    "/guide context",
+                    "/category new typescript dir=lang/ts patterns=*.ts,*.tsx",
+                    "/category edit typescript patterns=*.ts,*.tsx,*.d.ts",
+                    "/category del typescript",
                 ],
             }
-
             return {"success": True, "help": help_content}
         except Exception as e:
             return {"success": False, "error": f"Error generating help: {str(e)}"}

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Helper script to migrate current config to categories format."""
 
-from src.mcp_server_guide.session_tools import SessionManager
+from mcp_server_guide.session_manager import SessionManager
 
 
 def migrate_config():
     """Migrate current config to categories format."""
     session = SessionManager()
-    project = session.get_current_project()
+    project = session.get_project_name()
 
     print(f"Migrating config for project: {project}")
 

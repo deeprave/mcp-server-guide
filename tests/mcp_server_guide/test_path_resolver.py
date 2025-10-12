@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from mcp_server_guide.path_resolver import LazyPath, create_lazy_path
+from mcp_server_guide.path_resolver import LazyPath
 
 
 class TestLazyPath:
@@ -158,19 +158,19 @@ class TestLazyPath:
             assert result == expected
 
 
-class TestCreateLazyPath:
-    """Test create_lazy_path factory function."""
+class TestLazyPathInit:
+    """Test LazyPath initialization with different input types."""
 
-    def test_create_from_string(self):
+    def test_init_from_string(self):
         """Test creating LazyPath from string."""
-        result = create_lazy_path("test/path")
+        result = LazyPath("test/path")
         assert isinstance(result, LazyPath)
         assert result.path_str == "test/path"
 
-    def test_create_from_path(self):
+    def test_init_from_path(self):
         """Test creating LazyPath from Path object."""
         path_obj = Path("test/path")
-        result = create_lazy_path(path_obj)
+        result = LazyPath(path_obj)
         assert isinstance(result, LazyPath)
         assert result.path_str == "test/path"
 
@@ -223,3 +223,130 @@ class TestEdgeCases:
 
                 assert result == expected_path
                 assert mock_run.call_count == 1
+
+
+class TestUriPathResolution:
+    """Test URI-style path resolution including file:// URLs."""
+
+    @pytest.mark.asyncio
+    async def test_resolve_file_uri_with_client_root(self):
+        """Test resolving file:// URI with client_root."""
+        lazy_path = LazyPath("file://test/path")
+
+        # Resolve should use FileSource.FILE type
+        resolved = await lazy_path.resolve()
+
+        # Should resolve relative to current working directory
+        expected = Path.cwd() / "test/path"
+        assert resolved == expected
+
+    @pytest.mark.asyncio
+    async def test_resolve_http_uri(self):
+        """Test resolving http:// URI."""
+        lazy_path = LazyPath("http://example.com/path")
+
+        resolved = await lazy_path.resolve()
+
+        # HTTP URIs resolve to themselves as Path objects
+        assert resolved == Path("http://example.com/path")
+
+    @pytest.mark.asyncio
+    async def test_resolve_https_uri(self):
+        """Test resolving https:// URI."""
+        lazy_path = LazyPath("https://example.com/path")
+
+        resolved = await lazy_path.resolve()
+
+        # HTTPS URIs resolve to themselves as Path objects
+        assert resolved == Path("https://example.com/path")
+
+    def test_sync_fallback_with_file_uri(self):
+        """Test sync fallback resolution for file:// URI."""
+        mock_loop = Mock()
+        mock_loop.is_running.return_value = True
+
+        with patch("asyncio.get_event_loop", return_value=mock_loop):
+            lazy_path = LazyPath("file://test/path")
+            result = lazy_path.resolve_sync()
+
+            # Should resolve using sync fallback
+            expected = Path.cwd() / "test/path"
+            assert result == expected
+
+    def test_sync_fallback_with_http_uri(self):
+        """Test sync fallback resolution for http:// URI."""
+        mock_loop = Mock()
+        mock_loop.is_running.return_value = True
+
+        with patch("asyncio.get_event_loop", return_value=mock_loop):
+            lazy_path = LazyPath("http://example.com/path")
+            result = lazy_path.resolve_sync()
+
+            # Should resolve to itself as Path
+            assert result == Path("http://example.com/path")
+
+    def test_sync_fallback_with_absolute_path(self):
+        """Test sync fallback resolution for absolute path in URI context."""
+        mock_loop = Mock()
+        mock_loop.is_running.return_value = True
+
+        with patch("asyncio.get_event_loop", return_value=mock_loop):
+            # Create a file:// URI that results in absolute path
+            lazy_path = LazyPath("file:///absolute/path")
+            result = lazy_path.resolve_sync()
+
+            # Should resolve to absolute path
+            assert result == Path("/absolute/path")
+
+    def test_sync_fallback_cached_path(self):
+        """Test sync fallback when path is already cached."""
+        mock_loop = Mock()
+        mock_loop.is_running.return_value = True
+
+        lazy_path = LazyPath("test/path")
+        cached_path = Path("/cached/result")
+        lazy_path._resolved_path = cached_path
+
+        with patch("asyncio.get_event_loop", return_value=mock_loop):
+            result = lazy_path.resolve_sync()
+
+            # Should return cached path without re-resolving
+            assert result == cached_path
+
+
+class TestFromFileSource:
+    """Test LazyPath.from_file_source class method."""
+
+    def test_from_file_source_with_file_type(self):
+        """Test creating LazyPath from FileSource with FILE type."""
+        from mcp_server_guide.file_source import FileSource, FileSourceType
+
+        file_source = FileSource(type=FileSourceType.FILE, base_path="test/path")
+        lazy_path = LazyPath.from_file_source(file_source)
+
+        assert lazy_path.path_str == "test/path"
+        assert lazy_path._file_source == file_source
+
+    def test_from_file_source_with_http_type(self):
+        """Test creating LazyPath from FileSource with HTTP type."""
+        from mcp_server_guide.file_source import FileSource, FileSourceType
+
+        file_source = FileSource(type=FileSourceType.HTTP, base_path="http://example.com")
+        lazy_path = LazyPath.from_file_source(file_source)
+
+        assert lazy_path.path_str == "http://example.com"
+        assert lazy_path._file_source == file_source
+
+    def test_from_file_source_with_unknown_type(self):
+        """Test creating LazyPath from FileSource with unknown type (fallback case)."""
+        from mcp_server_guide.file_source import FileSource, FileSourceType
+
+        # Create a mock FileSource with a different type (tests the else branch)
+        file_source = FileSource(type=FileSourceType.FILE, base_path="fallback/path")
+        # Override the type to simulate unknown type
+        file_source.type = "UNKNOWN"
+
+        lazy_path = LazyPath.from_file_source(file_source)
+
+        # Should use base_path as fallback
+        assert lazy_path.path_str == "fallback/path"

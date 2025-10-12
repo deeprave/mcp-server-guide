@@ -120,7 +120,6 @@ async def test_all_tools_have_guide_prefix():
     expected_tools = [
         "guide_get_current_project",
         "guide_switch_project",
-        "guide_list_projects",
         "guide_get_project_config",
         "guide_set_project_config_values",
         "guide_set_project_config",
@@ -136,10 +135,8 @@ async def test_all_tools_have_guide_prefix():
         "guide_list_files",
         "guide_file_exists",
         "guide_get_file_content",
-        "guide_save_session",
-        "guide_load_session",
         "guide_reset_session",
     ]
 
     # This test will initially fail until we implement the decorator
-    assert len(expected_tools) == 21  # Verify we have all tools listed (removed 2 tools functions)
+    assert len(expected_tools) == 18  # Verify we have all tools listed (removed list_projects)

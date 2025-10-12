@@ -18,8 +18,8 @@ def mock_session():
     with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        session_instance.session_state.get_project_config = AsyncMock(
+        session_instance.get_project_name = Mock(return_value="test-project")
+        session_instance.session_state.get_project_config = Mock(
             return_value={
                 "categories": {
                     "guide": {"dir": "guide/", "patterns": ["guidelines.md"]},
@@ -28,7 +28,7 @@ def mock_session():
                 }
             }
         )
-        session_instance.session_state.set_project_config = AsyncMock()
+        session_instance.session_state.set_project_config = Mock()
         session_instance.get_or_create_project_config = AsyncMock(
             return_value={
                 "categories": {
@@ -38,7 +38,7 @@ def mock_session():
                 }
             }
         )
-        session_instance.save_to_file = AsyncMock()
+        session_instance.save_session = AsyncMock()
         yield session_instance
 
 
@@ -98,7 +98,7 @@ async def test_get_category_content_no_files(mock_glob, mock_path, mock_session)
     mock_path.return_value.exists.return_value = True
 
     # Add categories to config
-    mock_session.session_state.get_project_config = AsyncMock(
+    mock_session.get_or_create_project_config = AsyncMock(
         return_value={"categories": {"testing": {"dir": "test/", "patterns": ["*.md"]}}}
     )
 

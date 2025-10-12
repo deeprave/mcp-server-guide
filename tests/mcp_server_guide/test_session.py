@@ -7,7 +7,8 @@ async def test_session_state_creation():
     """Test creating session state."""
     session = SessionState()
     assert session is not None
-    assert isinstance(session.projects, dict)
+    assert isinstance(session.project_config, dict)
+    assert session.project_name is None  # Defaults to None, not empty string
 
 
 async def test_project_context_detection():
@@ -19,54 +20,46 @@ async def test_project_context_detection():
 
 async def test_session_config_get_default():
     """Test getting default configuration for project."""
-    session = SessionState()
-    config = await session.get_project_config("test-project")
-
-    # Should return default values
-    assert config["docroot"] == "."
+    session = SessionState("test-project")
+    config = session.get_project_config()
+    assert isinstance(config, dict)
 
 
 async def test_session_config_set_and_get():
     """Test setting and getting project configuration."""
-    session = SessionState()
+    session = SessionState("test-project")
 
     # Set configuration
-    await session.set_project_config("test-project", "guidelines", "python-web")
-    await session.set_project_config("test-project", "language", "python")
+    session.set_project_config("guidelines", "python-web")
+    session.set_project_config("language", "python")
 
     # Get configuration
-    config = await session.get_project_config("test-project")
+    config = session.get_project_config()
     assert config["guidelines"] == "python-web"
     assert config["language"] == "python"
-    # Other values should remain default
-    assert config["docroot"] == "."
 
 
 async def test_session_config_project_isolation():
-    """Test that projects have isolated configurations."""
-    session = SessionState()
+    """Test session config for single project."""
+    session = SessionState("projectA")
 
-    # Set different configs for different projects
-    await session.set_project_config("projectA", "guidelines", "python-web")
-    await session.set_project_config("projectB", "guidelines", "rust-systems")
+    # Set config for current project
+    session.set_project_config("guidelines", "python-web")
 
-    # Verify isolation
-    configA = await session.get_project_config("projectA")
-    configB = await session.get_project_config("projectB")
-
-    assert configA["guidelines"] == "python-web"
-    assert configB["guidelines"] == "rust-systems"
+    # Verify config
+    config = session.get_project_config()
+    assert config["guidelines"] == "python-web"
 
 
 async def test_session_config_precedence():
-    """Test that session config takes precedence over defaults."""
-    session = SessionState()
+    """Test session config behavior."""
+    session = SessionState("test-project")
 
     # Set session config
-    await session.set_project_config("test-project", "docroot", "/custom/path")
+    session.set_project_config("docroot", "/custom/path")
 
-    # Should override default
-    config = await session.get_project_config("test-project")
+    # Should have the set value
+    config = session.get_project_config()
     assert config["docroot"] == "/custom/path"
 
 
@@ -106,13 +99,13 @@ async def test_resolve_session_path_file_urls():
 
 async def test_session_config_with_local_paths():
     """Test session configuration with local file paths."""
-    session = SessionState()
+    session = SessionState("test-project")
 
     # Set local file paths
-    await session.set_project_config("test-project", "guidelines", "local:./team-guide.md")
-    await session.set_project_config("test-project", "language", "file://./python.md")
+    session.set_project_config("guidelines", "local:./team-guide.md")
+    session.set_project_config("language", "file://./python.md")
 
-    config = await session.get_project_config("test-project")
+    config = session.get_project_config()
     assert config["guidelines"] == "local:./team-guide.md"
     assert config["language"] == "file://./python.md"
 

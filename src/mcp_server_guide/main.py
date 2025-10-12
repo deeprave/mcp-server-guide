@@ -2,13 +2,11 @@
 
 import os
 from typing import Any, Dict, cast
-from pathlib import Path
 import click
 import contextlib
 from contextvars import ContextVar
 from .config import Config
 from .logging_config import get_logger
-from .naming import config_filename
 from .path_resolver import LazyPath
 
 logger = get_logger()
@@ -17,48 +15,27 @@ logger = get_logger()
 _deferred_builtin_config: ContextVar[Dict[str, Any]] = ContextVar("deferred_builtin_config", default={})
 
 
-def resolve_config_path_with_client_defaults(config_path: str) -> Path:
+def resolve_config_path(config_path: str | None) -> LazyPath | None:
     """Resolve config file path with client-relative defaults.
 
     Args:
-        config_path: Config file path (may be relative, absolute, or URI-prefixed)
+        config_path: Config file path
 
     Returns:
         Resolved Path object
     """
     # Handle environment variable expansion first (supports $VAR and ${VAR})
-    if "$" in config_path:
-        expanded = os.path.expandvars(config_path)
-        if expanded != config_path:  # Variable was expanded
-            config_path = expanded
+    if config_path:
+        if "$" in config_path:
+            expanded = os.path.expandvars(config_path)
+            if expanded != config_path:  # Variable was expanded
+                config_path = expanded
 
-    # Handle home directory paths (~, ~username) - bypass client-relative behavior
-    if config_path.startswith("~"):
-        return Path(config_path).expanduser().resolve()
+        if config_path.startswith("~"):
+            config_path = os.path.expanduser(config_path)
 
-    # Handle absolute paths - bypass client-relative behavior
-    if os.path.isabs(config_path):
-        return Path(config_path).resolve()
-
-    # Handle URI-style prefixes using LazyPath
-    if any(config_path.startswith(prefix) for prefix in ["http://", "https://", "file://"]):
-        lazy_path = LazyPath(config_path)
-        return lazy_path.resolve_sync()
-
-    # Check for unknown URI schemes and raise error (but allow empty schemes to fall through)
-    if "://" in config_path:
-        scheme = config_path.split("://", 1)[0]
-        if scheme:  # Only raise for non-empty schemes
-            raise ValueError(f"Unsupported URL scheme: {scheme}://")
-
-    # Default: treat as client-relative path
-    # Use PWD-based resolution instead of ClientPath
-
-    if "PWD" in os.environ:
-        return Path(os.environ["PWD"]) / config_path
-
-    # Fallback: server-side resolution
-    return Path(config_path).expanduser().resolve()
+        return LazyPath(config_path)
+    return None
 
 
 def resolve_cli_config(config_obj: Config, **kwargs: Any) -> Dict[str, Any]:
@@ -82,11 +59,6 @@ def resolve_cli_config(config_obj: Config, **kwargs: Any) -> Dict[str, Any]:
                 options.append(attr)
 
     for option in options:
-        # Skip config-related options as they're handled separately
-        if option.name in ["config", "global_config"]:
-            continue
-
-        # Check if CLI arg was provided using the parameter mapping
         # Click converts hyphens to underscores in parameter names
         cli_param_name = option.cli_long.lstrip("--").replace("-", "_")
 
@@ -103,61 +75,31 @@ def resolve_cli_config(config_obj: Config, **kwargs: Any) -> Dict[str, Any]:
     return resolved_config
 
 
-def resolve_config_file_path(kwargs: Dict[str, Any], config_obj: Config) -> str | None:
+def resolve_config_file_path(kwargs: Dict[str, Any]) -> LazyPath | None:
     """Resolve config file path from CLI args, environment variables, and defaults.
 
     Args:
         kwargs: CLI arguments dictionary
-        config_obj: Config object for accessing global config path
+        config_obj: Config object (unused, kept for compatibility)
 
     Returns:
         Resolved config file path or None
     """
     config_file_path = None
-    use_global_path = False
 
     # Precedence order (highest to lowest):
     # 1. --config FILENAME (always wins)
-    # 2. --global-config flag (CLI overrides env, sets default to global path)
-    # 3. MG_CONFIG environment variable
-    # 4. MG_CONFIG_GLOBAL environment variable (sets default to global path)
-    # 5. Default config file
+    # 2. MG_CONFIG environment variable
+    # 3. Default config file
 
     if "config" in kwargs and kwargs["config"] is not None:
         # Highest priority: explicit --config argument
         config_file_path = kwargs["config"]
-    elif "global_config" in kwargs and kwargs["global_config"]:
-        # Second priority: --global-config CLI flag (overrides MG_CONFIG)
-        use_global_path = True
     elif os.environ.get("MG_CONFIG"):
-        # Third priority: MG_CONFIG environment variable
+        # Second priority: MG_CONFIG environment variable
         config_file_path = os.environ.get("MG_CONFIG")
-    elif os.environ.get("MG_CONFIG_GLOBAL"):
-        # Fourth priority: MG_CONFIG_GLOBAL environment variable
-        use_global_path = True
 
-    # Set config path based on global flag or use default
-    if use_global_path:
-        config_file_path = config_obj.get_global_config_path()
-    elif config_file_path is None:
-        # Fallback to default config file
-        config_file_path = config_filename()
-
-    # Handle directory vs file logic and apply client-relative resolution
-    if config_file_path and not use_global_path:
-        # Use new client-relative resolution for non-global configs
-        resolved_path = resolve_config_path_with_client_defaults(config_file_path)
-
-        # If it's a directory, add the config filename (without leading dot)
-        if resolved_path.is_dir():
-            config_file_path = str(resolved_path / config_filename().lstrip("."))
-        else:
-            config_file_path = str(resolved_path)
-    elif config_file_path and use_global_path:
-        # Global configs use absolute path resolution
-        config_file_path = str(Path(config_file_path).expanduser().resolve())
-
-    return config_file_path
+    return resolve_config_path(config_file_path)
 
 
 def setup_early_logging(mode: str, **kwargs: Any) -> None:
@@ -374,13 +316,9 @@ def main() -> click.Command:
         """
         # Handle version flag first
         if kwargs.get("version"):
-            import importlib.metadata
+            from .naming import MCP_GUIDE_VERSION, mcp_name
 
-            try:
-                version = importlib.metadata.version("mcp-server-guide")
-                click.echo(f"mcp-server-guide {version}")
-            except importlib.metadata.PackageNotFoundError:
-                click.echo("mcp-server-guide version unknown")
+            click.echo(f"{mcp_name()} {MCP_GUIDE_VERSION}")
             return
 
         try:
@@ -428,12 +366,11 @@ def main() -> click.Command:
             logger.debug("Starting configuration resolution")
             resolved_config = resolve_cli_config(config, **kwargs)
 
-            # Handle config file path separately (not part of standard config resolution)
-            config_file_path = resolve_config_file_path(kwargs, config)
+            # Resolve config file path from CLI kwargs (not from resolved_config)
+            config_file_path = resolve_config_file_path(kwargs)
 
             # Add config file path to resolved config
             resolved_config["config_filename"] = config_file_path
-            logger.debug(f"Config file path resolved: {config_file_path}")
 
             try:
                 pass  # Config resolution now handled by resolve_cli_config()
@@ -460,7 +397,6 @@ def main() -> click.Command:
 
             # Log startup information
             logger.info(f"MCP server starting up in {mode_type} mode")
-            logger.info(f"Configuration loaded from: {resolved_config.get('config_filename', 'defaults')}")
 
             # Log resolved configuration as single JSON block
             import json

@@ -1,6 +1,8 @@
 """Tests for SessionManager property behavior."""
 
-from mcp_server_guide.session_tools import SessionManager
+from unittest.mock import patch
+
+from mcp_server_guide.session_manager import SessionManager
 
 
 def test_session_manager_pwd_based_approach():
@@ -12,13 +14,28 @@ def test_session_manager_pwd_based_approach():
     assert session_manager is not None
 
 
-def test_session_manager_pwd_fallback():
-    """Test SessionManager handles PWD environment variable."""
+def test_session_manager_pwd_required():
+    """Test SessionManager requires PWD environment variable."""
+    import os
+
     session_manager = SessionManager()
 
-    # Test that get_current_project works (may return None if PWD not set in test)
-    import asyncio
+    # Save current PWD
+    os.environ.get("PWD")
 
-    result = asyncio.run(session_manager.get_current_project())
-    # Should return either a string or None
-    assert result is None or isinstance(result, str)
+    result = session_manager.get_project_name()
+    assert isinstance(result, str)
+
+
+def test_session_manager_pwd_required_not_set():
+    """Test SessionManager requires PWD environment variable."""
+    import os
+    import pytest
+
+    session_manager = SessionManager()
+
+    # Mock environment without PWD
+    with patch.dict(os.environ, {}, clear=True):
+        # Should raise ValueError when PWD is not set
+        with pytest.raises(ValueError, match="PWD environment variable not set"):
+            session_manager.get_project_name()

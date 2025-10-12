@@ -3,16 +3,16 @@
 from typing import List, Optional
 from pathlib import Path
 import aiofiles
-from ..session_tools import SessionManager
+from ..session_manager import SessionManager
 
 
 async def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
     """List available files (guides, languages, etc.)."""
     session = SessionManager()
     if project is None:
-        project = await session.get_current_project_safe()
+        project = session.get_project_name()
 
-    config = await session.session_state.get_project_config(project)
+    config = await session.get_or_create_project_config(project)
 
     # Map file types to config keys - only docroot remains
     type_mapping = {"docs": "docroot"}
@@ -22,10 +22,7 @@ async def list_files(file_type: str, project: Optional[str] = None) -> List[str]
 
     try:
         path = Path(dir_path)
-        if path.is_dir():
-            return [f.name for f in path.iterdir() if f.is_file()]
-        else:
-            return []
+        return [f.name for f in path.iterdir() if f.is_file()] if path.is_dir() else []
     except Exception:
         return []
 

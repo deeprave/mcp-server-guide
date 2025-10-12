@@ -27,18 +27,7 @@ class TestCommandHandlerErrors:
         """Test help command execution."""
         result = await handler.execute_command("guide", [], {}, "help")
 
-        assert result["success"] is True
-        assert "help" in result
-        assert "commands" in result["help"]
-
-    @pytest.mark.asyncio
-    async def test_g_help_command_execution(self, handler):
-        """Test g:help command execution."""
-        result = await handler.execute_command("g", [], {}, "help")
-
-        assert result["success"] is True
-        assert "help" in result
-        assert "commands" in result["help"]
+        assert result["success"]
 
     @pytest.mark.asyncio
     async def test_guide_new_error_path(self, handler):

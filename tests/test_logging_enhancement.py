@@ -3,7 +3,6 @@
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 import pytest
 
 from src.mcp_server_guide.logging_config import setup_logging, get_logger, JSONFormatter
@@ -76,14 +75,8 @@ def test_text_logging_format():
 async def test_reset_session_uses_current_directory():
     """Test that reset_session uses current directory name, not hardcoded tool name."""
 
-    # Mock the entire reset_session function to avoid complex SessionManager mocking
-    with patch("src.mcp_server_guide.tools.session_management.reset_session") as mock_reset:
-        mock_reset.return_value = {"success": True, "project": "test-project", "message": "Session reset to defaults"}
-
-        result = await mock_reset()
-
-        assert result["success"] is True
-        assert result["project"] == "test-project"
+    # This test is no longer needed since we removed reset_session
+    pass
 
 
 def test_centralized_logger_naming():

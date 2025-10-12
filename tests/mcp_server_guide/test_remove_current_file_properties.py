@@ -1,7 +1,7 @@
 """Test removal of current_file properties."""
 
 import pytest
-from mcp_server_guide.session_tools import SessionManager
+from mcp_server_guide.session_manager import SessionManager
 
 
 @pytest.mark.asyncio

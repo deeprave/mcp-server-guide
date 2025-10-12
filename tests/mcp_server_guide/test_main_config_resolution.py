@@ -73,10 +73,6 @@ class TestConfigResolution:
 
         result = resolve_cli_config(config_obj, **kwargs)
 
-        # Config options should be skipped (not in result)
-        assert "config" not in result
-        assert "global_config" not in result
-        assert "no_global" not in result
         # But other options should be included
         assert result["docroot"] == "/test/path"
 

@@ -162,13 +162,13 @@ class TestIntegrationScenarios:
     def test_server_deployment_file_url_integration(self):
         """Test file URL processing in server deployment context."""
         with patch.dict(os.environ, {"DOCKER_CONTAINER": "true"}):
-            source = FileSource.from_url("file:///app/config.json")
+            source = FileSource.from_url("file:///app/config.yaml")
             assert source.type == FileSourceType.FILE
-            assert source.base_path == "/app/config.json"
+            assert source.base_path == "/app/config.yaml"
 
     def test_local_development_context_default(self):
         """Test local development context with default path."""
         with patch.dict(os.environ, {}, clear=True):
-            source = FileSource.get_context_default("config.json")
+            source = FileSource.get_context_default("config.yaml")
             assert source.type == FileSourceType.FILE
-            assert source.base_path == "config.json"
+            assert source.base_path == "config.yaml"

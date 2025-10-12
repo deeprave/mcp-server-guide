@@ -1,8 +1,5 @@
 """MCP Rules Server for developer guidelines and project rules."""
 
-import importlib.metadata
+from .naming import MCP_GUIDE_VERSION
 
-try:
-    __version__ = importlib.metadata.version("mcp-server-guide")
-except importlib.metadata.PackageNotFoundError:
-    __version__ = "unknown"
+__version__ = MCP_GUIDE_VERSION

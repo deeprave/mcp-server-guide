@@ -7,10 +7,9 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import Resource
 from pydantic import AnyUrl
 from pathlib import Path
-from .session_tools import SessionManager
+from .session_manager import SessionManager
 from .file_source import FileSource, FileAccessor
 from .logging_config import get_logger
-from .naming import config_filename
 from .error_handler import ErrorHandler
 from . import tools
 
@@ -22,12 +21,24 @@ error_handler = ErrorHandler(logger)
 async def server_lifespan(server: FastMCP) -> Any:
     """Server lifespan manager for initialization and cleanup.
 
-    Basic server initialization that doesn't require client context.
-    Client root initialization happens on first request that needs it.
+    Initializes the current project from PWD and ensures configuration is loaded.
     """
     logger.info("=== Starting MCP server initialization ===")
 
     try:
+        # Initialize current project from PWD environment variable
+        session_manager = SessionManager()
+        try:
+            project_name = session_manager.get_project_name()
+            logger.info(f"Initialized project from PWD: {project_name}")
+
+            # Ensure project configuration is loaded or created
+            await session_manager.get_or_create_project_config(project_name)
+            logger.info(f"Project configuration initialized for: {project_name}")
+        except ValueError as e:
+            logger.error(f"Failed to initialize project: {e}")
+            raise
+
         logger.info("MCP server initialized successfully")
         yield
 
@@ -153,28 +164,21 @@ async def switch_project(name: str) -> Dict[str, Any]:
 
 
 @guide.tool()
-async def list_projects() -> List[str]:
-    """List available projects."""
-    logger.debug("Listing available projects")
-    return await tools.list_projects()
-
-
-@guide.tool()
 async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration."""
     return await tools.get_project_config(project)
 
 
 @guide.tool()
-async def set_project_config_values(config_dict: Dict[str, Any], project: Optional[str] = None) -> Dict[str, Any]:
+async def set_project_config_values(config_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Set multiple project configuration values at once."""
-    return await tools.set_project_config_values(config_dict, project)
+    return await tools.set_project_config_values(config_dict)
 
 
 @guide.tool()
-async def set_project_config(key: str, value: Any, project: Optional[str] = None) -> Dict[str, Any]:
+async def set_project_config(key: str, value: Any) -> Dict[str, Any]:
     """Update project settings."""
-    return await tools.set_project_config(key, value, project)
+    return await tools.set_project_config(key, value)
 
 
 @guide.tool()
@@ -247,20 +251,6 @@ def file_exists(path: str, project: Optional[str] = None) -> bool:
 async def get_file_content(path: str, project: Optional[str] = None) -> str:
     """Get raw file content."""
     return await tools.get_file_content(path, project)
-
-
-@guide.tool()
-async def save_session() -> Dict[str, Any]:
-    """Persist current session state."""
-    return await tools.save_session()
-
-
-@guide.tool()
-async def load_session(project_path: Optional[str] = None) -> Dict[str, Any]:
-    """Load session from project."""
-
-    path = Path(project_path) if project_path else None
-    return await tools.load_session(path)
 
 
 # Category Management Tools
@@ -419,7 +409,6 @@ async def check_daic_status() -> bool:
 
 async def daic_status(state: bool | None = None) -> bool | None:
     """Set or check the current DAIC status."""
-    from pathlib import Path
 
     # Check for .consent file in current working directory (PWD-based)
     consent_file = Path.cwd() / ".consent"
@@ -477,7 +466,7 @@ async def list_resources() -> List[Resource]:
     from mcp.types import Resource
 
     session = SessionManager()
-    current_project = await session.get_current_project_safe()
+    current_project = session.get_project_name()
 
     # Get project config to find categories with auto_load: true
     config = await session.get_or_create_project_config(current_project)
@@ -512,10 +501,10 @@ async def list_resources() -> List[Resource]:
 async def _get_available_categories() -> List[Dict[str, Any]]:
     """Get available categories for testing purposes."""
     session = SessionManager()
-    current_project = await session.get_current_project_safe()
+    current_project = session.get_project_name()
 
     # Get project config to find categories with auto_load: true
-    config = await session.session_state.get_project_config(current_project)
+    config = await session.get_or_create_project_config(current_project)
     auto_load_categories = _get_auto_load_categories(config)
 
     return [
@@ -577,13 +566,13 @@ def create_server(
     async def _get_file_source(config_key: str, project_context: str) -> FileSource:
         """Get file source for a configuration key."""
         if hasattr(server, "_session_manager") and server._session_manager is not None:
-            config = await server._session_manager.session_state.get_project_config(project_context)  # type: ignore[attr-defined]
+            config = await server._session_manager.get_or_create_project_config(project_context)  # type: ignore[attr-defined]
         else:
             # Fallback to default config
-            from .session_tools import SessionManager
+            from .session_manager import SessionManager
 
             session_manager = SessionManager()
-            config = await session_manager.session_state.get_project_config(project_context)
+            config = await session_manager.get_or_create_project_config(project_context)
 
         # Map config_key to category names for unified system
         category_mapping = {"guide": "guide", "language": "lang", "context": "context"}
@@ -633,55 +622,14 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
     server = mcp
 
     # Get config filename (default or custom)
-    config_file = config.get("config_filename", config_filename())
+    config_file = config.get("config_filename")
 
     # Auto-load session configuration if it exists
     try:
-        from pathlib import Path
-        from .project_config import ProjectConfigManager
-        import asyncio
-
         session_manager = SessionManager()
-        manager = ProjectConfigManager()
+        config_manager = session_manager.config_manager()
+        config_manager.set_config_filename(config_file)
 
-        # Try to load full session state
-        config_path = Path(".") / config_file
-        if config_path.exists():
-            try:
-                # Check if we're in an async context
-                asyncio.get_running_loop()
-                # We're in an async context - try to load synchronously for tests
-                import json
-
-                with open(config_path) as f:
-                    session_data = json.load(f)
-
-                # Restore session state synchronously
-                if "projects" in session_data:
-                    session_manager.session_state.projects = session_data["projects"]
-
-                if "current_project" in session_data:
-                    # Direct assignment needed here as we're in sync context for tests
-                    # Using set_current_project would require await which isn't available
-                    session_manager._current_project = session_data["current_project"]
-
-                logger.info("Auto-loaded saved session configuration (sync mode)")
-            except RuntimeError:
-                # No running loop, we can use asyncio.run
-                if asyncio.run(manager.load_full_session_state(Path("."), session_manager, config_file)):
-                    logger.info("Auto-loaded saved session configuration")
-                else:
-                    logger.debug("No saved session found, using defaults")
-        else:
-            logger.debug("No saved session found, using defaults")
-    except Exception as e:
-        logger.warning(f"Failed to auto-load session: {e}")
-        session_manager = SessionManager()
-
-    # Use the same session manager instance (singleton)
-    try:
-        # Session manager is already initialized as singleton
-        logger.debug("Server configuration completed")
     except Exception as e:
         logger.error(f"Unexpected error during server initialization: {e}", exc_info=True)
 

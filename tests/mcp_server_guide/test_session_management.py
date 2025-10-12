@@ -1,86 +1,87 @@
-"""Tests for session management tools."""
+"""Tests to improve session management functionality coverage above 90%."""
 
-from unittest.mock import Mock, patch, AsyncMock
+import tempfile
 from pathlib import Path
-from mcp_server_guide.tools.session_management import save_session, load_session, reset_session
+from mcp_server_guide.session_manager import (
+    SessionManager,
+    get_project_config,
+    switch_project,
+    set_project_config,
+)
 
 
-async def test_save_session_error_handling():
-    """Test save_session with error conditions."""
-    # Test save_session with exception
-    with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Session error")):
-        result = await save_session()
-        assert isinstance(result, dict)
-        assert result["success"] is False
-        assert "error" in result
-        assert "Failed to save session" in result["message"]
+async def test_get_project_config():
+    """Test get_project_config function."""
+    # Set up some project data first
+    session = SessionManager()
+    session.set_project_name("test-project")
+    session.session_state.set_project_config("language", "python")
+
+    # This should return current project config
+    result = await get_project_config()
+
+    assert result["success"] is True
+    assert result["project"] == "test-project"
+    assert "config" in result
+    assert result["config"]["language"] == "python"
 
 
-async def test_load_session_error_handling():
-    """Test load_session with error conditions."""
-    # Test load_session with exception
-    with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Load error")):
-        result = await load_session()
-        assert isinstance(result, dict)
-        assert result["success"] is False
-        assert "error" in result
-        assert "Failed to load session" in result["message"]
+async def test_set_project_config():
+    """Test set_project_config function."""
+    # Set up project data first
+    session = SessionManager()
+    session.set_project_name("test-project")
+    session.session_state.set_project_config("language", "python")
 
-    # Test load_session with path
-    test_path = Path("/test/path")
-    with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Load error")):
-        result = await load_session(test_path)
-        assert isinstance(result, dict)
-        assert result["success"] is False
+    # Reset the project
+    result = await set_project_config("language", "go")
+
+    assert result["success"] is True
+    assert "Set language to 'go' for project test-project" in result["message"]
 
 
-async def test_reset_session_error_handling():
-    """Test reset_session with error conditions."""
-    # Test reset_session with exception
-    with patch("mcp_server_guide.tools.session_management.SessionManager", side_effect=Exception("Reset error")):
-        result = await reset_session()
-        assert isinstance(result, dict)
-        assert result["success"] is False
-        assert "error" in result
-        assert "Failed to reset session" in result["message"]
+async def test_switch_project(isolated_config_file):
+    """Test switch_project function."""
+    session_manager = SessionManager()
+    session_manager._set_config_filename(isolated_config_file)
+
+    result = await switch_project("new-project")
+
+    assert result["success"] is True
+    assert result["message"] == "Switched to project new-project"
+
+    # Verify the switch worked
+    session = SessionManager()
+    current_project = session.get_project_name()
+    assert current_project == "new-project"
 
 
-async def test_session_management_success_paths():
-    """Test session management success paths."""
-    # Mock successful SessionManager
-    mock_session = Mock()
-    mock_session.get_current_project = AsyncMock(return_value="test_project")
-    mock_session.save_to_file = AsyncMock()
+async def test_session_manager_save_session(isolated_config_file):
+    """Test SessionManager.save_session method."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        config_file = Path(temp_dir) / "test_save.yaml"
 
-    # Mock successful ProjectConfigManager
-    mock_manager = Mock()
+        session = SessionManager()
+        # Use isolated config file to prevent touching global config
+        session._set_config_filename(str(config_file))
 
-    # Test successful save_session
-    with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
-        with patch("mcp_server_guide.tools.session_management.ProjectConfigManager", return_value=mock_manager):
-            result = await save_session()
-            print(f"DEBUG: save_session result = {result}")
-            assert isinstance(result, dict)
-            assert result["success"] is True
-            assert result["project"] == "test_project"
+        session.set_project_name("test-project")
+        session.session_state.set_project_config("language", "python")
 
-    # Test successful load_session
-    mock_manager.load_full_session_state = AsyncMock(return_value=True)
-    with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
-        with patch("mcp_server_guide.tools.session_management.ProjectConfigManager", return_value=mock_manager):
-            result = await load_session()
-            assert isinstance(result, dict)
-            assert result["success"] is True
+        # Save session (uses mocked path)
+        await session.save_session()
 
-    # Test successful reset_session
-    import os
+        # Verify file was created and contains data
+        assert config_file.exists()
 
-    mock_session.set_current_project = AsyncMock()
-    with patch("mcp_server_guide.tools.session_management.SessionManager", return_value=mock_session):
-        result = await reset_session()  # Now properly awaited
-        print(f"DEBUG: reset_session result in success_paths = {result}")
-        assert isinstance(result, dict)
-        assert result["success"] is True
-        # Should use current directory name, not hardcoded tool name
-        expected_project = os.path.basename(os.getcwd())
-        assert result["project"] == expected_project
+
+async def test_session_manager_get_effective_config():
+    """Test SessionManager.get_effective_config method."""
+    session = SessionManager()
+    session.set_project_name("test-project")
+    session.session_state.set_project_config("language", "python")
+
+    # Get effective config - it merges with defaults so just check language
+    config = await session.get_effective_config("test-project")
+
+    assert config["language"] == "python"

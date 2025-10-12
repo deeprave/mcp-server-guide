@@ -1,6 +1,6 @@
 """Test config format and structure."""
 
-import json
+import yaml
 from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
 
@@ -9,40 +9,40 @@ class TestConfigFormatUpdates:
 
     async def test_project_config_dataclass_structure(self):
         """Test that ProjectConfig has expected structure."""
-        config = ProjectConfig(project="test-project")
+        config = ProjectConfig(categories={})
 
         # Should not have current_project field
         assert not hasattr(config, "current_project")
 
-        # Should have expected fields
-        assert hasattr(config, "project")
+        # Should have expected fields (project name is now a dict key, not a field)
         assert hasattr(config, "docroot")
-        assert hasattr(config, "categories")
         assert hasattr(config, "categories")
 
     async def test_config_serialization_structure(self):
         """Test that config serialization has correct structure."""
-        config = ProjectConfig(project="test-project", docroot="/test/path")
+        config = ProjectConfig(docroot="/test/path", categories={})
 
         config_dict = config.to_dict()
 
         # Should not contain current_project
         assert "current_project" not in config_dict
 
-        # Should contain expected fields
-        assert config_dict["project"] == "test-project"
+        # Should contain expected fields (project is not a field, it's a dict key in ConfigFile)
         assert config_dict["docroot"] == "/test/path"
 
-    async def test_config_save_format(self, tmp_path):
+    async def test_config_save_format(self, tmp_path, monkeypatch):
         """Test that saving config uses correct format."""
         manager = ProjectConfigManager()
 
-        config = ProjectConfig(project="new-project", docroot="/new/path")
-        manager.save_config(tmp_path, config)
+        # Set the config path to use tmp_path with YAML extension
+        config_file_path = tmp_path / "config.yaml"
+        manager.set_config_filename(config_file_path)
 
-        # Read saved file
-        config_file = tmp_path / ".mcp-server-guide.config.json"
-        saved_data = json.loads(config_file.read_text())
+        config = ProjectConfig(docroot="/new/path", categories={})
+        manager.save_config("new-project", config)
+
+        # Read saved file from global config location (now YAML format)
+        saved_data = yaml.safe_load(config_file_path.read_text())
 
         # Should not have current_project
         assert "current_project" not in saved_data
@@ -53,5 +53,4 @@ class TestConfigFormatUpdates:
 
         # Should use correct field names
         project_data = saved_data["projects"]["new-project"]
-        assert project_data["docroot"] == "/new/path"
         assert project_data["docroot"] == "/new/path"

@@ -3,19 +3,21 @@
 import os
 import pytest
 from unittest.mock import patch
-from src.mcp_server_guide.session_tools import SessionManager
+from src.mcp_server_guide.session_manager import SessionManager
 
 
 @pytest.mark.asyncio
 async def test_get_current_project_uses_pwd_when_current_project_none():
-    """Test that get_current_project uses PWD when _current_project is None."""
+    """Test that get_current_project uses PWD when project_name is None."""
+    # Reset singleton to ensure fresh state
+    SessionManager.clear()
     session_manager = SessionManager()
 
-    # Ensure _current_project is None
-    session_manager._current_project = None
+    # Ensure project_name is None
+    session_manager.session_state.project_name = None
 
     with patch.dict(os.environ, {"PWD": "/home/user/my-project"}):
-        project = await session_manager.get_current_project()
+        project = session_manager.get_project_name()
         assert project == "my-project"
 
 
@@ -25,25 +27,25 @@ async def test_get_current_project_returns_current_project_when_set():
     session_manager = SessionManager()
 
     # Set _current_project to a specific value
-    session_manager._current_project = "explicit-project"
+    session_manager.set_project_name("explicit-project")
 
     with patch.dict(os.environ, {"PWD": "/home/user/different-project"}):
-        project = await session_manager.get_current_project()
+        project = session_manager.get_project_name()
         assert project == "explicit-project"  # Should return the set value, not PWD
 
 
 @pytest.mark.asyncio
-async def test_get_current_project_returns_none_when_pwd_not_available():
-    """Test that get_current_project returns None when PWD is not available."""
+async def test_get_current_project_raises_when_pwd_not_available():
+    """Test that get_current_project raises ValueError when PWD is not available."""
     session_manager = SessionManager()
 
     # Ensure _current_project is None
-    session_manager._current_project = None
+    session_manager.session_state.project_name = None
 
-    # Remove PWD from environment
+    # Remove PWD from environment - should raise ValueError
     with patch.dict(os.environ, {}, clear=True):
-        project = await session_manager.get_current_project()
-        assert project is None
+        with pytest.raises(ValueError, match="PWD environment variable not set"):
+            session_manager.get_project_name()
 
 
 @pytest.mark.asyncio
@@ -52,11 +54,11 @@ async def test_set_current_project_without_file_io():
     session_manager = SessionManager()
 
     # Should not require directory to be set
-    await session_manager.set_current_project("new-project")
+    session_manager.set_project_name("new-project")
 
     # Should set the internal field
-    assert session_manager._current_project == "new-project"
+    assert session_manager.session_state.project_name == "new-project"
 
     # Should return the set project
-    project = await session_manager.get_current_project()
+    project = session_manager.get_project_name()
     assert project == "new-project"

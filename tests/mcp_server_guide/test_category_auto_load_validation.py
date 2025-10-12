@@ -12,10 +12,11 @@ def mock_session():
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        session_instance.session_state.get_project_config = AsyncMock(return_value={"categories": {}})
-        session_instance.session_state.set_project_config = AsyncMock()
-        session_instance.save_to_file = AsyncMock()  # Make save_to_file async
-        session_instance.save_to_file = AsyncMock()
+        config_data = {"categories": {}}
+        session_instance.session_state.get_project_config = Mock(return_value=config_data)
+        session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
+        session_instance.session_state.set_project_config = Mock()
+        session_instance.save_session = AsyncMock()
         yield session_instance
 
 
@@ -37,7 +38,7 @@ async def test_add_category_treats_missing_auto_load_as_false(mock_session):
 
     # Check that set_project_config was called with the right data
     call_args = mock_session.session_state.set_project_config.call_args
-    categories = call_args[0][2]  # Third argument is the categories dict
+    categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
     # auto_load=False should be stored explicitly
@@ -51,7 +52,7 @@ async def test_add_category_stores_auto_load_when_true(mock_session):
 
     # Check that set_project_config was called with the right data
     call_args = mock_session.session_state.set_project_config.call_args
-    categories = call_args[0][2]  # Third argument is the categories dict
+    categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
     assert category.get("auto_load", False) is True
@@ -60,9 +61,9 @@ async def test_add_category_stores_auto_load_when_true(mock_session):
 async def test_update_category_handles_auto_load_field(mock_session):
     """Test that update_category can handle auto_load field."""
     # Set up existing category
-    mock_session.session_state.get_project_config = AsyncMock(
-        return_value={"categories": {"test_cat": {"dir": "test_dir/", "patterns": ["*.md"], "description": ""}}}
-    )
+    config_data = {"categories": {"test_cat": {"dir": "test_dir/", "patterns": ["*.md"], "description": ""}}}
+    mock_session.session_state.get_project_config = AsyncMock(return_value=config_data)
+    mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     # Update with auto_load
     result = await update_category("test_cat", "test_dir/", ["*.md"], auto_load=True)
@@ -70,7 +71,7 @@ async def test_update_category_handles_auto_load_field(mock_session):
 
     # Check that set_project_config was called with the right data
     call_args = mock_session.session_state.set_project_config.call_args
-    categories = call_args[0][2]  # Third argument is the categories dict
+    categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
     assert category.get("auto_load", False) is True
@@ -79,11 +80,11 @@ async def test_update_category_handles_auto_load_field(mock_session):
 async def test_update_category_preserves_auto_load_when_not_specified(mock_session):
     """Test that update_category preserves existing auto_load setting when not specified."""
     # Set up existing category with auto_load=True
-    mock_session.session_state.get_project_config = AsyncMock(
-        return_value={
-            "categories": {"test_cat": {"dir": "test_dir/", "patterns": ["*.md"], "description": "", "auto_load": True}}
-        }
-    )
+    config_data = {
+        "categories": {"test_cat": {"dir": "test_dir/", "patterns": ["*.md"], "description": "", "auto_load": True}}
+    }
+    mock_session.session_state.get_project_config = AsyncMock(return_value=config_data)
+    mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     # Update without specifying auto_load
     result = await update_category("test_cat", "test_dir2/", ["*.txt"])
@@ -91,7 +92,7 @@ async def test_update_category_preserves_auto_load_when_not_specified(mock_sessi
 
     # Check that set_project_config was called with the right data
     call_args = mock_session.session_state.set_project_config.call_args
-    categories = call_args[0][2]  # Third argument is the categories dict
+    categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
     assert category.get("auto_load", False) is True

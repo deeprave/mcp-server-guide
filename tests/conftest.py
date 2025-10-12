@@ -8,10 +8,50 @@ from pathlib import Path
 from typing import Generator, Union
 import pytest
 
-from mcp_server_guide.session_tools import SessionManager
+from mcp_server_guide.session_manager import SessionManager
+
 
 # Global session temp directory
-_session_temp_dir = None
+_session_temp_dir: Path | None = None
+
+
+@pytest.fixture
+def mock_config_filename(monkeypatch):
+    """Mock config filename to use test directory.
+
+    DEPRECATED: Use isolated_config_file fixture instead for tests that need real file I/O.
+    This fixture is only for tests that don't actually read/write config files.
+    """
+
+    # noinspection PyUnusedLocal
+    def mock_getter(self):
+        return os.path.join(os.getcwd(), "config.yaml")
+
+    from mcp_server_guide.project_config import ProjectConfigManager
+
+    monkeypatch.setattr(ProjectConfigManager, "get_config_filename", mock_getter)
+
+
+@pytest.fixture
+def isolated_config_file():
+    """Provide an isolated config file path for tests that need real file I/O.
+
+    Tests that read/write config files should use this fixture and call:
+        SessionManager()._set_config_filename(isolated_config_file)
+
+    This ensures tests use a test-local file instead of the global config.
+    """
+    config_path = Path(os.getcwd()) / "test_config.yaml"
+
+    # Clean up any existing file
+    if config_path.exists():
+        config_path.unlink()
+
+    yield config_path
+
+    # Cleanup after test
+    if config_path.exists():
+        config_path.unlink()
 
 
 @pytest.fixture
@@ -42,8 +82,12 @@ def robust_cleanup(directory: Path) -> None:
         shutil.rmtree(directory, onerror=handle_remove_readonly)
 
 
+# pytest hooks for session setup/teardown
+
+
+# noinspection PyUnusedLocal
 def pytest_sessionstart(session):
-    """Create session-scoped temp directory."""
+    """Create the session-scoped temp directory."""
     global _session_temp_dir
     _session_temp_dir = Path(tempfile.mkdtemp(prefix="mcp_test_session_"))
 
@@ -51,8 +95,9 @@ def pytest_sessionstart(session):
     atexit.register(lambda: robust_cleanup(_session_temp_dir))
 
 
+# noinspection PyUnusedLocal
 def pytest_sessionfinish(session, exitstatus):
-    """Clean up session-scoped temp directory."""
+    """Clean up the session-scoped temp directory."""
     global _session_temp_dir
     if _session_temp_dir:
         robust_cleanup(_session_temp_dir)
@@ -68,7 +113,7 @@ def complete_test_isolation(request, monkeypatch):
     original_pwd = os.environ.get("PWD")
 
     # Reset SessionManager singleton
-    SessionManager._instance = None
+    SessionManager.clear()
 
     # Create unique subdirectory for this test within session temp dir
     test_name = request.node.name
@@ -91,8 +136,7 @@ def complete_test_isolation(request, monkeypatch):
             os.environ["PWD"] = original_pwd
         elif "PWD" in os.environ:
             del os.environ["PWD"]
-        SessionManager._instance = None
-        # No need to reset ClientPath since it's been removed
+        SessionManager.clear()
 
 
 @pytest.fixture

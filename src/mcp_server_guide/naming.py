@@ -2,14 +2,6 @@
 
 import importlib.metadata
 
-# Version constant for centralized version management
-try:
-    MCP_GUIDE_VERSION = importlib.metadata.version("mcp-server-guide")
-except importlib.metadata.PackageNotFoundError:
-    MCP_GUIDE_VERSION = "unknown"
-
-CONFIG_FILENAME = ".mcp-server-guide.config.json"
-
 
 def mcp_name() -> str:
     """Return the MCP server name used across all components.
@@ -23,16 +15,11 @@ def mcp_name() -> str:
     return "mcp-server-guide"
 
 
-def config_filename(is_global: bool = False) -> str:
-    """Return the configuration filename."""
-    if is_global:
-        return "config.json"
-    return f".{mcp_name()}.config.json"
-
-
-def current_filename() -> str:
-    """Return the current project filename."""
-    return f".{mcp_name()}.current"
+# Version constant for centralized version management
+try:
+    MCP_GUIDE_VERSION = importlib.metadata.version(mcp_name())
+except importlib.metadata.PackageNotFoundError:
+    MCP_GUIDE_VERSION = "unknown"
 
 
 def cache_directory_name() -> str:

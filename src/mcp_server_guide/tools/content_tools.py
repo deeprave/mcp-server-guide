@@ -1,7 +1,7 @@
 """Content retrieval tools."""
 
 from typing import Dict, Any, List, Optional
-from ..session_tools import SessionManager
+from ..session_manager import SessionManager
 from .category_tools import get_category_content
 
 
@@ -28,7 +28,7 @@ async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
     result = {}
     session = SessionManager()
     if project is None:
-        project = await session.get_current_project_safe()
+        project = session.get_project_name()
 
     # Get project config to find categories with auto_load: true
     config = await session.get_or_create_project_config(project)
@@ -36,7 +36,13 @@ async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
 
     # Filter categories with auto_load: true
     auto_load_categories = [
-        name for name, category_config in categories.items() if category_config.get("auto_load", False)
+        name
+        for name, category_config in categories.items()
+        if (
+            category_config.auto_load
+            if hasattr(category_config, "auto_load")
+            else category_config.get("auto_load", False)
+        )
     ]
 
     # Load content for each auto_load category
@@ -57,7 +63,7 @@ async def search_content(query: str, project: Optional[str] = None) -> List[Dict
     """Search across all categories for content matching query."""
     session = SessionManager()
     if project is None:
-        project = await session.get_current_project_safe()
+        project = session.get_project_name()
 
     results = []
     categories = ["guide", "lang", "context"]

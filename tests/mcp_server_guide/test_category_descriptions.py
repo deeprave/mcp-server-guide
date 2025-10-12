@@ -16,10 +16,10 @@ def mock_session():
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        session_instance.session_state.get_project_config = AsyncMock(return_value={"categories": {}})
-        session_instance.session_state.set_project_config = AsyncMock()
+        session_instance.session_state.get_project_config = Mock(return_value={"categories": {}})
+        session_instance.session_state.set_project_config = Mock()
         session_instance.get_or_create_project_config = AsyncMock(return_value={"categories": {}})
-        session_instance.save_to_file = AsyncMock()
+        session_instance.save_session = AsyncMock()
         yield session_instance
 
 
@@ -32,18 +32,19 @@ async def test_add_category_with_description(mock_session):
 
 
 async def test_add_category_without_description_defaults_empty(mock_session):
-    """Test adding category without description defaults to empty string."""
+    """Test adding category without description gets a default description."""
     result = await add_category("testing", "test/", ["*.md"])
 
     assert result["success"] is True
-    assert result["category"]["description"] == ""
+    assert result["category"]["description"] == "Custom category: testing"
 
 
 async def test_update_category_with_description(mock_session):
     """Test updating category with description."""
     # Setup existing category
-    config = mock_session.session_state.get_project_config.return_value
-    config["categories"]["testing"] = {"dir": "test/", "patterns": ["*.md"], "description": "Old description"}
+    config_data = {"categories": {"testing": {"dir": "test/", "patterns": ["*.md"], "description": "Old description"}}}
+    mock_session.session_state.get_project_config = Mock(return_value=config_data)
+    mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     result = await update_category("testing", "test/", ["*.md"], description="New description")
 
@@ -54,14 +55,13 @@ async def test_update_category_with_description(mock_session):
 async def test_list_categories_includes_descriptions(mock_session):
     """Test that list_categories includes descriptions."""
     # Setup categories with descriptions
-    mock_session.get_or_create_project_config = AsyncMock(
-        return_value={
-            "categories": {
-                "guide": {"dir": "guide/", "patterns": ["guidelines"], "description": "Development guidelines"},
-                "testing": {"dir": "test/", "patterns": ["*.md"], "description": "Test documentation"},
-            }
+    config_data = {
+        "categories": {
+            "guide": {"dir": "guide/", "patterns": ["guidelines"], "description": "Development guidelines"},
+            "testing": {"dir": "test/", "patterns": ["*.md"], "description": "Test documentation"},
         }
-    )
+    }
+    mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     result = await list_categories()
 
@@ -74,17 +74,16 @@ async def test_list_categories_includes_descriptions(mock_session):
 async def test_list_categories_handles_missing_descriptions(mock_session):
     """Test that list_categories handles categories without descriptions."""
     # Setup category without description
-    mock_session.get_or_create_project_config = AsyncMock(
-        return_value={
-            "categories": {
-                "testing": {
-                    "dir": "test/",
-                    "patterns": ["*.md"],
-                    # No description field
-                }
+    config_data = {
+        "categories": {
+            "testing": {
+                "dir": "test/",
+                "patterns": ["*.md"],
+                # No description field
             }
         }
-    )
+    }
+    mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     result = await list_categories()
 

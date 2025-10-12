@@ -4,8 +4,6 @@ import os
 from dataclasses import dataclass
 from typing import Callable, Union
 
-from .naming import config_filename
-
 
 @dataclass
 class ConfigOption:
@@ -15,7 +13,7 @@ class ConfigOption:
     cli_short: str
     cli_long: str
     env_var: str
-    default: Union[str, bool, Callable[[], str]]
+    default: Union[str, bool, Callable[[], str], None]
     description: str
     group: str = "other"
 
@@ -30,18 +28,8 @@ class Config:
             cli_short="-c",
             cli_long="--config",
             env_var="MG_CONFIG",
-            default=config_filename(),
+            default=None,
             description="specify config file path",
-            group="config",
-        )
-
-        self.global_config = ConfigOption(
-            name="global_config",
-            cli_short="",
-            cli_long="--global-config/--no-global-config",
-            env_var="MG_CONFIG_GLOBAL",
-            default="",
-            description="use global config (platform-specific location)",
             group="config",
         )
 
@@ -165,18 +153,6 @@ class Config:
             description="Show version and exit",
             group="other",
         )
-
-    def get_global_config_path(self) -> str:
-        """Get platform-specific global config path."""
-        from .naming import config_filename
-
-        filename = config_filename(is_global=True)
-        if os.name == "nt":  # Windows
-            appdata = os.environ.get("APPDATA", "")
-            return os.path.join(appdata, "mcp-server-guide", filename)
-        else:  # Unix-like systems
-            home = os.environ.get("HOME", "")
-            return os.path.join(home, ".config", "mcp-server-guide", filename)
 
     def resolve_path(self, path: str, relative_to: str = ".") -> str:
         """Resolve a path relative to a base directory."""

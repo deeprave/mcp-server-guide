@@ -42,8 +42,8 @@ async def test_http_client_error_handling():
         with pytest.raises(HttpError):
             client.get("http://example.com/test")
 
-    # Test generic exception
-    with patch("requests.get", side_effect=Exception("Generic error")):
+    # Test generic requests exception
+    with patch("requests.get", side_effect=requests.exceptions.RequestException("Request error")):
         with pytest.raises(HttpError):
             client.get("http://example.com/test")
 
@@ -65,9 +65,9 @@ async def test_http_client_comprehensive():
         assert result.content == "response content"
 
         # Check that requests.get was called with correct parameters
-        mock_get.assert_called_with(
-            "http://example.com/test", timeout=30, headers={"User-Agent": "mcp-server-guide/1.0"}
-        )
+        from mcp_server_guide.naming import user_agent
+
+        mock_get.assert_called_with("http://example.com/test", timeout=30, headers={"User-Agent": user_agent()})
 
 
 async def test_http_client_initialization():
@@ -75,14 +75,16 @@ async def test_http_client_initialization():
     # Test default initialization
     client1 = HttpClient()
     assert client1.timeout == 30
-    assert client1.headers == {"User-Agent": "mcp-server-guide/1.0"}
+    from mcp_server_guide.naming import user_agent
+
+    assert client1.headers == {"User-Agent": user_agent()}
 
     # Test initialization with custom values
     custom_headers = {"Authorization": "Bearer token"}
     client2 = HttpClient(timeout=60, headers=custom_headers)
     assert client2.timeout == 60
     # Should merge with default headers
-    expected_headers = {"User-Agent": "mcp-server-guide/1.0", "Authorization": "Bearer token"}
+    expected_headers = {"User-Agent": user_agent(), "Authorization": "Bearer token"}
     assert client2.headers == expected_headers
 
 
@@ -114,6 +116,6 @@ async def test_http_client_exists():
         assert result is True
 
     # Test HEAD request failure
-    with patch("requests.head", side_effect=Exception("Not found")):
+    with patch("requests.head", side_effect=requests.exceptions.RequestException("Not found")):
         result = client.exists("http://example.com")
         assert result is False
