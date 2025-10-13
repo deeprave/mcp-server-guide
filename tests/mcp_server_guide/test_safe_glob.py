@@ -4,7 +4,7 @@ import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-from src.mcp_server_guide.tools.category_tools import _safe_glob_search, MAX_GLOB_DEPTH, MAX_DOCUMENTS_PER_GLOB
+from mcp_server_guide.tools.category_tools import _safe_glob_search, MAX_GLOB_DEPTH, MAX_DOCUMENTS_PER_GLOB
 
 
 async def test_safe_glob_depth_limit():
@@ -126,7 +126,7 @@ async def test_safe_glob_deduplication():
 
 async def test_safe_glob_memory_efficiency():
     """Test that safe glob uses iglob for memory efficiency."""
-    with patch("src.mcp_server_guide.tools.category_tools.glob.iglob") as mock_iglob:
+    with patch("mcp_server_guide.tools.category_tools.glob.iglob") as mock_iglob:
         mock_iglob.return_value = []
 
         with tempfile.TemporaryDirectory() as temp_dir:

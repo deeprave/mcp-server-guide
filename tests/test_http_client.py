@@ -3,7 +3,7 @@
 import pytest
 import requests
 from unittest.mock import patch
-from src.mcp_server_guide.http_client import HttpClient, HttpError
+from mcp_server_guide.http_client import HttpClient, HttpError
 
 
 async def test_get_conditional_exception():

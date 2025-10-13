@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 import pytest
 
-from src.mcp_server_guide.logging_config import setup_logging, get_logger, JSONFormatter
+from mcp_server_guide.logging_config import setup_logging, get_logger, JSONFormatter
 
 
 def test_json_logging_format():
@@ -81,7 +81,7 @@ async def test_reset_session_uses_current_directory():
 
 def test_centralized_logger_naming():
     """Test that all loggers use centralized naming."""
-    from src.mcp_server_guide.naming import logger_name
+    from mcp_server_guide.naming import logger_name
 
     # Test get_logger uses centralized name
     logger1 = get_logger()

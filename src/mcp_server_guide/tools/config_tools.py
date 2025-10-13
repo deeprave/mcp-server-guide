@@ -88,18 +88,8 @@ async def set_project_config(config_key: str, value: Any) -> Dict[str, Any]:
     }
 
 
-async def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
-    """Get merged configuration (file + session)."""
-    session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
-
-    return await session.get_effective_config(project)
-
-
 __all__ = [
     "get_project_config",
     "set_project_config",
     "set_project_config_values",
-    "get_effective_config",
 ]

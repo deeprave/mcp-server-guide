@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch
 from pathlib import Path
-from src.mcp_server_guide.security.path_validator import PathValidator, SecurityError
+from mcp_server_guide.security.path_validator import PathValidator, SecurityError
 
 
 async def test_path_resolution_error():

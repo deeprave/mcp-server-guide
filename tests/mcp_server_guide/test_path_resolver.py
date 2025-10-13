@@ -1,5 +1,6 @@
 """Tests for path_resolver module."""
 
+import os
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -350,3 +351,174 @@ class TestFromFileSource:
 
         # Should use base_path as fallback
         assert lazy_path.path_str == "fallback/path"
+
+
+class TestLazyPathExpansion:
+    """Test LazyPath expansion methods."""
+
+    def test_expanduser_with_tilde(self):
+        """Test expanduser with ~ expansion."""
+        lazy_path = LazyPath("~/test/path")
+        expanded = lazy_path.expanduser()
+
+        # Should expand ~ to home directory
+        expected = str(Path("~/test/path").expanduser())
+        # Convert to posix for consistent comparison
+        assert expanded == Path(expected).as_posix()
+
+    def test_expanduser_without_tilde(self):
+        """Test expanduser without ~ (no change)."""
+        lazy_path = LazyPath("/absolute/path")
+        expanded = lazy_path.expanduser()
+
+        assert expanded == "/absolute/path"
+
+    def test_expandvars_with_env_var(self):
+        """Test expandvars with environment variable."""
+        # Set a test environment variable
+        os.environ["TEST_VAR"] = "/test/value"
+        try:
+            lazy_path = LazyPath("${TEST_VAR}/path")
+            expanded = lazy_path.expandvars()
+
+            assert expanded == "/test/value/path"
+        finally:
+            del os.environ["TEST_VAR"]
+
+    def test_expandvars_without_env_var(self):
+        """Test expandvars without environment variables (no change)."""
+        lazy_path = LazyPath("/absolute/path")
+        expanded = lazy_path.expandvars()
+
+        assert expanded == "/absolute/path"
+
+    def test_expandvars_with_dollar_sign(self):
+        """Test expandvars with $VAR format."""
+        os.environ["MYVAR"] = "myvalue"
+        try:
+            lazy_path = LazyPath("$MYVAR/path")
+            expanded = lazy_path.expandvars()
+
+            assert expanded == "myvalue/path"
+        finally:
+            del os.environ["MYVAR"]
+
+
+class TestLazyPathIsAbsolute:
+    """Test LazyPath is_absolute method."""
+
+    def test_is_absolute_with_absolute_path(self):
+        """Test is_absolute with absolute path."""
+        lazy_path = LazyPath("/absolute/path")
+        assert lazy_path.is_absolute() is True
+
+    def test_is_absolute_with_relative_path(self):
+        """Test is_absolute with relative path."""
+        lazy_path = LazyPath("relative/path")
+        assert lazy_path.is_absolute() is False
+
+    def test_is_absolute_with_tilde(self):
+        """Test is_absolute with ~ (should be absolute after expansion)."""
+        lazy_path = LazyPath("~/test/path")
+        assert lazy_path.is_absolute() is True
+
+    def test_is_absolute_with_env_var_absolute(self):
+        """Test is_absolute with env var that expands to absolute path."""
+        os.environ["TEST_ABS"] = "/absolute"
+        try:
+            lazy_path = LazyPath("${TEST_ABS}/path")
+            assert lazy_path.is_absolute() is True
+        finally:
+            del os.environ["TEST_ABS"]
+
+    def test_is_absolute_with_env_var_relative(self):
+        """Test is_absolute with env var that expands to relative path."""
+        os.environ["TEST_REL"] = "relative"
+        try:
+            lazy_path = LazyPath("${TEST_REL}/path")
+            assert lazy_path.is_absolute() is False
+        finally:
+            del os.environ["TEST_REL"]
+
+    def test_is_absolute_current_directory(self):
+        """Test is_absolute with current directory."""
+        lazy_path = LazyPath(".")
+        assert lazy_path.is_absolute() is False
+
+
+class TestLazyPathResolveOptions:
+    """Test LazyPath resolve with strict and expand options."""
+
+    @pytest.mark.asyncio
+    async def test_resolve_with_expand_true(self):
+        """Test resolve with expand=True (default)."""
+        os.environ["TEST_DIR"] = "test"
+        try:
+            lazy_path = LazyPath("${TEST_DIR}/path")
+            resolved = await lazy_path.resolve(expand=True)
+
+            # Should expand env var and resolve
+            expected = Path("test/path").resolve()
+            assert resolved == expected
+        finally:
+            del os.environ["TEST_DIR"]
+
+    @pytest.mark.asyncio
+    async def test_resolve_with_expand_false(self):
+        """Test resolve with expand=False."""
+        os.environ["TEST_DIR"] = "test"
+        try:
+            lazy_path = LazyPath("${TEST_DIR}/path")
+            # Clear cached resolution to force re-resolve
+            lazy_path._resolved_path = None
+
+            resolved = await lazy_path.resolve(expand=False)
+
+            # Should NOT expand env var, just resolve literal path
+            # This will resolve ${TEST_DIR}/path as a literal directory name
+            expected = Path("${TEST_DIR}/path").resolve()
+            assert resolved == expected
+        finally:
+            del os.environ["TEST_DIR"]
+
+    @pytest.mark.asyncio
+    async def test_resolve_with_strict_false_nonexistent(self):
+        """Test resolve with strict=False on non-existent path (default behavior)."""
+        lazy_path = LazyPath("/nonexistent/path/that/does/not/exist")
+
+        # Should not raise error with strict=False (default)
+        resolved = await lazy_path.resolve(strict=False)
+        assert resolved == Path("/nonexistent/path/that/does/not/exist")
+
+    @pytest.mark.asyncio
+    async def test_resolve_with_strict_true_nonexistent(self):
+        """Test resolve with strict=True on non-existent path."""
+        lazy_path = LazyPath("/nonexistent/path/that/does/not/exist")
+
+        # Should raise FileNotFoundError with strict=True
+        with pytest.raises(FileNotFoundError):
+            await lazy_path.resolve(strict=True)
+
+    @pytest.mark.asyncio
+    async def test_resolve_tilde_expansion(self):
+        """Test resolve with tilde expansion."""
+        lazy_path = LazyPath("~/test/path")
+        resolved = await lazy_path.resolve(expand=True)
+
+        expected = Path.home() / "test" / "path"
+        assert resolved == expected
+
+    @pytest.mark.asyncio
+    async def test_resolve_combined_expansions(self):
+        """Test resolve with both tilde and env var expansion."""
+        os.environ["SUBDIR"] = "mydir"
+        try:
+            # Note: This creates a path like /home/user/mydir/file
+            # The ~ expands first, then we append the expanded env var
+            lazy_path = LazyPath("~/${SUBDIR}/file")
+            resolved = await lazy_path.resolve(expand=True)
+
+            expected = Path.home() / "mydir" / "file"
+            assert resolved == expected
+        finally:
+            del os.environ["SUBDIR"]

@@ -14,8 +14,10 @@ async def test_set_project_config_values_tool(isolated_config_file):
     session_manager._set_config_filename(isolated_config_file)
     session_manager.set_project_name("test-project")
 
-    # Test batch setting multiple values
-    config_dict = {"docroot": "/test/path"}
+    # Test batch setting multiple values with valid categories
+    config_dict = {
+        "categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+    }
 
     result = await set_project_config_values(config_dict)
 
@@ -26,24 +28,23 @@ async def test_set_project_config_values_tool(isolated_config_file):
     # Verify the values were set
     result = await get_project_config()
     assert result["success"] is True
-    assert result["config"]["docroot"] == "/test/path"
+    assert "test" in result["config"]["categories"]
     assert result["project"] == "test-project"
 
 
 async def test_set_project_config_values_partial_failure(isolated_config_file):
-    """Test batch config setting with some failures."""
+    """Test batch config setting with valid categories."""
     session_manager = SessionManager()
     session_manager._set_config_filename(isolated_config_file)
 
-    # Mix valid and invalid keys - all keys should succeed in our implementation
+    # Set valid categories configuration
     config_dict = {
-        "docroot": "/test/guides",
-        "project": "test-lang",
+        "categories": {"guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide files"}}
     }
 
     result = await set_project_config_values(config_dict)
 
-    assert result["success"] is True  # All should succeed
+    assert result["success"] is True  # Should succeed
 
 
 async def test_set_project_config_tool(isolated_config_file):
@@ -51,10 +52,12 @@ async def test_set_project_config_tool(isolated_config_file):
     session_manager = SessionManager()
     session_manager._set_config_filename(isolated_config_file)
 
-    # Should set configuration for current project
-    result = await set_project_config("docroot", "/test/path")
+    # Should set configuration for current project with valid categories
+    result = await set_project_config(
+        "categories", {"lang": {"dir": "lang/", "patterns": ["*.py"], "description": "Language files"}}
+    )
     assert result["success"] is True
-    assert "/test/path" in result["message"]
+    assert "lang" in result["message"]
 
 
 async def test_get_project_config_tool(isolated_config_file):
@@ -63,19 +66,21 @@ async def test_get_project_config_tool(isolated_config_file):
     session_manager._set_config_filename(isolated_config_file)
     session_manager.set_project_name("test-project")
 
-    # Set some config first
-    await set_project_config("docroot", "/test/path")
+    # Set some config first with valid categories
+    await set_project_config(
+        "categories", {"context": {"dir": "context/", "patterns": ["*.txt"], "description": "Context files"}}
+    )
 
     # Get config
     result = await get_project_config()
     assert result["success"] is True
-    assert result["config"]["docroot"] == "/test/path"
+    assert "context" in result["config"]["categories"]
     assert result["project"] == "test-project"
 
     # List all configs
     result = await get_project_config()
     assert "config" in result
-    assert "docroot" in result["config"]
+    assert "categories" in result["config"]
 
 
 async def test_session_manager_initialization(isolated_config_file):
@@ -105,10 +110,12 @@ async def test_project_context_switching(isolated_config_file):
     result = await switch_project("project-b")
     assert result["success"] is True
 
-    # Set config for current project
-    await set_project_config("docroot", "/project-b")
+    # Set config for current project with valid categories
+    await set_project_config(
+        "categories", {"docs": {"dir": "docs/", "patterns": ["*.md"], "description": "Documentation"}}
+    )
 
     # Verify project has the config
     result = await get_project_config("project-b")
     assert result["success"] is True
-    assert result["config"]["docroot"] == "/project-b"
+    assert "docs" in result["config"]["categories"]

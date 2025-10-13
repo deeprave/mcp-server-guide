@@ -2,13 +2,13 @@
 
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from src.mcp_server_guide.tools.category_tools import list_categories
+from mcp_server_guide.tools.category_tools import list_categories
 
 
 @pytest.mark.asyncio
 async def test_get_or_create_project_config_exception_handling():
     """Test that exceptions in get_or_create_project_config are properly handled."""
-    with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
@@ -21,7 +21,7 @@ async def test_get_or_create_project_config_exception_handling():
 @pytest.mark.asyncio
 async def test_get_or_create_project_config_empty_config():
     """Test handling when get_or_create_project_config returns an empty dict."""
-    with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
@@ -38,7 +38,7 @@ async def test_get_or_create_project_config_empty_config():
 @pytest.mark.asyncio
 async def test_get_or_create_project_config_no_categories_key():
     """Test handling when get_or_create_project_config returns a dict without 'categories' key."""
-    with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
@@ -59,7 +59,7 @@ async def test_get_or_create_project_config_auto_save_behavior():
     from unittest.mock import patch, AsyncMock, Mock
 
     with tempfile.TemporaryDirectory():
-        with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_current_project_safe = AsyncMock(return_value="new-project")
             mock_session.get_or_create_project_config = AsyncMock(return_value={"docroot": "."})
@@ -67,7 +67,7 @@ async def test_get_or_create_project_config_auto_save_behavior():
             mock_session_class.return_value = mock_session
 
             # Test the function that uses SessionManager
-            from src.mcp_server_guide.tools.category_tools import list_categories
+            from mcp_server_guide.tools.category_tools import list_categories
 
             result = await list_categories("new-project")
 

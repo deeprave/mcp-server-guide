@@ -132,6 +132,7 @@ async def add_category(
     # Create and validate category using Pydantic model
     try:
         category = Category(
+            url=None,
             dir=dir,
             patterns=patterns,
             description=description,
@@ -217,6 +218,7 @@ async def update_category(
     # Create and validate category using Pydantic model
     try:
         category = Category(
+            url=None,
             dir=dir,
             patterns=patterns,
             description=description,
@@ -307,7 +309,7 @@ async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
-    """Get content from a category using glob patterns."""
+    """Get content from a category using glob patterns or HTTP URL."""
     session = SessionManager()
     if project is None:
         project = session.get_project_name()
@@ -320,6 +322,20 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
         return {"success": False, "error": f"Category '{name}' does not exist"}
 
     category = categories[name]
+
+    # Check if this is a URL-based category
+    category_url = category.url if hasattr(category, "url") else category.get("url")
+    if category_url:
+        # Return URL information for HTTP-based categories
+        return {
+            "success": True,
+            "content": "",  # Content will be fetched by HTTP client
+            "url": category_url,
+            "is_http": True,
+            "category_name": name,
+        }
+
+    # Handle file-based categories
     # Category is now a Pydantic model, use attribute access
     category_dir = category.dir if hasattr(category, "dir") else category.get("dir", "")
     patterns = category.patterns if hasattr(category, "patterns") else category.get("patterns", [])
@@ -327,13 +343,9 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
     if not patterns:
         return {"success": False, "error": f"Category '{name}' has no patterns defined"}
 
-    # Find matching files using safe glob search with resolved absolute paths
-    docroot = config.get("docroot", ".")
-    # Ensure docroot is absolute for reliable path resolution
-    if not Path(docroot).is_absolute():
-        docroot = str(Path(docroot).resolve())
-
-    base_path = Path(docroot)
+    # Get docroot from session manager's config manager
+    docroot = session.config_manager().docroot
+    base_path = docroot.resolve_sync() if docroot else Path(".")
     search_dir = base_path / category_dir
 
     if not search_dir.exists():

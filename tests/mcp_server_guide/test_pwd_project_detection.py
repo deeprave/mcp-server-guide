@@ -3,7 +3,7 @@
 import os
 import pytest
 from unittest.mock import patch
-from src.mcp_server_guide.session_manager import SessionManager
+from mcp_server_guide.session_manager import SessionManager
 
 
 @pytest.mark.asyncio

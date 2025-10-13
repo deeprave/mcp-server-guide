@@ -3,8 +3,8 @@
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, AsyncMock, Mock
-from src.mcp_server_guide.tools.content_tools import search_content
-from src.mcp_server_guide.tools.category_tools import get_category_content
+from mcp_server_guide.tools.content_tools import search_content
+from mcp_server_guide.tools.category_tools import get_category_content
 
 
 async def test_search_content_with_matches():
@@ -16,7 +16,7 @@ async def test_search_content_with_matches():
         "context": {"success": True, "content": "Another search term match"},
     }
 
-    with patch("src.mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
+    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
 
         def side_effect(category, project):
             return mock_results.get(category, {"success": False})
@@ -40,7 +40,7 @@ async def test_search_content_no_matches():
         "context": {"success": True, "content": "Also different"},
     }
 
-    with patch("src.mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
+    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
 
         def side_effect(category, project):
             return mock_results.get(category, {"success": False})
@@ -56,7 +56,7 @@ async def test_search_content_no_matches():
 async def test_search_content_failed_category():
     """Test search_content handles failed category retrieval."""
     # Mock get_category_content to return failures
-    with patch("src.mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
+    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
         mock_get.return_value = {"success": False, "error": "Category not found"}
 
         results = await search_content("test", "test-project")
@@ -67,18 +67,23 @@ async def test_search_content_failed_category():
 
 async def test_category_content_directory_not_exists():
     """Test get_category_content when directory doesn't exist."""
+    from mcp_server_guide.path_resolver import LazyPath
+
     with tempfile.TemporaryDirectory() as temp_dir:
         # Set up session with non-existent directory
-        with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
+        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
             mock_session.return_value.get_project_name = Mock(return_value="test-project")
             mock_session.return_value.get_or_create_project_config = AsyncMock(
                 return_value={
-                    "docroot": temp_dir,
                     "categories": {
                         "test": {"dir": "nonexistent/", "patterns": ["*.md"], "description": "Test category"}
                     },
                 }
             )
+            # Mock config_manager().docroot
+            mock_config_manager = Mock()
+            mock_config_manager.docroot = LazyPath(temp_dir)
+            mock_session.return_value.config_manager = Mock(return_value=mock_config_manager)
 
             result = await get_category_content("test", "test-project")
 
@@ -100,8 +105,8 @@ async def test_safe_glob_outside_search_directory():
         with patch("pathlib.Path.relative_to") as mock_relative:
             mock_relative.side_effect = ValueError("Path is outside")
 
-            with patch("src.mcp_server_guide.tools.category_tools.logger") as mock_logger:
-                from src.mcp_server_guide.tools.category_tools import _safe_glob_search
+            with patch("mcp_server_guide.tools.category_tools.logger") as mock_logger:
+                from mcp_server_guide.tools.category_tools import _safe_glob_search
 
                 results = _safe_glob_search(search_dir, ["*.md"])
 
@@ -127,7 +132,7 @@ async def test_safe_glob_depth_limit():
         # Create file at shallow level
         (base_path / "shallow.md").write_text("shallow content")
 
-        from src.mcp_server_guide.tools.category_tools import _safe_glob_search
+        from mcp_server_guide.tools.category_tools import _safe_glob_search
 
         results = _safe_glob_search(base_path, ["**/*.md"])
 

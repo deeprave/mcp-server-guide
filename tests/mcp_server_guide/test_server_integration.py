@@ -23,10 +23,13 @@ async def test_server_resolves_http_resources():
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
-        # Mock session with HTTP guide
+        # Mock session with HTTP guide in categories
         session = SessionManager()
         session.set_project_name("test-project")
-        session.session_state.set_project_config("guide", "https://example.com/guide.md")
+        categories = {
+            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
+        }
+        session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -57,7 +60,10 @@ async def test_server_caches_http_resources():
 
         session = SessionManager()
         session.set_project_name("test-project")
-        session.session_state.set_project_config("guide", "https://example.com/guide.md")
+        categories = {
+            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
+        }
+        session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -104,8 +110,11 @@ async def test_server_handles_mixed_sources():
 
         session = SessionManager()
         session.set_project_name("mixed-project")
-        session.session_state.set_project_config("guide", str(readme_path))  # Local file
-        session.session_state.set_project_config("language", "https://example.com/lang.md")  # HTTP file
+        categories = {
+            "guide": {"dir": str(readme_path.parent), "patterns": ["README.md"], "description": "Guide files"},
+            "lang": {"url": "https://example.com/lang.md", "description": "Language files"}
+        }
+        session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -136,7 +145,10 @@ async def test_server_fallback_on_http_error():
 
         session = SessionManager()
         session.set_project_name("fallback-project")
-        session.session_state.set_project_config("guide", "https://example.com/guide.md")
+        categories = {
+            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
+        }
+        session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -175,10 +187,13 @@ async def test_server_integration_with_session_paths():
         session = SessionManager()
         session.set_project_name("integration-project")
 
-        # Test various path formats from Issue 002
-        session.session_state.set_project_config("guide", "local:./local-guide.md")
-        session.session_state.set_project_config("language", "server:./server-lang.md")
-        session.session_state.set_project_config("context", "https://example.com/context.md")
+        # Test different category types: local files and HTTP URLs
+        categories = {
+            "guide": {"dir": "./guides/", "patterns": ["local-guide.md"], "description": "Guide files"},
+            "lang": {"dir": "./lang/", "patterns": ["server-lang.md"], "description": "Language files"},
+            "context": {"url": "https://example.com/context.md", "description": "Context files"}
+        }
+        session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
@@ -187,7 +202,7 @@ async def test_server_integration_with_session_paths():
 
             assert guide_source.type == FileSourceType.FILE
 
-            lang_source = await server._get_file_source("language", "integration-project")
+            lang_source = await server._get_file_source("lang", "integration-project")
             assert lang_source.type == FileSourceType.FILE
 
             context_source = await server._get_file_source("context", "integration-project")
@@ -202,7 +217,10 @@ async def test_server_respects_cache_settings():
 
         session = SessionManager()
         session.set_project_name("cache-test")
-        session.session_state.set_project_config("guide", "https://example.com/guide.md")
+        categories = {
+            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
+        }
+        session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:

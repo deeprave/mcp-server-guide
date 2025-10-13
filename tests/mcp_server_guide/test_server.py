@@ -40,21 +40,15 @@ async def test_get_current_project_no_project_set():
     result = await server.get_project_config("test_project")
     assert isinstance(result, dict)
 
-    # Test set_project_config
-    result = await server.set_project_config("test_key", "test_value")
+    # Test set_project_config with valid categories
+    categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+    result = await server.set_project_config("categories", categories)
     assert isinstance(result, dict)
 
     # Set current project first, then set config
     session = SessionManager()
     session.set_project_name("test_project")
-    result = await server.set_project_config("test_key", "test_value")
-    assert isinstance(result, dict)
-
-    # Test get_effective_config
-    result = await server.get_effective_config()
-    assert isinstance(result, dict)
-
-    result = await server.get_effective_config("test_project")
+    result = await server.set_project_config("categories", categories)
     assert isinstance(result, dict)
 
 

@@ -4,7 +4,8 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 import aiohttp
-from src.mcp_server_guide.http.async_client import AsyncHTTPClient
+
+from mcp_server_guide.http.async_client import AsyncHTTPClient
 
 
 class TestAsyncHTTPClient:

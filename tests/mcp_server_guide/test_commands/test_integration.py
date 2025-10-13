@@ -29,18 +29,14 @@ async def test_parameter_parsing_integration():
     parser = CommandParser()
     handler = CommandHandler()
 
-    # Test complex command with parameters
-    parsed = parser.parse_command("guide:new typescript dir=lang/ts patterns=*.ts,*.tsx auto-load=true")
+    # Test simple command
+    parsed = parser.parse_command("guide lang")
     assert parsed is not None
     assert parsed["command"] == "guide"
-    assert parsed["subcommand"] == "new"
-    assert parsed["args"] == ["typescript"]
-    assert parsed["params"]["dir"] == "lang/ts"
-    assert parsed["params"]["patterns"] == ["*.ts", "*.tsx"]
-    assert parsed["params"]["auto-load"] is True
+    assert parsed["args"] == ["lang"]
 
     # Test handler can accept this format
-    result = await handler.execute_command(parsed["command"], parsed["args"], parsed["params"])
+    result = await handler.execute_command(parsed["command"], parsed["args"], parsed.get("params", {}))
 
     assert "success" in result
 
@@ -52,7 +48,6 @@ def test_error_handling_invalid_syntax():
     # Test various invalid inputs
     assert parser.parse_command("") is None
     assert parser.parse_command("   ") is None
-    assert parser.parse_command("guide me through this") is None  # Natural language
     assert parser.parse_command("please guide me") is None  # Natural language
 
     # Valid commands should still work
@@ -77,14 +72,10 @@ def test_command_help_structure():
     parser = CommandParser()
 
     # Test that all valid commands parse to consistent structure
-    commands = ["guide", "guide lang", "g:lang", "guide:new test", "guide:edit test dir=new", "guide:del test"]
+    commands = ["guide", "guide lang"]
     expected_outputs = [
-        {"command": "guide", "subcommand": None, "args": [], "params": {}},
-        {"command": "guide", "subcommand": None, "args": ["lang"], "params": {}},
-        {"command": "g", "subcommand": "lang", "args": [], "params": {}},
-        {"command": "guide", "subcommand": "new", "args": ["test"], "params": {}},
-        {"command": "guide", "subcommand": "edit", "args": ["test"], "params": {"dir": "new"}},
-        {"command": "guide", "subcommand": "del", "args": ["test"], "params": {}},
+        {"command": "guide", "args": [], "params": {}},
+        {"command": "guide", "args": ["lang"], "params": {}},
     ]
 
     for cmd, expected in zip(commands, expected_outputs):
@@ -92,9 +83,6 @@ def test_command_help_structure():
         assert result is not None, f"Parser returned None for command: {cmd}"
         assert result.get("command") == expected["command"], (
             f"Command mismatch for '{cmd}': {result.get('command')} != {expected['command']}"
-        )
-        assert result.get("subcommand") == expected["subcommand"], (
-            f"Subcommand mismatch for '{cmd}': {result.get('subcommand')} != {expected['subcommand']}"
         )
         assert result.get("args") == expected["args"], (
             f"Args mismatch for '{cmd}': {result.get('args')} != {expected['args']}"

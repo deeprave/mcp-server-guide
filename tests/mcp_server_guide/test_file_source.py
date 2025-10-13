@@ -31,6 +31,22 @@ async def test_file_source_from_url_integration():
     assert source.type == FileSourceType.FILE
     assert source.base_path == "./docs/guide.md"
 
+    source = FileSource.from_url("file:///docs/guide.md")
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "/docs/guide.md"
+
+    source = FileSource.from_url("file:docs/guide.md")
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "docs/guide.md"
+
+    source = FileSource.from_url("docs/guide.md")
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "docs/guide.md"
+
+    source = FileSource.from_url("/docs/guide.md")
+    assert source.type == FileSourceType.FILE
+    assert source.base_path == "/docs/guide.md"
+
     # HTTP URLs
     source = FileSource.from_url("http://example.com/guide.md")
     assert source.type == FileSourceType.HTTP
@@ -131,14 +147,6 @@ async def test_file_source_auth_headers():
     headers = {"Authorization": "Bearer token", "X-API-Key": "secret"}
     source = FileSource(FileSourceType.HTTP, "https://example.com/docs/", auth_headers=headers)
     assert source.auth_headers == headers
-
-
-async def test_file_source_context_detection():
-    """Test FileSource context detection for file:// URLs."""
-    # Context detection should return a valid FileSourceType
-    context = FileSource.detect_deployment_context()
-    assert isinstance(context, FileSourceType)
-    assert context == FileSourceType.FILE
 
 
 async def test_integration_with_issue_002_session():

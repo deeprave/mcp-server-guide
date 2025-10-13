@@ -29,38 +29,50 @@ async def test_session_config_set_and_get():
     """Test setting and getting project configuration."""
     session = SessionState("test-project")
 
-    # Set configuration
-    session.set_project_config("guidelines", "python-web")
-    session.set_project_config("language", "python")
+    # Set configuration - only 'categories' is valid now
+    test_categories = {
+        "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guidelines"},
+        "lang": {"dir": "lang/", "patterns": ["*.md"], "description": "Language guides"}
+    }
+    session.set_project_config("categories", test_categories)
 
     # Get configuration
     config = session.get_project_config()
-    assert config["guidelines"] == "python-web"
-    assert config["language"] == "python"
+    assert config["categories"] == test_categories
 
 
 async def test_session_config_project_isolation():
     """Test session config for single project."""
     session = SessionState("projectA")
 
-    # Set config for current project
-    session.set_project_config("guidelines", "python-web")
+    # Set config for current project - only 'categories' is valid now
+    test_categories = {"guide": {"dir": "guide/", "patterns": ["*.md"]}}
+    session.set_project_config("categories", test_categories)
 
     # Verify config
     config = session.get_project_config()
-    assert config["guidelines"] == "python-web"
+    assert config["categories"] == test_categories
 
 
 async def test_session_config_precedence():
     """Test session config behavior."""
     session = SessionState("test-project")
 
-    # Set session config
-    session.set_project_config("docroot", "/custom/path")
+    # Set session config - only 'categories' is valid now
+    test_categories_v1 = {"guide": {"dir": "guide/", "patterns": ["*.md"]}}
+    session.set_project_config("categories", test_categories_v1)
 
     # Should have the set value
     config = session.get_project_config()
-    assert config["docroot"] == "/custom/path"
+    assert config["categories"] == test_categories_v1
+
+    # Update with new value
+    test_categories_v2 = {"context": {"dir": "context/", "patterns": ["*.md"]}}
+    session.set_project_config("categories", test_categories_v2)
+
+    # Should have the updated value
+    config = session.get_project_config()
+    assert config["categories"] == test_categories_v2
 
 
 async def test_resolve_session_path_default():
@@ -97,17 +109,21 @@ async def test_resolve_session_path_file_urls():
     assert result == "/etc/guide.md"
 
 
-async def test_session_config_with_local_paths():
-    """Test session configuration with local file paths."""
+async def test_session_config_with_categories():
+    """Test session configuration with categories structure."""
     session = SessionState("test-project")
 
-    # Set local file paths
-    session.set_project_config("guidelines", "local:./team-guide.md")
-    session.set_project_config("language", "file://./python.md")
+    # Set categories with various directory paths
+    test_categories = {
+        "local_guide": {"dir": "local/guide/", "patterns": ["*.md"]},
+        "remote_lang": {"dir": "remote/lang/", "patterns": ["*.py"]}
+    }
+    session.set_project_config("categories", test_categories)
 
     config = session.get_project_config()
-    assert config["guidelines"] == "local:./team-guide.md"
-    assert config["language"] == "file://./python.md"
+    assert config["categories"] == test_categories
+    assert "local_guide" in config["categories"]
+    assert "remote_lang" in config["categories"]
 
 
 async def test_validate_session_path():

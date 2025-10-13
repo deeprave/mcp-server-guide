@@ -113,14 +113,13 @@ class SessionManager:
 
         project_name = Path(pwd).name
         logger.debug(f"Using PWD basename as project: '{project_name}' (from {pwd})")
-        self._session_state.project_name = project_name
         return project_name
 
     def reset_project_config(self, project_name: Optional[str] = None) -> None:
         """Reset current project to defaults."""
         self._session_state.reset_project_config(project_name)
         self._session_state.project_config = {}
-        self._session_state.set_project_config("docroot", ".")
+        # Don't set docroot here - it will be loaded from config file
         self._session_state.set_project_config("categories", self.builtin_categories())
 
     async def save_session(self) -> None:
@@ -139,19 +138,21 @@ class SessionManager:
 
             # Update existing config with session state changes
             for key, value in session_config_dict.items():
-                if key == "categories" and isinstance(value, dict):
-                    category_objects = {
-                        cat_name: (
-                            cat_data
-                            if isinstance(cat_data, Category) or not isinstance(cat_data, dict)
-                            else Category(**cat_data)
-                        )
-                        for cat_name, cat_data in value.items()
-                    }
-                    existing_config.categories.update(category_objects)
-                elif key == "docroot":
-                    existing_config.docroot = value
-                    # Note: any other fields would be handled here
+                match key:
+                    case "categories":
+                        if isinstance(value, dict):
+                            category_objects = {
+                                cat_name: (
+                                    cat_data
+                                    if isinstance(cat_data, Category) or not isinstance(cat_data, dict)
+                                    else Category(**cat_data)
+                                )
+                                for cat_name, cat_data in value.items()
+                            }
+                            existing_config.categories.update(category_objects)
+                    case _:
+                        # For any other key, raise a warning log
+                        get_logger().warning("unhandled config key during save: %s", key)
 
             project_config = existing_config
         else:
@@ -207,7 +208,7 @@ class SessionManager:
         if not project_name or not isinstance(project_name, str):
             raise ValueError("Project name must be a non-empty string")
 
-        if project_name != self.get_project_name():
+        if project_name != self.project_name:
             project_config = await self.load_config(project_name)
             if project_config:
                 # Load existing config into session state
@@ -230,18 +231,21 @@ class SessionManager:
         """Create built-in categories with default values and auto_load = true."""
         return {
             "guide": Category(
+                url=None,
                 dir="guide/",
                 patterns=["guidelines"],
                 description="Development guidelines",
                 auto_load=True,
             ),
             "lang": Category(
+                url=None,
                 dir="lang/",
                 patterns=["none"],
                 description="Language-specific guidelines",
                 auto_load=True,
             ),
             "context": Category(
+                url=None,
                 dir="context/",
                 patterns=["project-context"],
                 description="Project-specific guidelines",
@@ -249,17 +253,9 @@ class SessionManager:
             ),
         }
 
-    async def get_effective_config(self, project_name: str) -> Dict[str, Any]:
-        """Get effective configuration combining file and session overrides with resolved paths."""
-        config = await self.get_or_create_project_config(project_name)
-
-        # Resolve docroot to absolute path
-        docroot = config.get("docroot", ".")
-        if not Path(docroot).is_absolute():
-            # Resolve relative paths to absolute
-            config["docroot"] = str(Path(docroot).resolve())
-
-        return config
+    @property
+    def docroot(self) -> Optional[LazyPath]:
+        return self._config_manager.docroot or LazyPath(".")
 
 
 async def set_project_config(key: str, value: str) -> Dict[str, Any]:

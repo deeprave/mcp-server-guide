@@ -7,6 +7,8 @@ from typing import Dict, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from .session_manager import SessionManager
 
+from .project_config import ProjectConfig
+
 
 # Global session instance
 _session_manager: Optional["SessionManager"] = None
@@ -96,10 +98,50 @@ class SessionState:
         """Get configuration for the current project."""
         return self.project_config
 
-    def merge_project_config(self, config_key: str, value: str | Dict[str, Any] | None) -> None:
-        """Set configuration value for the current project."""
-        self.project_config[config_key] |= value
+    @staticmethod
+    def _validate_config(config: Dict[str, Any]) -> None:
+        from pydantic import ValidationError
+
+        # Validate with Pydantic - this checks both key validity and value structure
+        try:
+            ProjectConfig.model_validate(config)
+        except ValidationError as e:
+            # Convert Pydantic error to ValueError with helpful message
+            raise ValueError(f"Invalid project configuration: {e}") from e
+
+    def merge_project_config(self, value: Optional[Dict[str, Any]]) -> None:
+        """Merge a configuration set for the current project.
+
+        Uses Pydantic validation to ensure the value is valid
+        according to the ProjectConfig schema.
+
+        Args:
+            value: Configuration value
+
+        Raises:
+            ValueError: If the config is invalid (wraps Pydantic ValidationError)
+        """
+        if value:
+            updated_config = self.project_config | value
+            self._validate_config(updated_config)
+            # If validation passed, set it
+            self.project_config = updated_config
 
     def set_project_config(self, config_key: str, value: str | Dict[str, Any] | None) -> None:
-        """Set configuration value for the current project."""
+        """Set a configuration value for the current project.
+
+        Uses Pydantic validation to ensure both the key and value are valid
+        according to the ProjectConfig schema.
+
+        Args:
+            config_key: Configuration key to set
+            value: Configuration value
+
+        Raises:
+            ValueError: If the config is invalid (wraps Pydantic ValidationError)
+        """
+        # Build updated config with the new value
+        updated_config = {**self.project_config, config_key: value}
+        self._validate_config(updated_config)
+        # If validation passed, set it
         self.project_config[config_key] = value

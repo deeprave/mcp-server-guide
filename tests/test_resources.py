@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 
-from src.mcp_server_guide.server import list_resources, read_resource
+from mcp_server_guide.server import list_resources, read_resource
 
 
 class TestResourceHandlers:
@@ -19,7 +19,7 @@ class TestResourceHandlers:
         mock_session.session_state.get_project_config = Mock(return_value={"categories": {}})
         mock_session.get_or_create_project_config = AsyncMock(return_value={"categories": {}})
 
-        with patch("src.mcp_server_guide.server.SessionManager", return_value=mock_session):
+        with patch("mcp_server_guide.server.SessionManager", return_value=mock_session):
             resources = await list_resources()
             assert resources == []
 
@@ -34,7 +34,7 @@ class TestResourceHandlers:
         mock_session.session_state.get_project_config = Mock(return_value=config_data)
         mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
-        with patch("src.mcp_server_guide.server.SessionManager", return_value=mock_session):
+        with patch("mcp_server_guide.server.SessionManager", return_value=mock_session):
             resources = await list_resources()
 
             assert len(resources) == 2  # aggregate + individual
@@ -64,7 +64,7 @@ class TestResourceHandlers:
         """Test that read_resource handles aggregate URI correctly."""
         expected_content = "# All Guides\n\nCombined content from all categories."
 
-        with patch("src.mcp_server_guide.server.tools.get_all_guides") as mock_get_all:
+        with patch("mcp_server_guide.server.tools.get_all_guides") as mock_get_all:
             mock_get_all.return_value = {"success": True, "content": expected_content}
 
             result = await read_resource("guide://category/")
@@ -74,7 +74,7 @@ class TestResourceHandlers:
     @pytest.mark.asyncio
     async def test_read_resource_nonexistent_category(self):
         """Test that read_resource raises error for non-existent category."""
-        with patch("src.mcp_server_guide.server.tools.get_category_content") as mock_get_content:
+        with patch("mcp_server_guide.server.tools.get_category_content") as mock_get_content:
             mock_get_content.return_value = {"success": False, "error": "Category not found"}
 
             with pytest.raises(Exception, match="Failed to load category 'nonexistent'"):
@@ -85,7 +85,7 @@ class TestResourceHandlers:
         """Test that read_resource returns content for valid category."""
         expected_content = "# Test Category\n\nThis is test content."
 
-        with patch("src.mcp_server_guide.server.tools.get_category_content") as mock_get_content:
+        with patch("mcp_server_guide.server.tools.get_category_content") as mock_get_content:
             mock_get_content.return_value = {"success": True, "content": expected_content}
 
             result = await read_resource("guide://category/test-category")

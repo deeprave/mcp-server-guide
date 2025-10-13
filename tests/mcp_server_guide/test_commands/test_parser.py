@@ -1,4 +1,5 @@
 """Tests for command parser functionality."""
+from unittest.mock import patch
 
 from mcp_server_guide.commands.parser import CommandParser
 
@@ -23,13 +24,6 @@ def test_parse_command_with_arguments():
     assert result["args"] == ["lang"]
 
 
-def test_parse_invalid_non_slash_command():
-    """Test that non-command text returns None."""
-    parser = CommandParser()
-    result = parser.parse_command("guide me through this")
-
-    assert result is None
-
 
 def test_parse_empty_command():
     """Test parsing empty or whitespace command."""
@@ -39,220 +33,70 @@ def test_parse_empty_command():
     assert parser.parse_command("   ") is None
 
 
-def test_parse_key_value_parameters():
-    """Test parsing key=value parameters."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript dir=lang/ts")
-
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"dir": "lang/ts"}
-
-
-def test_parse_comma_separated_values():
-    """Test parsing comma-separated values."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript patterns=*.ts,*.tsx")
-
-    assert result is not None
-    assert result["params"] == {"patterns": ["*.ts", "*.tsx"]}
-
-
-def test_parse_comma_separated_values_trailing_comma():
-    """Test parsing comma-separated values with a trailing comma."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript patterns=*.ts,*.tsx,")
-
-    assert result is not None
-    assert result["params"] == {"patterns": ["*.ts", "*.tsx"]}
-
-
-def test_parse_boolean_parameters():
-    """Test parsing boolean parameters."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript auto-load=true")
-
-    assert result is not None
-    assert result["params"] == {"auto-load": True}
-
-    result = parser.parse_command("guide:new typescript auto-load=false")
-    assert result["params"] == {"auto-load": False}
-
-
-def test_parse_mixed_parameters():
-    """Test parsing mixed parameter types."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript dir=lang/ts patterns=*.ts,*.tsx auto-load=true")
-
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"dir": "lang/ts", "patterns": ["*.ts", "*.tsx"], "auto-load": True}
-
-
-def test_parse_colon_syntax_guide_category():
-    """Test parsing /guide:category syntax."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:lang")
-
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "lang"
-    assert result["args"] == []
-
-
-def test_parse_colon_syntax_g_shorthand():
-    """Test parsing /g:category syntax."""
-    parser = CommandParser()
-    result = parser.parse_command("g:lang")
-
-    assert result is not None
-    assert result["command"] == "g"
-    assert result["subcommand"] == "lang"
-    assert result["args"] == []
-
-
-def test_parse_colon_syntax_with_params():
-    """Test parsing colon syntax with parameters."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript dir=lang/ts patterns=*.ts,*.tsx")
-
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"dir": "lang/ts", "patterns": ["*.ts", "*.tsx"]}
-
-
-def test_parse_g_shorthand_with_params():
-    """Test parsing /g shorthand with parameters."""
-    parser = CommandParser()
-    result = parser.parse_command("g:edit typescript patterns=*.ts,*.tsx,*.d.ts")
-
-    assert result is not None
-    assert result["command"] == "g"
-    assert result["subcommand"] == "edit"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"patterns": ["*.ts", "*.tsx", "*.d.ts"]}
-
-
-def test_parse_help_commands():
-    """Test parsing help commands."""
+def test_parse_command_shlex_failure():
+    """Test parsing command when shlex.split fails due to unmatched quotes."""
     parser = CommandParser()
 
-    result = parser.parse_command("guide:help")
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "help"
+    # Test cases that cause shlex.split to raise ValueError
+    test_cases = [
+        'guide "unmatched quote',
+        "guide 'unmatched single quote",
+        'guide "nested "quotes" problem',
+        "guide 'mixed \"quotes problem",
+    ]
 
-    result = parser.parse_command("g:help")
-    assert result is not None
-    assert result["command"] == "g"
-    assert result["subcommand"] == "help"
+    # sourcery skip: no-loop-in-tests
+    for test_case in test_cases:
+        result = parser.parse_command(test_case)
+        assert result is None, f"Expected None for malformed input: {test_case}"
 
 
-def test_parse_quoted_arguments():
-    """Test parsing commands with quoted arguments."""
+def test_parse_command_boolean():  # sourcery skip: extract-duplicate-method
     parser = CommandParser()
 
-    # Test quoted directory path with spaces
-    result = parser.parse_command('guide:new "my project" dir="my docs/typescript"')
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["my project"]
-    assert result["params"] == {"dir": "my docs/typescript"}
+    result = parser.parse_command("guide test=1 verbose=true")
+    assert "params" in result
+    assert result["params"]["test"] == "1"
+    assert result["params"]["verbose"] is True
 
-    # Test quoted patterns
-    result = parser.parse_command('guide:new typescript patterns="*.ts,*.tsx" dir="lang/ts with spaces"')
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"patterns": ["*.ts", "*.tsx"], "dir": "lang/ts with spaces"}
+    result = parser.parse_command("guide test=2 verbose=false")
+    assert "params" in result
+    assert result["params"]["test"] == "2"
+    assert result["params"]["verbose"] is False
 
 
-def test_parse_empty_value_parameter():
-    """Test parsing parameter with empty value."""
-    parser = CommandParser()
-    result = parser.parse_command("guide:new typescript dir=")
-
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"dir": ""}
-
-
-def test_parse_malformed_key_value_pairs():
-    """Test parsing malformed key-value pairs."""
+def test_parse_command_args():  # sourcery skip: extract-duplicate-method
     parser = CommandParser()
 
-    # Parameter with no '='
-    result = parser.parse_command("guide:new typescript dir")
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript", "dir"]
-    assert result["params"] == {}
-
-    # Parameter with only '=' and no key
-    result = parser.parse_command("guide:new typescript =value")
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"": "value"}
-
-    # Parameter with double '='
-    result = parser.parse_command("guide:new typescript dir==value")
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"dir": "=value"}
-
-    # Parameter with just '='
-    result = parser.parse_command("guide:new typescript =")
-    assert result is not None
-    assert result["command"] == "guide"
-    assert result["subcommand"] == "new"
-    assert result["args"] == ["typescript"]
-    assert result["params"] == {"": ""}
+    result = parser.parse_command("guide one,two,three")
+    assert "args" in result
+    assert result["args"] == ["one,two,three"]
 
 
-def test_parse_quoted_comma_values():
-    """Test parsing comma-separated values with quoted commas."""
+def test_parse_parameter_csv_fallback():
+    import csv
+    """Test parameter parsing when csv.reader fails and falls back to simple split."""
     parser = CommandParser()
 
-    # Test simple comma-separated values (existing functionality)
-    result = parser.parse_command("guide:new typescript patterns=*.ts,*.tsx")
-    assert result is not None
-    assert result["params"] == {"patterns": ["*.ts", "*.tsx"]}
+    # Mock csv.reader to raise csv.Error to test the fallback
+    with patch('csv.reader') as mock_reader:
+        mock_reader.side_effect = csv.Error("Mocked CSV error")
 
-    # Test quoted values with spaces and commas.
-    # NOTE: The parser splits quoted values containing commas into multiple items,
-    # because shlex splits on spaces first, then the parser splits on commas.
-    # This may differ from user expectations, as users might expect quoted commas to be preserved.
-    result = parser.parse_command('guide:new typescript patterns="file,one.ts","file two.tsx"')
-    assert result is not None
-    assert result["params"] == {"patterns": ["file", "one.ts", "file two.tsx"]}
+        result = parser.parse_command('guide list="item1,item2,item3"')
 
-    # Test quoted values with spaces (but no internal commas for now)
-    result = parser.parse_command('guide:new typescript patterns="file one.ts","file two.tsx"')
-    assert result is not None
+        assert result is not None
+        assert result["command"] == "guide"
+        assert "list" in result["params"]
+        # Should fall back to simple split
+        assert result["params"]["list"] == ["item1", "item2", "item3"]
 
-
-def test_multiple_colons_rejection():
-    """Test that commands with multiple colons are rejected."""
+def test_parse_command_csv():  # sourcery skip: extract-duplicate-method
     parser = CommandParser()
 
-    # Commands with multiple colons should be rejected
-    assert parser.parse_command("guide:sub:command") is None
-    assert parser.parse_command("g:sub:command:more") is None
+    result = parser.parse_command("guide list=one,two,three")
+    assert "params" in result
+    assert "list" in result["params"]
+    assert result["params"]["list"] == ["one" ,"two", "three"]
 
 
 def test_natural_language_passthrough():
@@ -260,8 +104,20 @@ def test_natural_language_passthrough():
     parser = CommandParser()
 
     # These should return None to let AI handle them
-    assert parser.parse_command("guide me through this process") is None
     assert parser.parse_command("please guide me") is None
     assert parser.parse_command("can you guide me") is None
     assert parser.parse_command("I need guidance") is None
-    assert parser.parse_command("guide me step by step") is None
+
+
+def test_command_parsed():
+    parser = CommandParser()
+
+    result = parser.parse_command("guide me through this process")
+    assert result is not None
+    assert result["command"] == "guide"
+    assert result["args"] == ["me", "through", "this", "process"]
+
+    result = parser.parse_command("guide me step by step")
+    assert result is not None
+    assert result["command"] == "guide"
+    assert result["args"] == ["me", "step", "by", "step"]

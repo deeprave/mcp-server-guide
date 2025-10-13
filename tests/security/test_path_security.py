@@ -3,7 +3,7 @@
 import pytest
 import tempfile
 from pathlib import Path
-from src.mcp_server_guide.security.path_validator import PathValidator, SecurityError
+from mcp_server_guide.security.path_validator import PathValidator, SecurityError
 
 
 class TestPathTraversalSecurity:
@@ -147,7 +147,7 @@ class TestPathSanitization:
 
     def test_sanitize_filename(self):
         """Test filename sanitization."""
-        from src.mcp_server_guide.security.path_validator import sanitize_filename
+        from mcp_server_guide.security.path_validator import sanitize_filename
 
         test_cases = [
             ("normal.txt", "normal.txt"),
@@ -171,7 +171,7 @@ class TestPathSanitization:
 
     def test_sanitize_empty_filename(self):
         """Test sanitization of empty or invalid filenames."""
-        from src.mcp_server_guide.security.path_validator import sanitize_filename
+        from mcp_server_guide.security.path_validator import sanitize_filename
 
         assert sanitize_filename("") == "unnamed"
         assert sanitize_filename("...") == "unnamed"

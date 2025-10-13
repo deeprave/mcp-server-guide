@@ -1,10 +1,8 @@
-"""Additional tests to boost coverage for low-hanging fruit."""
-
 import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, Mock, AsyncMock
-from src.mcp_server_guide.tools.category_tools import _safe_glob_search
+from mcp_server_guide.tools.category_tools import _safe_glob_search
 
 
 async def test_save_session_failure():
@@ -50,7 +48,7 @@ async def test_safe_glob_symlink_resolution_error():
                 OSError("Symlink error"),  # Second call for match_path
             ]
 
-            with patch("src.mcp_server_guide.tools.category_tools.logger") as mock_logger:
+            with patch("mcp_server_guide.tools.category_tools.logger") as mock_logger:
                 results = _safe_glob_search(base_path, ["*.md"])
 
                 # Should handle error gracefully and log warning

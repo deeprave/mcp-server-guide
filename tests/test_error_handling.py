@@ -2,7 +2,7 @@
 
 import logging
 from unittest.mock import Mock
-from src.mcp_server_guide.exceptions import (
+from mcp_server_guide.exceptions import (
     MCPError,
     ValidationError,
     SecurityError,
@@ -10,7 +10,7 @@ from src.mcp_server_guide.exceptions import (
     ErrorResponse,
     SuccessResponse,
 )
-from src.mcp_server_guide.error_handler import ErrorHandler, handle_errors
+from mcp_server_guide.error_handler import ErrorHandler, handle_errors
 
 
 class TestMCPExceptions:

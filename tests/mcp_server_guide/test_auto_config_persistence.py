@@ -7,30 +7,34 @@ class TestAutoConfigPersistence:
     """Test automatic configuration persistence functionality."""
 
     async def test_config_changes_trigger_save(self):
-        """Test that configuration changes work properly."""
-        # Set a configuration value
-        result = await set_project_config("project", "test-project")
+        """Test that valid configuration changes work properly."""
+        # Set categories - the only valid project config field
+        result = await set_project_config(
+            "categories", {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+        )
 
         assert result["success"] is True
-        assert result["key"] == "project"
-        assert result["value"] == "test-project"
 
     async def test_project_changes_work(self):
-        """Test that project changes work properly."""
-        # Set project
-        result = await set_project_config("project", "new-project")
+        """Test that category updates work properly."""
+        # Update categories
+        result = await set_project_config(
+            "categories", {"guide": {"dir": "guide/", "patterns": ["*.txt"], "description": "Guide files"}}
+        )
 
         assert result["success"] is True
-        assert result["key"] == "project"
-        assert result["value"] == "new-project"
 
     async def test_multiple_config_changes(self):
         """Test that multiple configuration changes work."""
-        # Make multiple configuration changes
-        result1 = await set_project_config("language", "python")
-        result2 = await set_project_config("docroot", "/custom/guides")
+        # Make multiple category configuration changes
+        result1 = await set_project_config(
+            "categories", {"lang": {"dir": "lang/", "patterns": ["*.py"], "description": "Python files"}}
+        )
+        result2 = await set_project_config(
+            "categories", {"context": {"dir": "context/", "patterns": ["*.md"], "description": "Context docs"}}
+        )
         result3 = await set_project_config(
-            "categories", {"test": {"dir": "test", "patterns": ["*.md"], "description": "Test category"}}
+            "categories", {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
         )
 
         assert result1["success"] is True

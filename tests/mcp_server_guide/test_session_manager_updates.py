@@ -17,7 +17,6 @@ class TestSessionManagerUpdates:
         existing_config = {
             "projects": {
                 "project-a": {
-                    "docroot": "/custom/root",
                     "categories": {
                         "guide": {"dir": "custom/guides/", "patterns": ["*.md"]},
                         "context": {"dir": "custom/context/", "patterns": ["*.txt"]},
@@ -44,14 +43,19 @@ class TestSessionManagerUpdates:
             session = SessionManager()
             session._set_config_filename(config_file)
 
+            # Load existing config first
+            config = await session.load_config("project-a")
+            if config:
+                session.session_state.set_project_name("project-a")
+                session.session_state.project_config = config.to_dict()
+
             # Add a new category to the current project
             from mcp_server_guide.project_config import Category
 
-            # Get existing categories or create empty dict
-            if "categories" not in session.session_state.project_config:
-                session.session_state.project_config["categories"] = {}
-            # Add new category
-            session.session_state.project_config["categories"]["language"] = Category(dir="lang/", patterns=["*.ts"])
+            # Get existing categories and add new one
+            existing_categories = session.session_state.project_config.get("categories", {})
+            existing_categories["language"] = Category(dir="lang/", patterns=["*.ts"])
+            session.session_state.project_config["categories"] = existing_categories
 
             # Save session (will auto-detect project name from PWD)
             await session.save_session()
@@ -63,8 +67,7 @@ class TestSessionManagerUpdates:
             assert "project-b" in updated_config["projects"]
             assert updated_config["projects"]["project-b"]["categories"]["guide"]["dir"] == "other/guides/"
 
-            # project-a should have new category but preserved other fields
-            assert updated_config["projects"]["project-a"]["docroot"] == "/custom/root"
+            # project-a should have new category and preserved existing categories
             assert "guide" in updated_config["projects"]["project-a"]["categories"]
             assert "context" in updated_config["projects"]["project-a"]["categories"]
             assert "language" in updated_config["projects"]["project-a"]["categories"]
@@ -78,7 +81,13 @@ class TestSessionManagerUpdates:
         config_file = tmp_path / "config.yaml"
 
         # Create existing config WITHOUT current_project field
-        existing_config = {"projects": {"existing-project": {"language": "python"}}}
+        existing_config = {
+            "projects": {
+                "existing-project": {
+                    "categories": {"guide": {"dir": "guide/", "patterns": ["*.md"]}}
+                }
+            }
+        }
         config_file.write_text(yaml.dump(existing_config, indent=2))
 
         # Create a directory with the expected project name
@@ -171,7 +180,11 @@ class TestSessionManagerUpdates:
 
             # Should handle a corrupted file gracefully
             # Either backup and recreate, or merge with defaults
-            session.session_state.set_project_config("language", "python")
+            from mcp_server_guide.project_config import Category
+
+            session.session_state.set_project_config(
+                "categories", {"guide": Category(dir="guide/", patterns=["*.md"])}
+            )
             # Save session (will auto-detect project name from PWD)
             await session.save_session()
 
@@ -217,15 +230,20 @@ class TestSessionManagerUpdates:
             session = SessionManager()
             session._set_config_filename(config_file)
 
-            # Operation 1: Set docroot for current project
-            session.session_state.set_project_config("docroot", "/custom/root")
+            # Load existing config first
+            config = await session.load_config("project-1")
+            if config:
+                session.session_state.set_project_name("project-1")
+                session.session_state.project_config = config.to_dict()
 
-            # Operation 2: Add new category
+            # Operation 1: Add language category
             from mcp_server_guide.project_config import Category
 
-            session.session_state.set_project_config(
-                "categories", {"context": Category(dir="context/", patterns=["*.txt"])}
-            )
+            # Get existing categories and add new ones
+            existing_categories = session.session_state.project_config.get("categories", {})
+            existing_categories["lang"] = Category(dir="lang/", patterns=["*.py"])
+            existing_categories["context"] = Category(dir="context/", patterns=["*.txt"])
+            session.session_state.project_config["categories"] = existing_categories
 
             # Save all changes
             await session.save_session()
@@ -240,9 +258,10 @@ class TestSessionManagerUpdates:
             assert final_config["projects"]["project-2"]["categories"]["guide"]["dir"] == "docs/"
 
             # project-1 should have updates applied
-            assert final_config["projects"]["project-1"]["docroot"] == "/custom/root"
             # Original guide category should still exist
             assert "guide" in final_config["projects"]["project-1"]["categories"]
+            # New lang category should be added
+            assert "lang" in final_config["projects"]["project-1"]["categories"]
             # New context category should be added
             assert "context" in final_config["projects"]["project-1"]["categories"]
 

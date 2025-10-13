@@ -15,7 +15,8 @@ async def test_get_project_config():
     # Set up some project data first
     session = SessionManager()
     session.set_project_name("test-project")
-    session.session_state.set_project_config("language", "python")
+    categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+    session.session_state.set_project_config("categories", categories)
 
     # This should return current project config
     result = await get_project_config()
@@ -23,7 +24,7 @@ async def test_get_project_config():
     assert result["success"] is True
     assert result["project"] == "test-project"
     assert "config" in result
-    assert result["config"]["language"] == "python"
+    assert "test" in result["config"]["categories"]
 
 
 async def test_set_project_config():
@@ -31,13 +32,16 @@ async def test_set_project_config():
     # Set up project data first
     session = SessionManager()
     session.set_project_name("test-project")
-    session.session_state.set_project_config("language", "python")
+    categories1 = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+    session.session_state.set_project_config("categories", categories1)
 
-    # Reset the project
-    result = await set_project_config("language", "go")
+    # Update the categories
+    categories2 = {"docs": {"dir": "docs/", "patterns": ["*.md"], "description": "Docs category"}}
+    result = await set_project_config("categories", categories2)
 
     assert result["success"] is True
-    assert "Set language to 'go' for project test-project" in result["message"]
+    assert "Set categories" in result["message"]
+    assert "test-project" in result["message"]
 
 
 async def test_switch_project(isolated_config_file):
@@ -66,7 +70,8 @@ async def test_session_manager_save_session(isolated_config_file):
         session._set_config_filename(str(config_file))
 
         session.set_project_name("test-project")
-        session.session_state.set_project_config("language", "python")
+        categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+        session.session_state.set_project_config("categories", categories)
 
         # Save session (uses mocked path)
         await session.save_session()
@@ -75,13 +80,14 @@ async def test_session_manager_save_session(isolated_config_file):
         assert config_file.exists()
 
 
-async def test_session_manager_get_effective_config():
-    """Test SessionManager.get_effective_config method."""
+async def test_session_manager_get_or_create_project_config():
+    """Test SessionManager.get_or_create_project_config method."""
     session = SessionManager()
     session.set_project_name("test-project")
-    session.session_state.set_project_config("language", "python")
+    categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+    session.session_state.set_project_config("categories", categories)
 
-    # Get effective config - it merges with defaults so just check language
-    config = await session.get_effective_config("test-project")
+    # Get or create config - should return the set config
+    config = await session.get_or_create_project_config("test-project")
 
-    assert config["language"] == "python"
+    assert "test" in config["categories"]

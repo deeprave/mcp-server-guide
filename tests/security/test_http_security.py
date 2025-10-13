@@ -4,8 +4,8 @@ import pytest
 import time
 from unittest.mock import Mock, patch
 import requests
-from src.mcp_server_guide.http.secure_client import SecureHTTPClient, RateLimiter
-from src.mcp_server_guide.exceptions import NetworkError, SecurityError
+from mcp_server_guide.http.secure_client import SecureHTTPClient, RateLimiter
+from mcp_server_guide.exceptions import NetworkError, SecurityError
 
 
 class TestRateLimiter:
@@ -152,7 +152,7 @@ class TestSecureHTTPClient:
         # Should not raise exception
         client._validate_response_size(mock_response)
 
-    @patch("src.mcp_server_guide.http.secure_client.requests.Session")
+    @patch("mcp_server_guide.http.secure_client.requests.Session")
     def test_get_request_success(self, mock_session_class):
         """Test successful GET request."""
         mock_session = Mock()
@@ -169,7 +169,7 @@ class TestSecureHTTPClient:
         mock_session.get.assert_called_once()
         mock_response.raise_for_status.assert_called_once()
 
-    @patch("src.mcp_server_guide.http.secure_client.requests.Session")
+    @patch("mcp_server_guide.http.secure_client.requests.Session")
     def test_get_request_timeout_error(self, mock_session_class):
         """Test GET request timeout handling."""
         mock_session = Mock()
@@ -181,7 +181,7 @@ class TestSecureHTTPClient:
         with pytest.raises(NetworkError, match="Request timeout"):
             client.get("https://example.com")
 
-    @patch("src.mcp_server_guide.http.secure_client.requests.Session")
+    @patch("mcp_server_guide.http.secure_client.requests.Session")
     def test_get_request_connection_error(self, mock_session_class):
         """Test GET request connection error handling."""
         mock_session = Mock()
@@ -193,7 +193,7 @@ class TestSecureHTTPClient:
         with pytest.raises(NetworkError, match="Connection error"):
             client.get("https://example.com")
 
-    @patch("src.mcp_server_guide.http.secure_client.requests.Session")
+    @patch("mcp_server_guide.http.secure_client.requests.Session")
     def test_get_request_http_error(self, mock_session_class):
         """Test GET request HTTP error handling."""
         mock_session = Mock()
@@ -235,7 +235,7 @@ class TestSecureHTTPClient:
         with pytest.raises(SecurityError):
             client.get("http://localhost:8080")
 
-    @patch("src.mcp_server_guide.http.secure_client.requests.Session")
+    @patch("mcp_server_guide.http.secure_client.requests.Session")
     def test_post_request_success(self, mock_session_class):
         """Test successful POST request."""
         mock_session = Mock()

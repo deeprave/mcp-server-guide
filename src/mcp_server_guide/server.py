@@ -182,12 +182,6 @@ async def set_project_config(key: str, value: Any) -> Dict[str, Any]:
 
 
 @guide.tool()
-async def get_effective_config(project: Optional[str] = None) -> Dict[str, Any]:
-    """Get merged configuration (file + session)."""
-    return await tools.get_effective_config(project)
-
-
-@guide.tool()
 async def get_guide(project: Optional[str] = None) -> str:
     """Get project guidelines for AI injection."""
     return await tools.get_guide(project)
@@ -565,6 +559,9 @@ def create_server(
     # Add file source resolution method
     async def _get_file_source(config_key: str, project_context: str) -> FileSource:
         """Get file source for a configuration key."""
+        # Import here to ensure available in all code paths
+        from .file_source import FileSource, FileSourceType
+
         if hasattr(server, "_session_manager") and server._session_manager is not None:
             config = await server._session_manager.get_or_create_project_config(project_context)  # type: ignore[attr-defined]
         else:
@@ -581,11 +578,15 @@ def create_server(
         if category:
             # Use category system to get content
             from .tools.category_tools import get_category_content
-            from .file_source import FileSource, FileSourceType
 
             result = await get_category_content(category, project_context)
-            if result.get("success") and result.get("search_dir"):
-                return FileSource(FileSourceType.FILE, result["search_dir"])
+            if result.get("success"):
+                # Check if this is an HTTP-based category
+                if result.get("is_http") and result.get("url"):
+                    return FileSource(FileSourceType.HTTP, result["url"])
+                # Otherwise it's a file-based category
+                elif result.get("search_dir"):
+                    return FileSource(FileSourceType.FILE, result["search_dir"])
 
         # Fallback for unknown keys
         session_path = config.get(config_key)
@@ -599,15 +600,47 @@ def create_server(
     # Add content reading methods
     async def read_guide(project_context: str) -> str:
         """Read guide content using hybrid file access."""
+        from .tools.category_tools import get_category_content
+        from .file_source import FileSource, FileSourceType
+
+        # Try to get content from guide category
+        result = await get_category_content("guide", project_context)
+        if result.get("success"):
+            # For HTTP categories, fetch using HTTP client
+            if result.get("is_http") and result.get("url"):
+                source = FileSource(FileSourceType.HTTP, result["url"])
+                content = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+                return str(content)
+            # For file categories, content is already read
+            elif result.get("content") is not None:
+                return str(result["content"])
+
+        # Fallback to old behavior if category doesn't exist
         source = await _get_file_source("guide", project_context)
-        result = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
-        return str(result)
+        content = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+        return str(content)
 
     async def read_language(project_context: str) -> str:
         """Read language content using hybrid file access."""
+        from .tools.category_tools import get_category_content
+        from .file_source import FileSource, FileSourceType
+
+        # Try to get content from lang category
+        result = await get_category_content("lang", project_context)
+        if result.get("success"):
+            # For HTTP categories, fetch using HTTP client
+            if result.get("is_http") and result.get("url"):
+                source = FileSource(FileSourceType.HTTP, result["url"])
+                content = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+                return str(content)
+            # For file categories, content is already read
+            elif result.get("content") is not None:
+                return str(result["content"])
+
+        # Fallback to old behavior if category doesn't exist
         source = await _get_file_source("language", project_context)
-        result = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
-        return str(result)
+        content = await server.file_accessor.read_file("", source)  # type: ignore[attr-defined]
+        return str(content)
 
     server.read_guide = read_guide  # type: ignore[attr-defined]
     server.read_language = read_language  # type: ignore[attr-defined]

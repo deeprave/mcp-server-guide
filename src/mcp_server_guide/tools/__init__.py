@@ -3,7 +3,6 @@ from .config_tools import (
     get_project_config,
     set_project_config,
     set_project_config_values,
-    get_effective_config,
 )
 from .content_tools import (
     get_guide,
@@ -32,7 +31,6 @@ __all__ = [
     "get_project_config",
     "set_project_config",
     "set_project_config_values",
-    "get_effective_config",
     # Content Retrieval
     "get_guide",
     "get_language_guide",

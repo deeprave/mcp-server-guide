@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from src.mcp_server_guide.tools.category_tools import (
+from mcp_server_guide.tools.category_tools import (
     add_category,
     remove_category,
     update_category,
@@ -15,7 +15,9 @@ from src.mcp_server_guide.tools.category_tools import (
 @pytest.fixture
 def mock_session():
     """Mock session manager."""
-    with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+        from mcp_server_guide.path_resolver import LazyPath
+
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_project_name = Mock(return_value="test-project")
@@ -38,6 +40,10 @@ def mock_session():
                 }
             }
         )
+        # Mock config_manager().docroot to return a LazyPath that resolves to current directory
+        mock_config_manager = Mock()
+        mock_config_manager.docroot = LazyPath(".")
+        session_instance.config_manager = Mock(return_value=mock_config_manager)
         session_instance.save_session = AsyncMock()
         yield session_instance
 
@@ -90,12 +96,13 @@ async def test_update_category_nonexistent(mock_session):
     assert "does not exist" in result["error"]
 
 
-@patch("src.mcp_server_guide.tools.category_tools.Path")
-@patch("src.mcp_server_guide.tools.category_tools.glob")
-async def test_get_category_content_no_files(mock_glob, mock_path, mock_session):
+async def test_get_category_content_no_files(mock_session):
     """Test getting category content when no files match."""
-    mock_glob.glob.return_value = []
-    mock_path.return_value.exists.return_value = True
+    # Create test directory in the temp dir (autouse fixture handles pwd)
+    from pathlib import Path
+
+    test_dir = Path.cwd() / "test"
+    test_dir.mkdir(exist_ok=True)
 
     # Add categories to config
     mock_session.get_or_create_project_config = AsyncMock(

@@ -12,16 +12,50 @@ from .path_resolver import LazyPath
 
 
 class Category(BaseModel):
-    """Category configuration for organizing source code."""
+    """Category configuration for organizing source code.
 
-    dir: str = Field(..., description="Directory path relative to project root")
-    patterns: List[str] = Field(default_factory=list, description="File patterns to match")
+    A category can either:
+    - Point to HTTP resources via 'url' field
+    - Point to local files via 'dir' and 'patterns' fields
+    But not both.
+    """
+
+    url: Optional[str] = Field(None, description="HTTP URL for remote resources")
+    dir: Optional[str] = Field(None, description="Directory path relative to project root")
+    patterns: Optional[List[str]] = Field(None, description="File patterns to match")
     description: str = Field(default="", description="Human-readable description of the category")
     auto_load: Optional[bool] = Field(None, description="Whether to include in 'all' grouping")
 
+    def model_post_init(self, __context: Any) -> None:
+        """Validate that category has either url OR dir/patterns, but not both."""
+        has_url = self.url is not None
+        has_dir = self.dir is not None
+        has_patterns = self.patterns is not None and len(self.patterns) > 0
+
+        if has_url and (has_dir or has_patterns):
+            raise ValueError("Category cannot have both 'url' and 'dir'/'patterns' fields")
+
+        if not has_url and not has_dir:
+            raise ValueError("Category must have either 'url' or 'dir' field")
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not v.strip():
+            raise ValueError("URL cannot be empty")
+        # Basic URL validation
+        v = v.strip()
+        if not (v.startswith("http://") or v.startswith("https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return v
+
     @field_validator("dir")
     @classmethod
-    def validate_dir(cls, v: str) -> str:
+    def validate_dir(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         if not v.strip():
             raise ValueError("Directory path cannot be empty")
         # Normalize path separators and remove redundant slashes
@@ -36,7 +70,9 @@ class Category(BaseModel):
 
     @field_validator("patterns")
     @classmethod
-    def validate_patterns(cls, v: List[str]) -> List[str]:
+    def validate_patterns(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        if v is None:
+            return v
         if not v:  # Empty list is allowed
             return v
         for pattern in v:
@@ -59,20 +95,12 @@ class Category(BaseModel):
 class ProjectConfig(BaseModel):
     """Project configuration containing only categories."""
 
-    docroot: Optional[str] = Field(None, description="Document root directory path")
-    categories: Dict[str, Category] = Field(default_factory=dict, description="Category definitions")
+    model_config = ConfigDict(
+        extra="forbid",  # Don't allow extra fields
+        validate_assignment=True,  # Validate on assignment
+    )
 
-    @field_validator("docroot")
-    @classmethod
-    def validate_docroot(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        if not v.strip():
-            return None  # Empty string becomes None
-        # Basic path validation
-        if ".." in v:
-            raise ValueError("Document root cannot contain path traversal sequences")
-        return v.strip()
+    categories: Dict[str, Category] = Field(default_factory=dict, description="Category definitions")
 
     @field_validator("categories")
     @classmethod
@@ -162,15 +190,22 @@ def _get_global_config_path() -> Path:
     return config_dir / "config.yaml"
 
 
-def _save_config_locked(config_file: Path, project_name: str, config: ProjectConfig) -> None:
-    """Internal function to save config while holding file lock."""
-    # Load existing config structure
+def _save_config_locked(config_file: Path, project_name: str, config: ProjectConfig) -> Optional[str]:
+    """Internal function to save config while holding file lock.
+
+    Returns:
+        The docroot value from the saved config (for updating session state)
+    """
+    # Load the existing config structure or create with default docroot
     existing_config = ConfigFile(docroot=".", projects={})
     if config_file.exists():
         try:
             with open(config_file) as f:
                 data = yaml.safe_load(f)
                 if data and isinstance(data, dict):  # Handle empty YAML files and ensure it's a dict
+                    # Preserve existing docroot or default to "."
+                    if "docroot" not in data or not data["docroot"]:
+                        data["docroot"] = "."
                     existing_config = ConfigFile(**data)
         except yaml.YAMLError as e:
             # Handle YAML parsing errors with specific message
@@ -212,11 +247,18 @@ def _save_config_locked(config_file: Path, project_name: str, config: ProjectCon
     except yaml.YAMLError as e:
         raise ValueError(f"Cannot serialize configuration to YAML: {e}") from e
 
+    # Return the docroot for session state update
+    return existing_config.docroot
 
-def _load_config_locked(config_file: Path, project_name: str) -> Optional[ProjectConfig]:
-    """Internal function to load config while holding file lock."""
+
+def _load_config_locked(config_file: Path, project_name: str) -> tuple[Optional[ProjectConfig], Optional[LazyPath]]:
+    """Internal function to load config while holding file lock.
+
+    Returns:
+        Tuple of (ProjectConfig, docroot LazyPath) or (None, None) if not found
+    """
     if not config_file.exists():
-        return None
+        return None, None
 
     try:
         with open(config_file) as f:
@@ -228,40 +270,48 @@ def _load_config_locked(config_file: Path, project_name: str) -> Optional[Projec
 
             logger = get_logger()
             logger.warning(f"Config file {config_file} is empty or contains invalid data")
-            return None
+            return None, None
+
+        # Extract docroot - default to "." if missing or empty
+        docroot_str = data.get("docroot")
+        if docroot_str and isinstance(docroot_str, str) and docroot_str.strip():
+            docroot = LazyPath(docroot_str.strip())
+        else:
+            # Default to current directory if docroot is missing or empty
+            docroot = LazyPath(".")
 
         # Load from projects structure
         if "projects" in data and project_name in data["projects"]:
             project_data = data["projects"][project_name]
             try:
-                return ProjectConfig(**project_data)
+                return ProjectConfig(**project_data), docroot
             except ValueError as e:
                 from .logging_config import get_logger
 
                 logger = get_logger()
                 logger.error(f"Invalid configuration for project '{project_name}': {e}")
-                return None
+                return None, docroot
 
-        return None
+        return None, docroot
 
     except yaml.YAMLError as e:
         from .logging_config import get_logger
 
         logger = get_logger()
         logger.error(f"YAML parsing error in config file {config_file}: {e}")
-        return None
+        return None, None
     except (OSError, IOError) as e:
         from .logging_config import get_logger
 
         logger = get_logger()
         logger.error(f"Cannot read config file {config_file}: {e}")
-        return None
+        return None, None
     except Exception as e:
         from .logging_config import get_logger
 
         logger = get_logger()
         logger.error(f"Unexpected error loading config from {config_file}: {e}")
-        return None
+        return None, None
 
 
 class ProjectConfigManager:
@@ -270,6 +320,7 @@ class ProjectConfigManager:
     def __init__(self) -> None:
         """Initialize project config manager."""
         self._config_filename: Optional[Path] = None  # Lazy initialization
+        self._docroot: Optional[LazyPath] = None  # Cached docroot from config file
 
     def set_config_filename(self, filename: str | LazyPath | Path | None) -> None:
         """Set the config filename explicitly."""
@@ -290,7 +341,9 @@ class ProjectConfigManager:
         """Save project configuration to file with explicit project name."""
         config_file = Path(self.get_config_filename())
         config_file.parent.mkdir(parents=True, exist_ok=True)
-        lock_update(config_file, _save_config_locked, project_name, config)
+        docroot_str = lock_update(config_file, _save_config_locked, project_name, config)
+        # Update cached docroot
+        self._docroot = LazyPath(docroot_str) if docroot_str else None
 
     def load_config(self, project_name: str) -> Optional[ProjectConfig]:
         """Load project configuration from file.
@@ -309,4 +362,16 @@ class ProjectConfigManager:
         config_file = Path(self.get_config_filename())
 
         # Use file locking to ensure thread-safe reads
-        return lock_update(config_file, _load_config_locked, project_name_str)
+        project_config, docroot = lock_update(config_file, _load_config_locked, project_name_str)
+        # Update cached docroot
+        self._docroot = docroot
+        return project_config
+
+    @property
+    def docroot(self) -> Optional[LazyPath]:
+        """Get the cached docroot from the most recent load/save operation.
+
+        Returns:
+            LazyPath for docroot if available, None otherwise
+        """
+        return self._docroot

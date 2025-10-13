@@ -1,70 +1,21 @@
-"""Tests for file source deployment context detection and edge cases."""
+"""Tests for file source path handling and HTTP edge cases."""
 
 import pytest
-import os
 from unittest.mock import patch, AsyncMock, MagicMock
 from mcp_server_guide.file_source import FileSource, FileSourceType, FileAccessor
 
 
-class TestDeploymentContextDetection:
-    """Test deployment context detection functionality."""
-
-    def test_detect_deployment_context_server_mode_set(self):
-        """Test that SERVER_MODE environment variable triggers server context."""
-        with patch.dict(os.environ, {"SERVER_MODE": "true"}):
-            context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.FILE
-
-    def test_detect_deployment_context_docker_container_set(self):
-        """Test that DOCKER_CONTAINER environment variable triggers server context."""
-        with patch.dict(os.environ, {"DOCKER_CONTAINER": "true"}):
-            context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.FILE
-
-    def test_detect_deployment_context_both_variables_set(self):
-        """Test that both environment variables still trigger server context."""
-        with patch.dict(os.environ, {"SERVER_MODE": "1", "DOCKER_CONTAINER": "1"}):
-            context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.FILE
-
-    def test_detect_deployment_context_no_variables_defaults_local(self):
-        """Test that no environment variables defaults to local context."""
-        with patch.dict(os.environ, {}, clear=True):
-            context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.FILE
-
-    def test_detect_deployment_context_malformed_server_mode(self):
-        """Test that any non-empty SERVER_MODE value triggers server context."""
-        # Non-empty values trigger server context (current behavior)
-        for value in ["unexpected", "foobar", "123"]:
-            with patch.dict(os.environ, {"SERVER_MODE": value}, clear=True):
-                context = FileSource.detect_deployment_context()
-                assert context == FileSourceType.FILE
-
-        # Empty string should default to LOCAL (falsy value)
-        with patch.dict(os.environ, {"SERVER_MODE": ""}, clear=True):
-            context = FileSource.detect_deployment_context()
-            assert context == FileSourceType.FILE
-
-    def test_get_context_default_uses_detected_context(self):
-        """Test that get_context_default uses detected deployment context."""
-        with patch.dict(os.environ, {"SERVER_MODE": "true"}):
-            source = FileSource.get_context_default("/test/path")
-            assert source.type == FileSourceType.FILE
-            assert source.base_path == "/test/path"
-
-
 class TestSessionPathParsing:
-    """Test session path parsing edge cases."""
+    """Test session path parsing for different URL types."""
 
     def test_from_session_path_regular_path(self):
-        """Test regular path handling."""
+        """Test regular file path handling."""
         source = FileSource.from_session_path("test/path", "project")
         assert source.type == FileSourceType.FILE
         assert source.base_path == "test/path"
 
-    def test_from_session_path_another_regular_path(self):
-        """Test another regular path handling."""
+    def test_from_session_path_nested_path(self):
+        """Test nested file path handling."""
         source = FileSource.from_session_path("server/test/path", "project")
         assert source.type == FileSourceType.FILE
         assert source.base_path == "server/test/path"
@@ -83,30 +34,29 @@ class TestSessionPathParsing:
 
 
 class TestFileUrlProcessing:
-    """Test file URL processing edge cases."""
+    """Test file:// URL processing edge cases."""
 
-    def test_from_file_url_with_leading_slash_removal(self):
-        """Test file:// URL processing removes extra leading slash."""
-        with patch.object(FileSource, "detect_deployment_context", return_value=FileSourceType.FILE):
-            source = FileSource._from_file_url("file://relative/path")
-            assert source.base_path == "relative/path"
+    def test_from_file_url_absolute_path(self):
+        """Test file:// URL with absolute path."""
+        source = FileSource._from_file_url("file:///absolute/path")
+        assert source.type == FileSourceType.FILE
+        assert source.base_path == "/absolute/path"
+
+    def test_from_file_url_relative_path(self):
+        """Test file:// URL with relative path."""
+        source = FileSource._from_file_url("file://relative/path")
+        assert source.type == FileSourceType.FILE
+        assert source.base_path == "relative/path"
 
     def test_from_file_url_file_prefix_only(self):
         """Test file: prefix handling."""
-        with patch.object(FileSource, "detect_deployment_context", return_value=FileSourceType.FILE):
-            source = FileSource._from_file_url("file:test/path")
-            assert source.base_path == "test/path"
-
-    def test_from_file_url_uses_server_context_when_detected(self):
-        """Test file URL uses server context when environment indicates server."""
-        with patch.dict(os.environ, {"SERVER_MODE": "true"}):
-            source = FileSource._from_file_url("file:///absolute/path")
-            assert source.type == FileSourceType.FILE
-            assert source.base_path == "/absolute/path"
+        source = FileSource._from_file_url("file:test/path")
+        assert source.type == FileSourceType.FILE
+        assert source.base_path == "test/path"
 
 
 class TestHttpFileReading:
-    """Test HTTP file reading edge cases."""
+    """Test HTTP file reading with caching."""
 
     @pytest.mark.asyncio
     async def test_read_http_file_cache_update_for_fresh_request(self):
@@ -156,19 +106,21 @@ class TestHttpFileReading:
                 await accessor._read_http_file("test.txt", source)
 
 
-class TestIntegrationScenarios:
-    """Test integration scenarios combining multiple features."""
+class TestContextDefaults:
+    """Test default file source context behaviour."""
 
-    def test_server_deployment_file_url_integration(self):
-        """Test file URL processing in server deployment context."""
-        with patch.dict(os.environ, {"DOCKER_CONTAINER": "true"}):
-            source = FileSource.from_url("file:///app/config.yaml")
-            assert source.type == FileSourceType.FILE
-            assert source.base_path == "/app/config.yaml"
+    def test_get_context_default_creates_file_source(self):
+        """Test that get_context_default always creates FILE type source.
 
-    def test_local_development_context_default(self):
-        """Test local development context with default path."""
-        with patch.dict(os.environ, {}, clear=True):
-            source = FileSource.get_context_default("config.yaml")
-            assert source.type == FileSourceType.FILE
-            assert source.base_path == "config.yaml"
+        All file sources are relative to the server's working directory.
+        There is no client-side path support.
+        """
+        source = FileSource.get_context_default("test/path")
+        assert source.type == FileSourceType.FILE
+        assert source.base_path == "test/path"
+
+    def test_get_context_default_with_absolute_path(self):
+        """Test get_context_default with absolute path."""
+        source = FileSource.get_context_default("/app/config.yaml")
+        assert source.type == FileSourceType.FILE
+        assert source.base_path == "/app/config.yaml"

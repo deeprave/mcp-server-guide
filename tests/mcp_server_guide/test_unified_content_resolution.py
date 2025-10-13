@@ -65,7 +65,7 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
     mock_category_content.return_value = {"success": True, "content": "test content"}
 
     # Mock SessionManager to return current project
-    with patch("src.mcp_server_guide.tools.content_tools.SessionManager") as mock_session:
+    with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session:
         session_instance = Mock()
         mock_session.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="current-project")

@@ -14,31 +14,45 @@ class TestConfigFormatUpdates:
         # Should not have current_project field
         assert not hasattr(config, "current_project")
 
-        # Should have expected fields (project name is now a dict key, not a field)
-        assert hasattr(config, "docroot")
+        # Should NOT have docroot field (it's in ConfigFile now, not ProjectConfig)
+        assert not hasattr(config, "docroot")
+
+        # Should have categories field only
         assert hasattr(config, "categories")
 
     async def test_config_serialization_structure(self):
         """Test that config serialization has correct structure."""
-        config = ProjectConfig(docroot="/test/path", categories={})
+        from mcp_server_guide.project_config import Category
+
+        config = ProjectConfig(
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")}
+        )
 
         config_dict = config.to_dict()
 
         # Should not contain current_project
         assert "current_project" not in config_dict
 
-        # Should contain expected fields (project is not a field, it's a dict key in ConfigFile)
-        assert config_dict["docroot"] == "/test/path"
+        # Should NOT contain docroot (it's in ConfigFile, not ProjectConfig)
+        assert "docroot" not in config_dict
+
+        # Should contain categories
+        assert "categories" in config_dict
+        assert "test" in config_dict["categories"]
 
     async def test_config_save_format(self, tmp_path, monkeypatch):
         """Test that saving config uses correct format."""
+        from mcp_server_guide.project_config import Category
+
         manager = ProjectConfigManager()
 
         # Set the config path to use tmp_path with YAML extension
         config_file_path = tmp_path / "config.yaml"
         manager.set_config_filename(config_file_path)
 
-        config = ProjectConfig(docroot="/new/path", categories={})
+        config = ProjectConfig(
+            categories={"guide": Category(dir="guide/", patterns=["*.md"], description="Guide files")}
+        )
         manager.save_config("new-project", config)
 
         # Read saved file from global config location (now YAML format)
@@ -53,4 +67,7 @@ class TestConfigFormatUpdates:
 
         # Should use correct field names
         project_data = saved_data["projects"]["new-project"]
-        assert project_data["docroot"] == "/new/path"
+        # docroot should NOT be in project_data (it's at global level in ConfigFile)
+        assert "docroot" not in project_data
+        assert "categories" in project_data
+        assert "guide" in project_data["categories"]

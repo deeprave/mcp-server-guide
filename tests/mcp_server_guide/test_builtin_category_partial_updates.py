@@ -2,13 +2,13 @@
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from src.mcp_server_guide.tools.category_tools import update_category
+from mcp_server_guide.tools.category_tools import update_category
 
 
 @pytest.fixture
 def mock_session():
     """Mock session manager with builtin categories."""
-    with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
@@ -99,7 +99,7 @@ async def test_update_builtin_category_auto_load_field(mock_session):
 @pytest.mark.asyncio
 async def test_builtin_category_deletion_still_forbidden(mock_session):
     """Test that deleting builtin categories is still forbidden."""
-    from src.mcp_server_guide.tools.category_tools import remove_category
+    from mcp_server_guide.tools.category_tools import remove_category
 
     result = await remove_category("guide")
 

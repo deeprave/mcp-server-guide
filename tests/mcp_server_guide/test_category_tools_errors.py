@@ -107,19 +107,26 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_category_directory_not_exists(self):
         """Test error when category directory doesn't exist."""
+        from mcp_server_guide.path_resolver import LazyPath
+
         with tempfile.TemporaryDirectory() as temp_dir:
             # Mock SessionManager properly
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+                mock_session.get_project_name = Mock(return_value="test_project")
 
                 # Mock get_or_create_project_config
                 mock_session.get_or_create_project_config = AsyncMock(
                     return_value={
                         "categories": {"test_cat": {"dir": "nonexistent", "patterns": ["*.md"]}},
-                        "docroot": temp_dir,
                     }
                 )
+                # Mock config_manager().docroot
+                mock_config_manager = Mock()
+                mock_config_manager.docroot = LazyPath(temp_dir)
+                mock_session.config_manager = Mock(return_value=mock_config_manager)
+
                 mock_session_class.return_value = mock_session
 
                 result = await get_category_content("test_cat")
@@ -130,6 +137,8 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_file_read_error(self):
         """Test error handling when file reading fails."""
+        from mcp_server_guide.path_resolver import LazyPath
+
         with tempfile.TemporaryDirectory() as temp_dir:
             search_dir = Path(temp_dir) / "test"
             search_dir.mkdir()
@@ -142,14 +151,19 @@ class TestGetCategoryContentErrors:
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+                mock_session.get_project_name = Mock(return_value="test_project")
 
                 # Mock get_or_create_project_config
                 mock_session.get_or_create_project_config = AsyncMock(
                     return_value={
                         "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
-                        "docroot": temp_dir,
                     }
                 )
+                # Mock config_manager().docroot
+                mock_config_manager = Mock()
+                mock_config_manager.docroot = LazyPath(temp_dir)
+                mock_session.config_manager = Mock(return_value=mock_config_manager)
+
                 mock_session_class.return_value = mock_session
 
                 # Mock aiofiles.open to raise exception
@@ -164,6 +178,8 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_partial_file_read_failure(self):
         """Test handling when multiple files exist and some fail to read."""
+        from mcp_server_guide.path_resolver import LazyPath
+
         with tempfile.TemporaryDirectory() as temp_dir:
             search_dir = Path(temp_dir) / "test"
             search_dir.mkdir()
@@ -177,12 +193,17 @@ class TestGetCategoryContentErrors:
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+                mock_session.get_project_name = Mock(return_value="test_project")
                 mock_session.get_or_create_project_config = AsyncMock(
                     return_value={
                         "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
-                        "docroot": temp_dir,
                     }
                 )
+                # Mock config_manager().docroot
+                mock_config_manager = Mock()
+                mock_config_manager.docroot = LazyPath(temp_dir)
+                mock_session.config_manager = Mock(return_value=mock_config_manager)
+
                 mock_session_class.return_value = mock_session
 
                 # Mock aiofiles.open to always fail
@@ -200,6 +221,8 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_no_matching_files(self):
         """Test when no files match the patterns."""
+        from mcp_server_guide.path_resolver import LazyPath
+
         with tempfile.TemporaryDirectory() as temp_dir:
             search_dir = Path(temp_dir) / "test"
             search_dir.mkdir()
@@ -208,14 +231,19 @@ class TestGetCategoryContentErrors:
             with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+                mock_session.get_project_name = Mock(return_value="test_project")
 
                 # Mock get_or_create_project_config
                 mock_session.get_or_create_project_config = AsyncMock(
                     return_value={
                         "categories": {"test_cat": {"dir": "test", "patterns": ["*.nonexistent"]}},
-                        "docroot": temp_dir,
                     }
                 )
+                # Mock config_manager().docroot
+                mock_config_manager = Mock()
+                mock_config_manager.docroot = LazyPath(temp_dir)
+                mock_session.config_manager = Mock(return_value=mock_config_manager)
+
                 mock_session_class.return_value = mock_session
 
                 result = await get_category_content("test_cat")

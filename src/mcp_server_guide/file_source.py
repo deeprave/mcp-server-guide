@@ -36,16 +36,13 @@ class FileSource:
         """Create FileSource from URL, integrating Issue 002 file:// support."""
         if url.startswith(("http://", "https://")):
             return cls(FileSourceType.HTTP, url)
-        elif url.startswith("file://"):
+        elif url.startswith("file:") or "://" not in url:
             # Context-aware file URLs (from Issue 002)
             return cls._from_file_url(url)
-        elif "://" in url:
+        else:
             # Unknown scheme - raise error for malformed prefixes
             scheme = url.split("://", 1)[0]
             raise ValueError(f"Unsupported URL scheme: {scheme}://")
-        else:
-            # Context-aware default (from Issue 002)
-            return cls.get_context_default(url)
 
     @classmethod
     def from_session_path(cls, session_path: str, project_context: str) -> "FileSource":
@@ -57,34 +54,23 @@ class FileSource:
 
     @classmethod
     def _from_file_url(cls, url: str) -> "FileSource":
-        """Handle file:// URLs with context awareness."""
-        context = cls.detect_deployment_context()
+        """Handle file:// URLs - always creates FILE type source."""
         if url.startswith("file:///"):
-            # Absolute file URL
-            path = "/" + url[8:]  # Remove "file:///" and add back leading /
+            path = f"/{url[8:]}"
         elif url.startswith("file://"):
-            # Relative file URL - remove "file://" but handle double slashes
             path = url[7:]  # Remove "file://"
-            # Remove leading slash if it creates double slash
-            if path.startswith("/"):
-                path = path[1:]
-        else:
+        elif url.startswith("file:"):
             # Just "file:" prefix
             path = url[5:]  # Remove "file:"
+        else:
+            path = url
 
-        return cls(context, path)
-
-    @classmethod
-    def detect_deployment_context(cls) -> FileSourceType:
-        """Detect deployment context for file:// URLs."""
-        # Always return LOCAL since we removed SERVER support
-        return FileSourceType.FILE
+        return cls(FileSourceType.FILE, path)
 
     @classmethod
     def get_context_default(cls, path: str) -> "FileSource":
-        """Get context-aware default FileSource."""
-        context = cls.detect_deployment_context()
-        return cls(context, path)
+        """Get default FileSource - always creates FILE type source."""
+        return cls(FileSourceType.FILE, path)
 
 
 class FileAccessor:
@@ -114,23 +100,22 @@ class FileAccessor:
 
     def exists(self, relative_path: str, source: FileSource) -> bool:
         """Check if file exists."""
+        # For HTTP, we'd need to make a HEAD request
+        # For now, assume it exists (will fail on read if not)
+        # sourcery skip: class-extract-method
         if source.type == FileSourceType.HTTP:
-            # For HTTP, we'd need to make a HEAD request
-            # For now, assume it exists (will fail on read if not)
             return True
-        else:
-            full_path = self.resolve_path(relative_path, source)
-            return Path(full_path).exists()
+        full_path = self.resolve_path(relative_path, source)
+        return Path(full_path).exists()
 
     async def read_file(self, relative_path: str, source: FileSource) -> str:
         """Read file content with HTTP-aware caching."""
         if source.type == FileSourceType.HTTP:
             return await self._read_http_file(relative_path, source)
-        else:
-            # Local/server file reading
-            full_path = self.resolve_path(relative_path, source)
-            async with aiofiles.open(full_path, "r", encoding="utf-8") as f:
-                return await f.read()
+        # Local/server file reading
+        full_path = self.resolve_path(relative_path, source)
+        async with aiofiles.open(full_path, "r", encoding="utf-8") as f:
+            return await f.read()
 
     async def _read_http_file(self, relative_path: str, source: FileSource) -> str:
         """Read HTTP file with caching support."""
@@ -197,17 +182,17 @@ class FileAccessor:
 
                     return content
             except Exception as e:
-                raise RuntimeError(f"Failed to read HTTP file {full_url}: {e}")
+                raise RuntimeError(f"Failed to read HTTP file {full_url}: {e}") from e
 
     def file_exists(self, relative_path: str, source: FileSource) -> bool:
         """Check if file exists."""
         if source.type == FileSourceType.HTTP:
             # For HTTP, we'd need to make a HEAD request, but for now return True
+            # Sadly, AsyncHTTPClient().head is not implemented
             return True
-        else:
-            # For local/server sources, check filesystem
-            full_path = self.resolve_path(relative_path, source)
-            return Path(full_path).exists()
+        # For local/server sources, check filesystem
+        full_path = self.resolve_path(relative_path, source)
+        return Path(full_path).exists()
 
 
 __all__ = ["FileSourceType", "FileSource", "FileAccessor"]

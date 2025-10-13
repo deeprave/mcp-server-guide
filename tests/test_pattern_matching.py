@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from src.mcp_server_guide.tools.category_tools import _safe_glob_search
+from mcp_server_guide.tools.category_tools import _safe_glob_search
 
 
 async def test_pattern_matching_adds_md_when_needed():

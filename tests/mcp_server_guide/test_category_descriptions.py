@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from src.mcp_server_guide.tools.category_tools import (
+from mcp_server_guide.tools.category_tools import (
     add_category,
     update_category,
     list_categories,
@@ -12,7 +12,7 @@ from src.mcp_server_guide.tools.category_tools import (
 @pytest.fixture
 def mock_session():
     """Mock session manager."""
-    with patch("src.mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")

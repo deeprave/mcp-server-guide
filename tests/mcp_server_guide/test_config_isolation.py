@@ -58,7 +58,9 @@ class TestConfigIsolation:
                 session = SessionManager()
                 session._set_config_filename(isolated_config_file)  # Use isolated config
                 session.set_project_name("isolated-test")
-                await set_project_config("language", "java")
+                await set_project_config(
+                    "categories", {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test"}}
+                )
 
                 # This should create files using isolated config, not in working_dir
                 await session.save_session()

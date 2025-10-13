@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import Mock, patch
 import requests
-from src.mcp_server_guide.http.secure_client import SecureHTTPClient, get_default_client, RateLimiter
-from src.mcp_server_guide.exceptions import SecurityError, NetworkError
+from mcp_server_guide.http.secure_client import SecureHTTPClient, get_default_client, RateLimiter
+from mcp_server_guide.exceptions import SecurityError, NetworkError
 
 
 class TestSecureHTTPClient:
@@ -91,7 +91,7 @@ class TestSecureHTTPClient:
     def test_get_default_client_creates_new(self):
         """Test get_default_client creates new client when none exists."""
         # Reset global client
-        import src.mcp_server_guide.http.secure_client as module
+        import mcp_server_guide.http.secure_client as module
 
         module._default_client = None
 
@@ -102,7 +102,7 @@ class TestSecureHTTPClient:
     def test_get_default_client_returns_existing(self):
         """Test get_default_client returns existing client."""
         # Set up existing client
-        import src.mcp_server_guide.http.secure_client as module
+        import mcp_server_guide.http.secure_client as module
 
         existing_client = SecureHTTPClient()
         module._default_client = existing_client

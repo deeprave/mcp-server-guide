@@ -69,7 +69,13 @@ async def test_project_config_manager_load_uses_getter():
         # Create custom config file in current directory (will be found by mocked getter)
         custom_config_file = Path("custom-load-config.yaml")
         manager.set_config_filename(custom_config_file)
-        config_data = {"projects": {"test-project": {"project": "test-project", "docroot": "/test/path"}}}
+        config_data = {
+            "projects": {
+                "test-project": {
+                    "categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test"}}
+                }
+            }
+        }
         custom_config_file.write_text(yaml.dump(config_data))
 
         try:
@@ -77,8 +83,8 @@ async def test_project_config_manager_load_uses_getter():
 
             # Should successfully load the config
             assert config is not None
-            assert config.categories == {}
-            assert config.docroot == "/test/path"
+            assert "test" in config.categories
+            assert config.categories["test"].dir == "test/"
         finally:
             # Clean up
             custom_config_file.unlink(missing_ok=True)

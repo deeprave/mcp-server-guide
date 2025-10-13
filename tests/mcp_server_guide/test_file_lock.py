@@ -143,11 +143,11 @@ async def test_stale_lock_different_hostname_dead_process():
 
 async def test_project_config_save_uses_locking():
     """Test that ProjectConfigManager.save_config uses locking."""
-    from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+    from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig, Category
 
     with tempfile.TemporaryDirectory() as temp_dir:
         project_path = Path(temp_dir)
-        config = ProjectConfig(docroot="/test", categories={})
+        config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"])})
 
         manager = ProjectConfigManager()
         # Set config file to temp directory to avoid overwriting actual config
@@ -189,7 +189,7 @@ async def test_project_config_save_uses_locking():
 async def test_concurrent_config_updates_prevented():
     """Test that concurrent configuration updates are prevented by locking."""
     import threading
-    from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+    from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig, Category
 
     with tempfile.TemporaryDirectory() as temp_dir:
         project_path = Path(temp_dir)
@@ -200,7 +200,7 @@ async def test_concurrent_config_updates_prevented():
         results = []
 
         def save_config(project_name):
-            config = ProjectConfig(docroot="/test", categories={})
+            config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"])})
             manager.save_config(project_name, config)
             results.append(project_name)
 

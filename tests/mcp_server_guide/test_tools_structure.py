@@ -17,11 +17,11 @@ async def test_tools_return_expected_types():
 
 async def test_tools_with_parameters():
     """Test tools accept and handle parameters correctly."""
-    # Test config tool with parameters
-    result = await set_project_config("docroot", "/test/path")
+    # Test config tool with parameters using valid categories
+    result = await set_project_config(
+        "categories", {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
+    )
     assert result["success"] is True
-    assert result["key"] == "docroot"
-    assert result["value"] == "/test/path"
 
 
 async def test_session_management_comprehensive():
@@ -32,10 +32,12 @@ async def test_session_management_comprehensive():
 
 async def test_config_tools_comprehensive():
     """Test comprehensive configuration tools functionality."""
-    # Set the current project first, then set config
+    # Set the current project first, then set config with valid categories
     session = SessionManager()
     session.set_project_name("test_project")
-    result = await set_project_config("docroot", "/test/path")
+    result = await set_project_config(
+        "categories", {"guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide files"}}
+    )
     assert result["success"] is True
     assert result["project"] == "test_project"
 
@@ -43,8 +45,8 @@ async def test_config_tools_comprehensive():
     result = await get_project_config("test_project")
     assert isinstance(result, dict)
     assert result["success"] is True
-    assert result["config"]["docroot"] == "/test/path"
+    assert "guide" in result["config"]["categories"]
 
     # Test get_project_config with a non-existent project
     non_existent_config = await get_project_config("non_existent_project")
-    assert isinstance(non_existent_config, dict)  # Should return empty dict or default config
+    assert isinstance(non_existent_config, dict)  # Should return config with default categories

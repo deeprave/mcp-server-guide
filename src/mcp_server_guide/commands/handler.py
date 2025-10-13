@@ -13,7 +13,7 @@ class CommandHandler:
         pass
 
     async def execute_command(
-        self, command: str, args: List[str], params: Optional[Dict[str, Any]] = None, subcommand: Optional[str] = None
+        self, command: str, args: List[str], params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Execute a parsed command.
 
@@ -21,17 +21,12 @@ class CommandHandler:
             command: The command name (without slash)
             args: List of command arguments
             params: Dictionary of parsed parameters
-            subcommand: Optional subcommand for colon syntax
 
         Returns:
             Dict with success status and content or error
         """
         if params is None:
             params = {}
-
-        # Handle colon syntax commands
-        if subcommand is not None:
-            return await self._execute_colon_command(command, subcommand, args, params)
 
         if command == "guide":
             return await self._execute_guide_command(args)
@@ -44,39 +39,6 @@ class CommandHandler:
 
         # Try as category shortcut (/<category>)
         return await self._try_category_shortcut(command, args)
-
-    async def _execute_colon_command(
-        self, command: str, subcommand: str, args: List[str], params: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Execute colon syntax commands (/guide:subcommand or /g:subcommand).
-
-        Args:
-            command: Main command (guide or g)
-            subcommand: Subcommand after colon
-            args: Command arguments
-            params: Command parameters
-
-        Returns:
-            Dict with success status and content or error
-        """
-        # Both /guide: and /g: work the same way
-        if command not in ["guide"]:
-            return {"success": False, "error": f"Unknown command: {command}"}
-
-        # Handle help subcommand
-        if subcommand == "help":
-            return await self._execute_help_command()
-
-        # Handle management subcommands
-        if subcommand == "new":
-            return await self._execute_guide_new_command(args, params)
-        elif subcommand == "edit":
-            return await self._execute_guide_edit_command(args, params)
-        elif subcommand == "del":
-            return await self._execute_guide_del_command(args, params)
-
-        # Handle category subcommands (e.g., /guide:lang, /g:context)
-        return await self._execute_category_command(subcommand, args)
 
     async def _execute_guide_command(self, args: List[str]) -> Dict[str, Any]:
         """Execute guide command variants.
@@ -285,32 +247,3 @@ class CommandHandler:
             return {"success": True, "help": help_content}
         except Exception as e:
             return {"success": False, "error": f"Error generating help: {str(e)}"}
-
-    async def _execute_category_command(self, category: str, args: List[str]) -> Dict[str, Any]:
-        """Execute category command (e.g., /guide:lang, /g:context).
-
-        Args:
-            category: Category name
-            args: Command arguments (should be empty for category commands)
-
-        Returns:
-            Dict with success status and content or error
-        """
-        # Validate category: non-empty, only allow alphanumeric, dash, underscore
-        import re
-
-        if not category or not re.match(r"^[\w-]+$", category):
-            return {
-                "success": False,
-                "error": f"Invalid category name: '{category}'. "
-                "Only letters, numbers, dash, and underscore are allowed.",
-            }
-
-        try:
-            result = await get_category_content(category, None)
-            if result.get("success"):
-                return {"success": True, "content": result["content"]}
-            else:
-                return {"success": False, "error": result.get("error", f"Category not found: {category}")}
-        except Exception as e:
-            return {"success": False, "error": f"Error accessing category {category}: {str(e)}"}
