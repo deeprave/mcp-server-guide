@@ -48,10 +48,13 @@ async def test_project_config_does_not_contain_docroot():
     # Get project config
     config = session.get_full_project_config()
 
-    # Should NOT contain docroot
-    assert "docroot" not in config
+    # Should NOT contain docroot - check dict representation
+    config_dict = config.to_dict()
+    assert "docroot" not in config_dict
     # Should only contain categories
-    assert "categories" in config
+    assert "categories" in config_dict
+    # Also verify the object has categories attribute
+    assert hasattr(config, "categories")
 
 
 @pytest.mark.asyncio

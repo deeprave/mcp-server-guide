@@ -18,16 +18,20 @@ async def test_server_uses_hybrid_file_access():
         assert server.file_accessor.cache is not None
 
 
-async def test_server_resolves_http_resources():
+async def test_server_resolves_http_resources() -> None:
     """Test server can resolve HTTP resources."""
+    import mcp_server_guide.project_config
+
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
         # Mock session with HTTP guide in categories
         session = SessionManager()
         session.set_project_name("test-project")
-        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
-        session.session_state.set_project_config("categories", categories)
+        config = mcp_server_guide.project_config.ProjectConfig(
+            categories={"guide": mcp_server_guide.project_config.Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+        )
+        session.session_state.project_config = config
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -53,13 +57,17 @@ async def test_server_resolves_http_resources():
 
 async def test_server_caches_http_resources():
     """Test server caches HTTP resources."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
         session.set_project_name("test-project")
-        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
-        session.session_state.set_project_config("categories", categories)
+        config = ProjectConfig(
+            categories={"guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+        )
+        session.session_state.project_config = config
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -97,8 +105,10 @@ async def test_server_caches_http_resources():
 
 async def test_server_handles_mixed_sources():
     """Test server handles mixed local and HTTP sources."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     with tempfile.TemporaryDirectory() as temp_dir:
-        server = create_server(cache_dir=temp_dir)
+        server = create_server(cache_dir=temp_dir, docroot=temp_dir)
 
         # Create a test README file
         readme_path = Path(temp_dir) / "README.md"
@@ -106,11 +116,13 @@ async def test_server_handles_mixed_sources():
 
         session = SessionManager()
         session.set_project_name("mixed-project")
-        categories = {
-            "guide": {"dir": str(readme_path.parent), "patterns": ["README.md"], "description": "Guide files"},
-            "lang": {"url": "https://example.com/lang.md", "description": "Language files"},
-        }
-        session.session_state.set_project_config("categories", categories)
+        config = ProjectConfig(
+            categories={
+                "guide": Category(dir=".", patterns=["README.md"], description="Guide files", auto_load=False),
+                "lang": Category(url="https://example.com/lang.md", description="Language files", auto_load=False),
+            }
+        )
+        session.session_state.project_config = config
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -136,13 +148,17 @@ async def test_server_handles_mixed_sources():
 
 async def test_server_fallback_on_http_error():
     """Test server falls back to cache on HTTP errors."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
         session.set_project_name("fallback-project")
-        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
-        session.session_state.set_project_config("categories", categories)
+        config = ProjectConfig(
+            categories={"guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+        )
+        session.session_state.project_config = config
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -175,6 +191,8 @@ async def test_server_fallback_on_http_error():
 
 async def test_server_integration_with_session_paths():
     """Test server integration with Issue 002 session path resolution."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
@@ -182,12 +200,14 @@ async def test_server_integration_with_session_paths():
         session.set_project_name("integration-project")
 
         # Test different category types: local files and HTTP URLs
-        categories = {
-            "guide": {"dir": "./guides/", "patterns": ["local-guide.md"], "description": "Guide files"},
-            "lang": {"dir": "./lang/", "patterns": ["server-lang.md"], "description": "Language files"},
-            "context": {"url": "https://example.com/context.md", "description": "Context files"},
-        }
-        session.session_state.set_project_config("categories", categories)
+        config = ProjectConfig(
+            categories={
+                "guide": Category(dir="./guides/", patterns=["local-guide.md"], description="Guide files", auto_load=False),
+                "lang": Category(dir="./lang/", patterns=["server-lang.md"], description="Language files", auto_load=False),
+                "context": Category(url="https://example.com/context.md", description="Context files", auto_load=False),
+            }
+        )
+        session.session_state.project_config = config
 
         with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
@@ -206,13 +226,17 @@ async def test_server_integration_with_session_paths():
 
 async def test_server_respects_cache_settings():
     """Test server respects cache enable/disable settings."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     with tempfile.TemporaryDirectory() as temp_dir:
         server = create_server(cache_dir=temp_dir)
 
         session = SessionManager()
         session.set_project_name("cache-test")
-        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
-        session.session_state.set_project_config("categories", categories)
+        config = ProjectConfig(
+            categories={"guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+        )
+        session.session_state.project_config = config
 
         with patch.object(server, "_session_manager", session):
             with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:

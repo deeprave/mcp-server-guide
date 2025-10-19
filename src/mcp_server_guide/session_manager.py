@@ -53,18 +53,35 @@ class SessionManager:
         """
         return self._session_state
 
-    def get_project_config_value(self, key: str) -> Any:
-        """Get a specific configuration value for the current project."""
-        return self._session_state.project_config.get(key)
+    def get_project_config_value(self, key: str, default: Any = None) -> Any:
+        """Get a specific configuration value for the current project.
 
-    def get_full_project_config(self) -> Dict[str, Any]:
-        """Get the full project configuration dictionary."""
+        Raises AttributeError if the key is not present or its value is None and no default is provided.
+
+        If the attribute exists but its value is None, the default is used (if provided).
+        """
+        if hasattr(self._session_state.project_config, key):
+            value = getattr(self._session_state.project_config, key)
+            if value is not None:
+                return value
+        if default is not None:
+            return default
+        raise AttributeError(f"Project config has no attribute '{key}' or its value is None")
+
+    def get_full_project_config(self) -> ProjectConfig:
+        """Get the full project configuration."""
         return self._session_state.get_project_config()
 
-    def set_full_project_config(self, config: Dict[str, Any]) -> None:
-        """Set the full project configuration dictionary."""
-        self._session_state.project_config = config
-
+    def set_full_project_config(self, config: Dict[str, Any] | ProjectConfig) -> None:
+        """Set the full project configuration."""
+        if isinstance(config, dict):
+            self._session_state.project_config = ProjectConfig.from_dict(config)
+        elif isinstance(config, ProjectConfig):
+            self._session_state.project_config = config
+        else:
+            raise TypeError(
+                f"config must be a dict or ProjectConfig instance, got {type(config).__name__}"
+            )
     def reset_session_config(self, project_name: Optional[str] = None) -> None:
         """Reset the session configuration to defaults."""
         self._session_state.reset_project_config(project_name)
@@ -117,10 +134,10 @@ class SessionManager:
 
     def reset_project_config(self, project_name: Optional[str] = None) -> None:
         """Reset current project to defaults."""
+        from .project_config import ProjectConfig
+
         self._session_state.reset_project_config(project_name)
-        self._session_state.project_config = {}
-        # Don't set docroot here - it will be loaded from config file
-        self._session_state.set_project_config("categories", self.builtin_categories())
+        self._session_state.project_config = ProjectConfig(categories=self.builtin_categories())
 
     async def save_session(self) -> None:
         """Save session state to config file."""
@@ -130,53 +147,31 @@ class SessionManager:
             return
 
         # Load existing config from file (if it exists)
-        from .project_config import ProjectConfig, Category
+        from .project_config import Category
 
         if existing_config := self._config_manager.load_config(project_name):
             # Merge session state changes into existing config
-            session_config_dict = self._session_state.get_project_config()
+            session_config = self._session_state.get_project_config()
 
-            # Update existing config with session state changes
-            for key, value in session_config_dict.items():
-                match key:
-                    case "categories":
-                        if isinstance(value, dict):
-                            category_objects = {
-                                cat_name: (
-                                    cat_data
-                                    if isinstance(cat_data, Category) or not isinstance(cat_data, dict)
-                                    else Category(**cat_data)
-                                )
-                                for cat_name, cat_data in value.items()
-                            }
-                            existing_config.categories.update(category_objects)
-                    case _:
-                        # For any other key, raise a warning log
-                        get_logger().warning("unhandled config key during save: %s", key)
-
+            category_objects = {
+                cat_name: (
+                    cat_data
+                    if isinstance(cat_data, Category)
+                    or not isinstance(cat_data, dict)
+                    else Category(**cat_data)
+                )
+                for cat_name, cat_data in session_config.categories.items()
+            }
+            existing_config.categories.update(category_objects)
             project_config = existing_config
         else:
-            # No existing config, create new from session state
-            session_config_dict = self._session_state.get_project_config()
-
-            # Convert dict categories to Category objects
-            if "categories" in session_config_dict and isinstance(session_config_dict["categories"], dict):
-                category_objects = {
-                    cat_name: (
-                        cat_data
-                        if isinstance(cat_data, Category) or not isinstance(cat_data, dict)
-                        else Category(**cat_data)
-                    )
-                    for cat_name, cat_data in session_config_dict["categories"].items()
-                }
-                session_config_dict["categories"] = category_objects
-
-            project_config = ProjectConfig(**session_config_dict)
+            # No existing config, use session state directly
+            project_config = self._session_state.get_project_config()
 
         # Save using config manager with project name as key
         self._config_manager.save_config(project_name, project_config)
 
-    async def get_or_create_project_config(self, project: str) -> Dict[str, Any]:
+    async def get_or_create_project_config(self, project: str) -> ProjectConfig:
         """Get project config and auto-save if project was newly created."""
 
         # Get or create project-specific lock to prevent race conditions
@@ -213,7 +208,7 @@ class SessionManager:
             if project_config:
                 # Load existing config into session state
                 self._session_state.set_project_name(project_name)
-                self._session_state.project_config = project_config.to_dict()
+                self._session_state.project_config = project_config
                 logger.info(f"Switched to existing project '{project_name}' with loaded configuration")
                 return project_config
 
@@ -224,7 +219,7 @@ class SessionManager:
         else:
             logger.info(f"Switched to same project '{project_name}'")
 
-        return ProjectConfig(**self._session_state.get_project_config())
+        return self._session_state.get_project_config()
 
     @staticmethod
     def builtin_categories() -> Dict[str, Any]:
@@ -276,7 +271,7 @@ async def get_project_config() -> Dict[str, Any]:
     try:
         current_project = session_manager.get_project_name()
         config = await session_manager.get_or_create_project_config(current_project)
-        return {"success": True, "project": current_project, "config": config}
+        return {"success": True, "project": current_project, "config": config.to_dict()}
     except ValueError as e:
         return {"success": False, "error": str(e)}
 

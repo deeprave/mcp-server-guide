@@ -1,7 +1,7 @@
 """MCP server for developer guidelines and project rules with hybrid file access."""
 
 import functools
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, TYPE_CHECKING
 from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
@@ -11,11 +11,14 @@ from .logging_config import get_logger
 from .error_handler import ErrorHandler
 from . import tools
 
+if TYPE_CHECKING:
+    from .project_config import ProjectConfig
+
 logger = get_logger()
 error_handler = ErrorHandler(logger)
 
 
-async def _register_category_resources(server: FastMCP, config: Dict[str, Any]) -> None:
+async def _register_category_resources(server: FastMCP, config: "ProjectConfig") -> None:
     """Register dynamic resources for auto_load categories.
 
     This function is called during server initialization to register resources
@@ -26,12 +29,8 @@ async def _register_category_resources(server: FastMCP, config: Dict[str, Any]) 
 
     auto_load_categories = [
         (name, category_config)
-        for name, category_config in config.get("categories", {}).items()
-        if (
-            category_config.auto_load
-            if hasattr(category_config, "auto_load")
-            else category_config.get("auto_load", False)
-        )
+        for name, category_config in config.categories.items()
+        if category_config.auto_load
     ]
 
     # Register aggregate resource for all auto-load categories
@@ -59,11 +58,9 @@ async def _register_category_resources(server: FastMCP, config: Dict[str, Any]) 
     for category_name, category_config in auto_load_categories:
         # Create a closure to capture the category_name
         def make_category_reader(cat_name: str) -> object:
-            desc = (
-                category_config.description
-                if hasattr(category_config, "description")
-                else category_config.get("description", cat_name)
-            )
+            desc = category_config.description
+            if desc is None or (isinstance(desc, str) and not desc.strip()):
+                desc = cat_name
 
             @server.resource(f"guide://category/{cat_name}", name=cat_name, description=desc, mime_type="text/markdown")
             async def read_category() -> str:
@@ -71,7 +68,7 @@ async def _register_category_resources(server: FastMCP, config: Dict[str, Any]) 
                 result = await get_category_content(cat_name, None)
                 if result.get("success"):
                     return str(result.get("content", ""))
-                raise Exception(f"Failed to load category '{cat_name}': {result.get('error', 'Unknown error')}")
+                raise ValueError(f"Failed to load category '{cat_name}': {result.get('error', 'Unknown error')}")
 
             return read_category
 
@@ -371,7 +368,10 @@ async def guide_prompt(category: Optional[str] = None) -> str:
     """Get all auto-load guides or specific category."""
     # No initialization needed - PWD-based project detection handles context
 
-    if not category or category in ("all", "*", "?", "-"):
+    # Normalize input: strip whitespace and convert to lowercase
+    normalized_category = category.strip().lower() if category else None
+
+    if not normalized_category or normalized_category in ("all", "*", "?", "-"):
         guides = await tools.get_all_guides(None)
         if guides:
             content_parts = [f"## {category_name}\n\n{content}" for category_name, content in guides.items()]
@@ -379,7 +379,8 @@ async def guide_prompt(category: Optional[str] = None) -> str:
         else:
             return "No guides available."
     else:
-        result = await tools.get_category_content(category, None)
+        # Use normalized category name for lookup
+        result = await tools.get_category_content(normalized_category, None)
         if result.get("success"):
             return str(result.get("content", ""))
         else:
@@ -425,7 +426,18 @@ async def category_prompt(
 
         # Use provided values or fall back to current values
         new_dir = dir or current_category["dir"]
-        new_patterns = patterns.split(",") if patterns else current_category["patterns"]
+        def parse_patterns(patterns_str: str) -> list:
+            import re
+            # This regex splits on commas not inside quotes
+            pattern = r'''((?:[^,"']|"[^"]*"|'[^']*')+)'''
+            items = [item.strip() for item in re.findall(pattern, patterns_str) if item.strip()]
+            # Remove surrounding quotes if present
+            def unquote(s: str) -> str:
+                if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+                    return s[1:-1]
+                return s
+            return [unquote(item) for item in items]
+        new_patterns = parse_patterns(patterns) if patterns else current_category["patterns"]
         new_auto_load = auto_load == "true" if auto_load else current_category.get("auto_load", False)
 
         result = await tools.update_category(
@@ -459,8 +471,8 @@ DAIC_DESC = "Discussion-Alignment-Implementation-Check"
 DAIC_DISABLED = "IMPLEMENTATION/CHECK mode"
 
 # Agent instruction constants for file operations
-DAIC_ENABLE_INSTRUCTION = "\nAfter completing implementation and running checks, please remove the .consent file from the project root to enable DISCISSION/ALIGNMENT mode."
-DAIC_DISABLE_INSTRUCTION = "\nPlease create a .consent file in the project root to enable IMPLEMENTATION/CHECK mode."
+DAIC_ENABLE_INSTRUCTION: str = "\nAfter completing implementation and running checks, please remove the .consent file from the project root to enable DISCUSSION/ALIGNMENT mode."
+DAIC_DISABLE_INSTRUCTION: str = "\nPlease create a .consent file in the project root to enable IMPLEMENTATION/CHECK mode."
 
 
 async def check_daic_status() -> bool:
@@ -510,16 +522,6 @@ async def daic_prompt(arg: Optional[str] = None) -> str:
 
     # Disable DAIC - instruct agent to create .consent file
     return f"{DAIC_DISABLED} - {arg.strip()}{DAIC_DISABLE_INSTRUCTION}"
-
-
-def _get_auto_load_categories(config: Dict[str, Any]) -> List[tuple[str, Dict[str, Any]]]:
-    """Get categories with auto_load: true."""
-    return [
-        (name, category_config)
-        for name, category_config in config.get("categories", {}).items()
-        if category_config.get("auto_load", False)
-    ]
-
 
 # MCP Resource Handlers - Now registered dynamically in server_lifespan
 # See _register_category_resources() function above
@@ -575,7 +577,7 @@ def create_server(
                     return FileSource(FileSourceType.FILE, result["search_dir"])
 
         # Fallback for unknown keys
-        session_path = config.get(config_key)
+        session_path = getattr(config, config_key, None)
         if session_path:
             return FileSource.from_session_path(session_path, project_context)
         default_path = server.config.get(config_key, "./")  # type: ignore[attr-defined]

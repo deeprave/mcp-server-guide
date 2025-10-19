@@ -14,7 +14,11 @@ class TestSessionConfigKeyValidation:
         # Should not raise
         session.set_project_config("categories", {"test": {"dir": "test/", "patterns": ["*.md"]}})
 
-        assert session.project_config["categories"] == {"test": {"dir": "test/", "patterns": ["*.md"]}}
+        # Verify the category was set correctly
+        assert "test" in session.project_config.categories
+        test_category = session.project_config.categories["test"]
+        assert test_category.dir == "test/"
+        assert test_category.patterns == ["*.md"]
 
     def test_invalid_key_rejected(self):
         """Test that invalid keys are rejected by Pydantic validation."""
@@ -102,7 +106,12 @@ class TestSessionConfigKeyValidation:
 
         # Set categories multiple times
         session.set_project_config("categories", {"test1": {"dir": "test1/", "patterns": ["*.md"]}})
-        assert "test1" in session.project_config["categories"]
+        assert "test1" in session.project_config.categories
 
         session.set_project_config("categories", {"test2": {"dir": "test2/", "patterns": ["*.py"]}})
-        assert session.project_config["categories"] == {"test2": {"dir": "test2/", "patterns": ["*.py"]}}
+        # After second set, should only have test2
+        assert "test2" in session.project_config.categories
+        assert "test1" not in session.project_config.categories
+        test2_category = session.project_config.categories["test2"]
+        assert test2_category.dir == "test2/"
+        assert test2_category.patterns == ["*.py"]

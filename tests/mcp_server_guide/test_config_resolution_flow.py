@@ -143,11 +143,12 @@ class TestServerInitialization:
         from mcp_server_guide.server import server_lifespan
         from mcp_server_guide.server import mcp as server
         from mcp_server_guide.session_manager import SessionManager
+        from mcp_server_guide.project_config import ProjectConfig
         from unittest.mock import AsyncMock, patch
 
         with patch.dict(os.environ, {"PWD": "/home/user/test-project"}):
             with patch.object(
-                SessionManager, "get_or_create_project_config", new=AsyncMock(return_value={})
+                SessionManager, "get_or_create_project_config", new=AsyncMock(return_value=ProjectConfig(categories={}))
             ) as mock_get_or_create:
                 async with server_lifespan(server):
                     # Should have called get_or_create_project_config with project name

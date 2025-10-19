@@ -32,18 +32,10 @@ async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
 
     # Get project config to find categories with auto_load: true
     config = await session.get_or_create_project_config(project)
-    categories = config.get("categories", {})
+    categories = config.categories
 
     # Filter categories with auto_load: true
-    auto_load_categories = [
-        name
-        for name, category_config in categories.items()
-        if (
-            category_config.auto_load
-            if hasattr(category_config, "auto_load")
-            else category_config.get("auto_load", False)
-        )
-    ]
+    auto_load_categories = [name for name, category_config in categories.items() if category_config.auto_load or False]
 
     # Load content for each auto_load category
     for category_name in auto_load_categories:

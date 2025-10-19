@@ -78,20 +78,21 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
 
 async def test_get_all_guides_uses_unified_system():
     """Test that await get_all_guides() uses unified category system with auto_load."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
 
     with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
         # Set up mock session with auto_load categories
         mock_session = Mock()
         mock_session_class.return_value = mock_session
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        config_data = {
-            "categories": {
-                "guide": {"dir": "guide/", "patterns": ["*.md"], "auto_load": True},
-                "lang": {"dir": "lang/", "patterns": ["*.md"], "auto_load": True},
-                "context": {"dir": "context/", "patterns": ["*.md"], "auto_load": True},
+        mock_session.get_project_name.return_value = "test-project"
+        config_data = ProjectConfig(
+            categories={
+                "guide": Category(dir="guide/", patterns=["*.md"], description="Guide", auto_load=True),
+                "lang": Category(dir="lang/", patterns=["*.md"], description="Language", auto_load=True),
+                "context": Category(dir="context/", patterns=["*.md"], description="Context", auto_load=True),
             }
-        }
-        mock_session.session_state.get_project_config.return_value = config_data
+        )
         mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category_content:

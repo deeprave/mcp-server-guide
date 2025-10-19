@@ -12,11 +12,15 @@ from mcp_server_guide.session_manager import (
 
 async def test_get_project_config():
     """Test get_project_config function."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     # Set up some project data first
     session = SessionManager()
     session.set_project_name("test-project")
-    categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
-    session.session_state.set_project_config("categories", categories)
+    config = ProjectConfig(
+        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
+    )
+    session.session_state.project_config = config
 
     # This should return current project config
     result = await get_project_config()
@@ -29,11 +33,15 @@ async def test_get_project_config():
 
 async def test_set_project_config():
     """Test set_project_config function."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     # Set up project data first
     session = SessionManager()
     session.set_project_name("test-project")
-    categories1 = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
-    session.session_state.set_project_config("categories", categories1)
+    config1 = ProjectConfig(
+        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
+    )
+    session.session_state.project_config = config1
 
     # Update the categories
     categories2 = {"docs": {"dir": "docs/", "patterns": ["*.md"], "description": "Docs category"}}
@@ -62,6 +70,8 @@ async def test_switch_project(isolated_config_file):
 
 async def test_session_manager_save_session(isolated_config_file):
     """Test SessionManager.save_session method."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "test_save.yaml"
 
@@ -70,8 +80,10 @@ async def test_session_manager_save_session(isolated_config_file):
         session._set_config_filename(str(config_file))
 
         session.set_project_name("test-project")
-        categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
-        session.session_state.set_project_config("categories", categories)
+        config = ProjectConfig(
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
+        )
+        session.session_state.project_config = config
 
         # Save session (uses mocked path)
         await session.save_session()
@@ -82,12 +94,16 @@ async def test_session_manager_save_session(isolated_config_file):
 
 async def test_session_manager_get_or_create_project_config():
     """Test SessionManager.get_or_create_project_config method."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     session = SessionManager()
     session.set_project_name("test-project")
-    categories = {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
-    session.session_state.set_project_config("categories", categories)
+    test_config = ProjectConfig(
+        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
+    )
+    session.session_state.project_config = test_config
 
     # Get or create config - should return the set config
     config = await session.get_or_create_project_config("test-project")
 
-    assert "test" in config["categories"]
+    assert "test" in config.categories

@@ -11,7 +11,7 @@ async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
         project = session.get_project_name()
 
     config = await session.get_or_create_project_config(project)
-    return {"success": True, "project": project, "config": config}
+    return {"success": True, "project": project, "config": config.to_dict()}
 
 
 async def set_project_config_values(config_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -65,17 +65,14 @@ async def set_project_config(config_key: str, value: Any) -> Dict[str, Any]:
     session = SessionManager()
     project = session.get_project_name()
 
-    # Check if trying to change an immutable project key
+    # Check if trying to set invalid key - ProjectConfig only supports 'categories'
     if config_key == "project":
-        current_config = await session.get_or_create_project_config(project)
-        if "project" in current_config and current_config["project"] != value:
-            return {
-                "success": False,
-                "error": f"Project key is immutable. Cannot change from "
-                f"'{current_config['project']}' to '{value}'. Create a new project instead.",
-                "key": config_key,
-                "value": value,
-            }
+        return {
+            "success": False,
+            "error": "Project key is not valid for project configuration. ProjectConfig only supports 'categories'.",
+            "key": config_key,
+            "value": value,
+        }
 
     session.session_state.set_project_config(config_key, value)
 

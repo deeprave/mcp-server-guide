@@ -9,10 +9,16 @@ from mcp_server_guide.tools.category_tools import add_category, update_category
 def mock_session():
     """Mock session manager."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+        from mcp_server_guide.project_config import ProjectConfig
+
         session_instance = Mock()
         mock.return_value = session_instance
+        session_instance.get_project_name = Mock(return_value="test-project")
         session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        config_data = {"categories": {}}
+
+        # Create ProjectConfig with empty categories
+        config_data = ProjectConfig(categories={})
+
         session_instance.session_state.get_project_config = Mock(return_value=config_data)
         session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
         session_instance.session_state.set_project_config = Mock()
@@ -41,8 +47,8 @@ async def test_add_category_treats_missing_auto_load_as_false(mock_session):
     categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
-    # auto_load=False should be stored explicitly
-    assert category["auto_load"] is False
+    # auto_load=False should be stored explicitly (category is a Category object)
+    assert category.auto_load is False
 
 
 async def test_add_category_stores_auto_load_when_true(mock_session):
@@ -55,14 +61,18 @@ async def test_add_category_stores_auto_load_when_true(mock_session):
     categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
-    assert category.get("auto_load", False) is True
+    assert category.auto_load is True
 
 
 async def test_update_category_handles_auto_load_field(mock_session):
     """Test that update_category can handle auto_load field."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     # Set up existing category
-    config_data = {"categories": {"test_cat": {"dir": "test_dir/", "patterns": ["*.md"], "description": ""}}}
-    mock_session.session_state.get_project_config = AsyncMock(return_value=config_data)
+    config_data = ProjectConfig(
+        categories={"test_cat": Category(dir="test_dir/", patterns=["*.md"], description="", auto_load=False)}
+    )
+    mock_session.session_state.get_project_config = Mock(return_value=config_data)
     mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     # Update with auto_load
@@ -74,16 +84,18 @@ async def test_update_category_handles_auto_load_field(mock_session):
     categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
-    assert category.get("auto_load", False) is True
+    assert category.auto_load is True
 
 
 async def test_update_category_preserves_auto_load_when_not_specified(mock_session):
     """Test that update_category preserves existing auto_load setting when not specified."""
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
     # Set up existing category with auto_load=True
-    config_data = {
-        "categories": {"test_cat": {"dir": "test_dir/", "patterns": ["*.md"], "description": "", "auto_load": True}}
-    }
-    mock_session.session_state.get_project_config = AsyncMock(return_value=config_data)
+    config_data = ProjectConfig(
+        categories={"test_cat": Category(dir="test_dir/", patterns=["*.md"], description="", auto_load=True)}
+    )
+    mock_session.session_state.get_project_config = Mock(return_value=config_data)
     mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     # Update without specifying auto_load
@@ -95,5 +107,5 @@ async def test_update_category_preserves_auto_load_when_not_specified(mock_sessi
     categories = call_args[0][1]  # Second argument is the categories dict
 
     category = categories["test_cat"]
-    assert category.get("auto_load", False) is True
-    assert category["dir"] == "test_dir2/"
+    assert category.auto_load is True
+    assert category.dir == "test_dir2/"

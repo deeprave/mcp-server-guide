@@ -20,12 +20,15 @@ async def test_get_or_create_project_config_exception_handling():
 
 @pytest.mark.asyncio
 async def test_get_or_create_project_config_empty_config():
-    """Test handling when get_or_create_project_config returns an empty dict."""
+    """Test handling when get_or_create_project_config returns an empty ProjectConfig."""
+    from mcp_server_guide.project_config import ProjectConfig
+
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session_class.return_value = mock_session
+        mock_session.get_project_name = Mock(return_value="test-project")
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_session.get_or_create_project_config = AsyncMock(return_value={})
+        mock_session.get_or_create_project_config = AsyncMock(return_value=ProjectConfig(categories={}))
 
         result = await list_categories()
 
@@ -36,12 +39,15 @@ async def test_get_or_create_project_config_empty_config():
 
 @pytest.mark.asyncio
 async def test_get_or_create_project_config_no_categories_key():
-    """Test handling when get_or_create_project_config returns a dict without 'categories' key."""
+    """Test handling when get_or_create_project_config returns a ProjectConfig with empty categories."""
+    from mcp_server_guide.project_config import ProjectConfig
+
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session_class.return_value = mock_session
+        mock_session.get_project_name = Mock(return_value="test-project")
         mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_session.get_or_create_project_config = AsyncMock(return_value={"docroot": "."})
+        mock_session.get_or_create_project_config = AsyncMock(return_value=ProjectConfig(categories={}))
 
         result = await list_categories()
 
@@ -55,12 +61,14 @@ async def test_get_or_create_project_config_auto_save_behavior():
     """Test that save_to_file is called when a new project is created."""
     import tempfile
     from unittest.mock import patch, AsyncMock, Mock
+    from mcp_server_guide.project_config import ProjectConfig
 
     with tempfile.TemporaryDirectory():
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
             mock_session = Mock()
+            mock_session.get_project_name = Mock(return_value="new-project")
             mock_session.get_current_project_safe = AsyncMock(return_value="new-project")
-            mock_session.get_or_create_project_config = AsyncMock(return_value={"docroot": "."})
+            mock_session.get_or_create_project_config = AsyncMock(return_value=ProjectConfig(categories={}))
             mock_session.save_session = AsyncMock()
             mock_session_class.return_value = mock_session
 

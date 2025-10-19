@@ -147,13 +147,13 @@ async def add_category(
 
     # Get current config
     config = await session.get_or_create_project_config(project)
-    categories = config.get("categories", {})
+    categories = config.categories
 
     if name in categories:
         return {"success": False, "error": f"Category '{name}' already exists"}
 
-    # Add the new category
-    categories[name] = category.model_dump()
+    # Add the new category (keep as Category object)
+    categories[name] = category
 
     # Update session
     session.session_state.set_project_config("categories", categories)
@@ -188,7 +188,7 @@ async def update_category(
 
     # Get current config
     config = await session.get_or_create_project_config(project)
-    categories = config.get("categories", {})
+    categories = config.categories
 
     if name not in categories:
         return {"success": False, "error": f"Category '{name}' does not exist"}
@@ -196,19 +196,13 @@ async def update_category(
     # Preserve existing auto_load setting if not explicitly provided
     existing_category = categories[name]
     if auto_load is None:
-        # Handle both dict and Category object
-        if hasattr(existing_category, "auto_load"):
-            auto_load = existing_category.auto_load if existing_category.auto_load is not None else False
-        else:
-            auto_load = existing_category.get("auto_load", False)
+        # Category is always a Pydantic model
+        auto_load = existing_category.auto_load if existing_category.auto_load is not None else False
 
     # Provide default description if empty
     if not description.strip():
-        # Handle both dict and Category object
-        if hasattr(existing_category, "description"):
-            existing_description = existing_category.description
-        else:
-            existing_description = existing_category.get("description", "")
+        # Category is always a Pydantic model
+        existing_description = existing_category.description
 
         if existing_description.strip():
             description = existing_description
@@ -227,8 +221,8 @@ async def update_category(
     except ValueError as e:
         return {"success": False, "error": f"Invalid category configuration: {e}"}
 
-    # Update the category
-    categories[name] = category.model_dump()
+    # Update the category (keep as Category object)
+    categories[name] = category
 
     # Update session
     session.session_state.set_project_config("categories", categories)
@@ -259,7 +253,7 @@ async def remove_category(name: str, project: Optional[str] = None) -> Dict[str,
 
     # Get current config
     config = await session.get_or_create_project_config(project)
-    categories = config.get("categories", {})
+    categories = config.categories
 
     if name not in categories:
         return {"success": False, "error": f"Category '{name}' does not exist"}
@@ -288,12 +282,15 @@ async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
         project = session.get_project_name()
 
     config = await session.get_or_create_project_config(project)
-    categories = config.get("categories", {})
+    categories = config.categories
+
+    # Convert Category objects to dicts for API response
+    categories_dict = {name: cat.model_dump() for name, cat in categories.items()}
 
     return {
         "success": True,
         "project": project,
-        "categories": categories,
+        "categories": categories_dict,
         "total_categories": len(categories),
     }
 
@@ -306,29 +303,30 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
 
     # Get current config - use get_or_create_project_config for consistency
     config = await session.get_or_create_project_config(project)
-    categories = config.get("categories", {})
+    categories = config.categories
 
     if name not in categories:
         return {"success": False, "error": f"Category '{name}' does not exist"}
 
     category = categories[name]
 
-    # Check if this is a URL-based category
-    category_url = category.url if hasattr(category, "url") else category.get("url")
-    if category_url:
+    # Check if this is a URL-based category (Category is always a Pydantic model)
+    if category.url:
         # Return URL information for HTTP-based categories
         return {
             "success": True,
             "content": "",  # Content will be fetched by HTTP client
-            "url": category_url,
+            "url": category.url,
             "is_http": True,
             "category_name": name,
         }
 
-    # Handle file-based categories
-    # Category is now a Pydantic model, use attribute access
-    category_dir = category.dir if hasattr(category, "dir") else category.get("dir", "")
-    patterns = category.patterns if hasattr(category, "patterns") else category.get("patterns", [])
+    # Handle file-based categories (Category is always a Pydantic model)
+    category_dir = category.dir
+    patterns = category.patterns
+
+    if not category_dir:
+        return {"success": False, "error": f"Category '{name}' has no directory specified"}
 
     if not patterns:
         return {"success": False, "error": f"Category '{name}' has no patterns defined"}
