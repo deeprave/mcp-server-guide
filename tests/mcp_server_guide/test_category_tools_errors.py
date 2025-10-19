@@ -111,6 +111,29 @@ class TestGetCategoryContentErrors:
             assert "has no patterns defined" in result["error"]
 
     @pytest.mark.asyncio
+    async def test_empty_patterns_list(self):
+        """Test error when category has empty patterns list."""
+        from mcp_server_guide.project_config import ProjectConfig, Category
+
+        # Mock SessionManager properly
+        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+            mock_session = Mock()
+            mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+            mock_session.get_project_name = Mock(return_value="test_project")
+
+            # Create ProjectConfig with category that has empty patterns list
+            config_data = ProjectConfig(
+                categories={"test_cat": Category(dir="test", patterns=[], description="", auto_load=False)}
+            )
+            mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
+            mock_session_class.return_value = mock_session
+
+            result = await get_category_content("test_cat")
+
+            assert result["success"] is False
+            assert "has no patterns defined" in result["error"]
+
+    @pytest.mark.asyncio
     async def test_category_directory_not_exists(self):
         """Test error when category directory doesn't exist."""
         from mcp_server_guide.path_resolver import LazyPath
