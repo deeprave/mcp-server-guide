@@ -66,7 +66,7 @@ async def test_list_categories_includes_descriptions(mock_session):
     result = await list_categories()
 
     # Find the testing category
-    testing_category = result["custom_categories"].get("testing")
+    testing_category = result["categories"].get("testing")
     assert testing_category is not None
     assert testing_category["description"] == "Test documentation"
 
@@ -87,5 +87,5 @@ async def test_list_categories_handles_missing_descriptions(mock_session):
 
     result = await list_categories()
 
-    testing_category = result["custom_categories"]["testing"]
+    testing_category = result["categories"]["testing"]
     assert testing_category.get("description", "") == ""

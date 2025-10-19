@@ -14,7 +14,7 @@ from .content_tools import (
     show_language_guide,
     show_project_summary,
 )
-from .file_tools import list_files, file_exists, get_file_content
+from .file_tools import get_file_content
 from .category_tools import (
     add_category,
     remove_category,
@@ -22,6 +22,7 @@ from .category_tools import (
     list_categories,
     get_category_content,
 )
+from .prompt_tools import list_prompts
 
 __all__ = [
     # Project Management
@@ -41,8 +42,6 @@ __all__ = [
     "show_language_guide",
     "show_project_summary",
     # File Operations
-    "list_files",
-    "file_exists",
     "get_file_content",
     # Category Management
     "add_category",
@@ -50,4 +49,6 @@ __all__ = [
     "update_category",
     "list_categories",
     "get_category_content",
+    # Prompt Discovery
+    "list_prompts",
 ]

@@ -18,9 +18,7 @@ class TestDocrootInitialization:
 
         # Create a new project config
         project_config = ProjectConfig(
-            categories={
-                "test": Category(dir="test/", patterns=["*.md"], description="Test category")
-            }
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")}
         )
 
         # Save the config
@@ -72,9 +70,7 @@ class TestDocrootInitialization:
 
         # Save a new project
         new_project_config = ProjectConfig(
-            categories={
-                "test": Category(dir="test/", patterns=["*.md"], description="Test")
-            }
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")}
         )
         manager.save_config("new-project", new_project_config)
 
@@ -125,9 +121,7 @@ class TestDocrootPreservation:
 
         # Save a new project
         new_project_config = ProjectConfig(
-            categories={
-                "test": Category(dir="test/", patterns=["*.md"], description="Test")
-            }
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")}
         )
         manager.save_config("project2", new_project_config)
 
@@ -324,9 +318,7 @@ class TestDocrootCaching:
 
         # Save a new project
         project_config = ProjectConfig(
-            categories={
-                "test": Category(dir="test/", patterns=["*.md"], description="Test")
-            }
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")}
         )
         manager.save_config("new-project", project_config)
 

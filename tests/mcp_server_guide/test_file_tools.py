@@ -1,52 +1,7 @@
 """Tests for file tools functionality."""
 
-from unittest.mock import Mock, patch, AsyncMock
-from mcp_server_guide.tools.file_tools import list_files, file_exists, get_file_content
-
-
-async def test_list_files_error_handling():
-    """Test list_files with various error conditions."""
-    # Mock SessionManager to avoid real config access
-    with patch("mcp_server_guide.tools.file_tools.SessionManager") as mock_session_class:
-        mock_session = Mock()
-        mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
-        mock_session.get_or_create_project_config = AsyncMock(return_value={"guide": "./nonexistent"})
-        mock_session_class.return_value = mock_session
-
-        # Test with non-existent directory
-        with patch("pathlib.Path.exists", return_value=False):
-            result = await list_files("guide", "test_project")
-            assert result == []
-
-        # Test with path that's not a directory
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.is_dir", return_value=False):
-                result = await list_files("guide", "test_project")
-                assert result == []
-
-        # Test with exception during iteration
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.is_dir", return_value=True):
-                with patch("pathlib.Path.iterdir", side_effect=Exception("Permission denied")):
-                    result = await list_files("guide", "test_project")
-                    assert result == []
-
-
-async def test_file_exists_error_handling():
-    """Test file_exists with error conditions."""
-    # Test with exception
-    with patch("pathlib.Path.exists", side_effect=Exception("Path error")):
-        result = file_exists("test.txt")
-        assert result is False
-
-    # Test normal operation
-    with patch("pathlib.Path.exists", return_value=True):
-        result = file_exists("test.txt")
-        assert result is True
-
-    with patch("pathlib.Path.exists", return_value=False):
-        result = file_exists("nonexistent.txt")
-        assert result is False
+from unittest.mock import AsyncMock, MagicMock, patch
+from mcp_server_guide.tools.file_tools import get_file_content
 
 
 async def test_get_file_content_error_handling():
@@ -73,8 +28,6 @@ async def test_get_file_content_error_handling():
     with patch("pathlib.Path.exists", return_value=True):
         with patch("pathlib.Path.is_file", return_value=True):
             # Mock aiofiles.open context manager properly
-            from unittest.mock import AsyncMock, MagicMock
-
             mock_file = AsyncMock()
             mock_file.read = AsyncMock(return_value="file content")
             mock_context = MagicMock()
@@ -84,37 +37,3 @@ async def test_get_file_content_error_handling():
             with patch("aiofiles.open", return_value=mock_context):
                 result = await get_file_content("test.txt")
                 assert result == "file content"
-
-
-async def test_list_files_successful_operation():
-    """Test list_files successful operation."""
-    # Mock successful directory listing
-    mock_file1 = Mock()
-    mock_file1.name = "file1.md"
-    mock_file1.is_file.return_value = True
-
-    mock_file2 = Mock()
-    mock_file2.name = "file2.md"
-    mock_file2.is_file.return_value = True
-
-    mock_dir = Mock()
-    mock_dir.name = "subdir"
-    mock_dir.is_file.return_value = False
-
-    with patch("pathlib.Path.exists", return_value=True):
-        with patch("pathlib.Path.is_dir", return_value=True):
-            with patch("pathlib.Path.iterdir", return_value=[mock_file1, mock_file2, mock_dir]):
-                result = await list_files("guide", "test_project")
-                assert "file1.md" in result
-                assert "file2.md" in result
-                assert "subdir" not in result  # Should only include files
-
-
-async def test_list_files_empty_directory():
-    """Test list_files with empty directory."""
-    with patch("pathlib.Path.exists", return_value=True):
-        with patch("pathlib.Path.is_dir", return_value=True):
-            with patch("pathlib.Path.iterdir", return_value=[]):
-                result = await list_files("guide", "test_project")
-                assert isinstance(result, list)
-                assert len(result) == 0

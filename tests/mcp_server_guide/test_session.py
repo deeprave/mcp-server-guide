@@ -32,7 +32,7 @@ async def test_session_config_set_and_get():
     # Set configuration - only 'categories' is valid now
     test_categories = {
         "guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guidelines"},
-        "lang": {"dir": "lang/", "patterns": ["*.md"], "description": "Language guides"}
+        "lang": {"dir": "lang/", "patterns": ["*.md"], "description": "Language guides"},
     }
     session.set_project_config("categories", test_categories)
 
@@ -116,7 +116,7 @@ async def test_session_config_with_categories():
     # Set categories with various directory paths
     test_categories = {
         "local_guide": {"dir": "local/guide/", "patterns": ["*.md"]},
-        "remote_lang": {"dir": "remote/lang/", "patterns": ["*.py"]}
+        "remote_lang": {"dir": "remote/lang/", "patterns": ["*.py"]},
     }
     session.set_project_config("categories", test_categories)
 

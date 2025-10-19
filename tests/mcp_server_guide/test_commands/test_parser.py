@@ -1,4 +1,5 @@
 """Tests for command parser functionality."""
+
 from unittest.mock import patch
 
 from mcp_server_guide.commands.parser import CommandParser
@@ -22,7 +23,6 @@ def test_parse_command_with_arguments():
     assert result is not None
     assert result["command"] == "guide"
     assert result["args"] == ["lang"]
-
 
 
 def test_parse_empty_command():
@@ -75,11 +75,12 @@ def test_parse_command_args():  # sourcery skip: extract-duplicate-method
 
 def test_parse_parameter_csv_fallback():
     import csv
+
     """Test parameter parsing when csv.reader fails and falls back to simple split."""
     parser = CommandParser()
 
     # Mock csv.reader to raise csv.Error to test the fallback
-    with patch('csv.reader') as mock_reader:
+    with patch("csv.reader") as mock_reader:
         mock_reader.side_effect = csv.Error("Mocked CSV error")
 
         result = parser.parse_command('guide list="item1,item2,item3"')
@@ -90,13 +91,14 @@ def test_parse_parameter_csv_fallback():
         # Should fall back to simple split
         assert result["params"]["list"] == ["item1", "item2", "item3"]
 
+
 def test_parse_command_csv():  # sourcery skip: extract-duplicate-method
     parser = CommandParser()
 
     result = parser.parse_command("guide list=one,two,three")
     assert "params" in result
     assert "list" in result["params"]
-    assert result["params"]["list"] == ["one" ,"two", "three"]
+    assert result["params"]["list"] == ["one", "two", "three"]
 
 
 def test_natural_language_passthrough():

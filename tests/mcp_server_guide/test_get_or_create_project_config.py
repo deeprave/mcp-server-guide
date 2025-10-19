@@ -30,8 +30,7 @@ async def test_get_or_create_project_config_empty_config():
         result = await list_categories()
 
         assert result["success"] is True
-        assert result["builtin_categories"] == {}
-        assert result["custom_categories"] == {}
+        assert result["categories"] == {}
         assert result["total_categories"] == 0
 
 
@@ -47,8 +46,7 @@ async def test_get_or_create_project_config_no_categories_key():
         result = await list_categories()
 
         assert result["success"] is True
-        assert result["builtin_categories"] == {}
-        assert result["custom_categories"] == {}
+        assert result["categories"] == {}
         assert result["total_categories"] == 0
 
 

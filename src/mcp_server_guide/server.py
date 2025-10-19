@@ -4,8 +4,6 @@ import functools
 from typing import Dict, Any, Optional, List
 from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
-from mcp.types import Resource
-from pydantic import AnyUrl
 from pathlib import Path
 from .session_manager import SessionManager
 from .file_source import FileSource, FileAccessor
@@ -15,6 +13,70 @@ from . import tools
 
 logger = get_logger()
 error_handler = ErrorHandler(logger)
+
+
+async def _register_category_resources(server: FastMCP, config: Dict[str, Any]) -> None:
+    """Register dynamic resources for auto_load categories.
+
+    This function is called during server initialization to register resources
+    based on the current project configuration.
+    """
+    from .tools.category_tools import get_category_content
+    from .tools.content_tools import get_all_guides
+
+    auto_load_categories = [
+        (name, category_config)
+        for name, category_config in config.get("categories", {}).items()
+        if (
+            category_config.auto_load
+            if hasattr(category_config, "auto_load")
+            else category_config.get("auto_load", False)
+        )
+    ]
+
+    # Register aggregate resource for all auto-load categories
+    if auto_load_categories:
+
+        @server.resource(
+            "guide://category/all",
+            name="all",
+            description="All auto-load guide categories combined",
+            mime_type="text/markdown",
+        )
+        async def read_all_categories() -> str:
+            """All auto-load guide categories combined."""
+            result = await get_all_guides(None)
+            # get_all_guides returns Dict[str, str] mapping category names to content
+            if not result:
+                return ""
+            # Format as markdown sections
+            content_parts = [f"# {category_name}\n\n{content}" for category_name, content in result.items()]
+            return "\n\n".join(content_parts)
+
+        logger.info("Registered resource: guide://category/all")
+
+    # Register individual category resources
+    for category_name, category_config in auto_load_categories:
+        # Create a closure to capture the category_name
+        def make_category_reader(cat_name: str) -> object:
+            desc = (
+                category_config.description
+                if hasattr(category_config, "description")
+                else category_config.get("description", cat_name)
+            )
+
+            @server.resource(f"guide://category/{cat_name}", name=cat_name, description=desc, mime_type="text/markdown")
+            async def read_category() -> str:
+                """Get content for a specific category."""
+                result = await get_category_content(cat_name, None)
+                if result.get("success"):
+                    return str(result.get("content", ""))
+                raise Exception(f"Failed to load category '{cat_name}': {result.get('error', 'Unknown error')}")
+
+            return read_category
+
+        make_category_reader(category_name)
+        logger.info(f"Registered resource: guide://category/{category_name}")
 
 
 @asynccontextmanager
@@ -33,8 +95,13 @@ async def server_lifespan(server: FastMCP) -> Any:
             logger.info(f"Initialized project from PWD: {project_name}")
 
             # Ensure project configuration is loaded or created
-            await session_manager.get_or_create_project_config(project_name)
+            config = await session_manager.get_or_create_project_config(project_name)
             logger.info(f"Project configuration initialized for: {project_name}")
+
+            # Register dynamic resources based on auto_load categories
+            await _register_category_resources(server, config)
+            logger.info("Dynamic resources registered successfully")
+
         except ValueError as e:
             logger.error(f"Failed to initialize project: {e}")
             raise
@@ -101,6 +168,18 @@ def log_tool_usage(func: Any) -> Any:
         return sync_wrapper
 
 
+NO_PREFIX = ("", "none", "false")
+
+
+def get_tool_prefix() -> str:
+    import os
+
+    # Get the prefix from environment, or use "guide_" if not set
+    # Note: if GUIDE_TOOL_PREFIX="" (empty string), this will return ""
+    prefix = os.getenv("GUIDE_TOOL_PREFIX")
+    return "guide_" if prefix is None else "" if prefix in NO_PREFIX else prefix
+
+
 class ExtMcpToolDecorator:
     """Extended MCP tool decorator with flexible prefixing and automatic client root initialization."""
 
@@ -139,7 +218,7 @@ class ExtMcpToolDecorator:
 
 
 # Create guide decorator instance
-guide = ExtMcpToolDecorator(mcp, prefix="guide_")
+guide = ExtMcpToolDecorator(mcp, prefix=get_tool_prefix())
 
 
 # Register MCP Tools
@@ -230,18 +309,6 @@ async def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
 
 
 @guide.tool()
-async def list_files(file_type: str, project: Optional[str] = None) -> List[str]:
-    """List available files (guides, languages, etc.)."""
-    return await tools.list_files(file_type, project)
-
-
-@guide.tool()
-def file_exists(path: str, project: Optional[str] = None) -> bool:
-    """Check if a file exists."""
-    return tools.file_exists(path, project)
-
-
-@guide.tool()
 async def get_file_content(path: str, project: Optional[str] = None) -> str:
     """Get raw file content."""
     return await tools.get_file_content(path, project)
@@ -292,25 +359,31 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
     return await tools.get_category_content(name, project)
 
 
+@guide.tool()
+async def list_prompts() -> Dict[str, Any]:
+    """List all available prompts registered with the MCP server."""
+    return await tools.list_prompts()
+
+
 # MCP Prompt Handlers
 @mcp.prompt("guide")
 async def guide_prompt(category: Optional[str] = None) -> str:
     """Get all auto-load guides or specific category."""
     # No initialization needed - PWD-based project detection handles context
 
-    if category:
-        result = await tools.get_category_content(category, None)
-        if result.get("success"):
-            return str(result.get("content", ""))
-        else:
-            return f"Error: {result.get('error', 'Failed to get category')}"
-    else:
+    if not category or category in ("all", "*", "?", "-"):
         guides = await tools.get_all_guides(None)
         if guides:
             content_parts = [f"## {category_name}\n\n{content}" for category_name, content in guides.items()]
             return "\n\n".join(content_parts)
         else:
             return "No guides available."
+    else:
+        result = await tools.get_category_content(category, None)
+        if result.get("success"):
+            return str(result.get("content", ""))
+        else:
+            return f"Error: {result.get('error', 'Failed to get category')}"
 
 
 @mcp.prompt("category")
@@ -323,7 +396,7 @@ async def category_prompt(
     if action == "new":
         # Check for duplicate category name
         categories_result = await tools.list_categories(None)
-        all_categories = {**categories_result["builtin_categories"], **categories_result["custom_categories"]}
+        all_categories = categories_result["categories"]
         if name in all_categories:
             return f"Error: Category with name '{name}' already exists."
 
@@ -343,10 +416,7 @@ async def category_prompt(
     elif action == "edit":
         # Get current category to preserve existing values
         categories_result = await tools.list_categories(None)
-        existing_categories: dict[str, Any] = {
-            **categories_result["builtin_categories"],
-            **categories_result["custom_categories"],
-        }
+        existing_categories = categories_result["categories"]
 
         if name not in existing_categories:
             return f"Error: Category '{name}' not found"
@@ -354,7 +424,7 @@ async def category_prompt(
         current_category = existing_categories[name]
 
         # Use provided values or fall back to current values
-        new_dir = dir if dir else current_category["dir"]
+        new_dir = dir or current_category["dir"]
         new_patterns = patterns.split(",") if patterns else current_category["patterns"]
         new_auto_load = auto_load == "true" if auto_load else current_category.get("auto_load", False)
 
@@ -384,15 +454,13 @@ async def category_prompt(
         return f"Error: Unknown action '{action}'. Use 'new', 'edit', or 'del'."
 
 
-DAIC_ENABLED = "DAIC mode: ENABLED"
+DAIC_ENABLED = "DISCUSSION/ALIGNMENT mode"
 DAIC_DESC = "Discussion-Alignment-Implementation-Check"
-DAIC_DISABLED = "DAIC mode: DISABLED"
+DAIC_DISABLED = "IMPLEMENTATION/CHECK mode"
 
 # Agent instruction constants for file operations
-DAIC_ENABLE_INSTRUCTION = "\n\nPlease remove the .consent file from the project root to enable DAIC mode."
-DAIC_DISABLE_INSTRUCTION = (
-    "\n\nPlease create a .consent file in the project root to disable DAIC mode and allow implementation."
-)
+DAIC_ENABLE_INSTRUCTION = "\nAfter completing implementation and running checks, please remove the .consent file from the project root to enable DISCISSION/ALIGNMENT mode."
+DAIC_DISABLE_INSTRUCTION = "\nPlease create a .consent file in the project root to enable IMPLEMENTATION/CHECK mode."
 
 
 async def check_daic_status() -> bool:
@@ -407,20 +475,19 @@ async def daic_status(state: bool | None = None) -> bool | None:
     # Check for .consent file in current working directory (PWD-based)
     consent_file = Path.cwd() / ".consent"
 
-    if state is not None:
-        # Setting state - create or remove consent file
-        if state:
-            # Enable DAIC - remove consent file if it exists
-            if consent_file.exists():
-                consent_file.unlink()
-        else:
-            # Disable DAIC - create consent file
-            consent_file.touch()
-        return state
-    else:
+    if state is None:
         # Getting state - check if consent file exists
         # DAIC is enabled when consent file does NOT exist
         return not consent_file.exists()
+    # Setting state - create or remove consent file
+    if state:
+        # Enable DAIC - remove consent file if it exists
+        if consent_file.exists():
+            consent_file.unlink()
+    else:
+        # Disable DAIC - create consent file
+        consent_file.touch()
+    return state
 
 
 @mcp.prompt("daic")
@@ -429,7 +496,7 @@ async def daic_prompt(arg: Optional[str] = None) -> str:
 
     if arg is not None:
         arg = arg.strip()
-    if not arg:
+    if not arg or arg.lower() in {"status", "check"}:
         # Return current state - check actual consent file status
         is_enabled = await daic_status()
         if is_enabled:
@@ -437,7 +504,7 @@ async def daic_prompt(arg: Optional[str] = None) -> str:
         else:
             return f"{DAIC_DISABLED} (Implementation allowed)"
 
-    if arg.lower() in {"on", "enable", "true", "1", "yes"}:
+    if arg.lower() in {"on", "enable", "true", "1"}:
         # Enable DAIC - instruct agent to remove .consent file
         return f"{DAIC_ENABLED} ({DAIC_DESC}){DAIC_ENABLE_INSTRUCTION}"
 
@@ -454,89 +521,8 @@ def _get_auto_load_categories(config: Dict[str, Any]) -> List[tuple[str, Dict[st
     ]
 
 
-# MCP Resource Handlers
-async def list_resources() -> List[Resource]:
-    """List resources for auto_load categories."""
-    from mcp.types import Resource
-
-    session = SessionManager()
-    current_project = session.get_project_name()
-
-    # Get project config to find categories with auto_load: true
-    config = await session.get_or_create_project_config(current_project)
-    auto_load_categories = _get_auto_load_categories(config)
-
-    # Generate resources for each auto_load category
-    resources = []
-
-    # Add aggregate resource for all auto-load categories
-    if auto_load_categories:
-        aggregate_resource = Resource(
-            uri=AnyUrl("guide://category/"),
-            name="all-guides",
-            description="All auto-load guide categories combined",
-            mimeType="text/markdown",
-        )
-        resources.append(aggregate_resource)
-
-    # Add individual category resources
-    for category_name, category_config in auto_load_categories:
-        resource = Resource(
-            uri=AnyUrl(f"guide://category/{category_name}"),
-            name=category_name,
-            description=category_config.get("description", category_name),
-            mimeType="text/markdown",
-        )
-        resources.append(resource)
-
-    return resources
-
-
-async def _get_available_categories() -> List[Dict[str, Any]]:
-    """Get available categories for testing purposes."""
-    session = SessionManager()
-    current_project = session.get_project_name()
-
-    # Get project config to find categories with auto_load: true
-    config = await session.get_or_create_project_config(current_project)
-    auto_load_categories = _get_auto_load_categories(config)
-
-    return [
-        {"name": name, "description": category_config.get("description", name)}
-        for name, category_config in auto_load_categories
-    ]
-
-
-async def read_resource(uri: str) -> str:
-    """Read resource content by URI."""
-    # Parse guide://category/{name} URIs
-    if not uri.startswith("guide://category/"):
-        raise ValueError(f"Invalid URI scheme: {uri}")
-
-    category_name = uri.removeprefix("guide://category/")
-
-    # Handle aggregate resource (empty category name)
-    if category_name == "":
-        # Use existing get_all_guides function for combined content
-        result = await tools.get_all_guides(None)
-        if result.get("success"):
-            return str(result.get("content", ""))
-        else:
-            raise Exception(f"Failed to load all guides: {result.get('error', 'Unknown error')}")
-
-    # Use existing get_category_content function for individual categories
-    result = await tools.get_category_content(category_name, None)
-
-    if result.get("success"):
-        return str(result.get("content", ""))
-    else:
-        raise Exception(f"Failed to load category '{category_name}': {result.get('error', 'Unknown error')}")
-
-
-# Register resource handlers with MCP server (type: ignore for method assignment)
-mcp.list_resources = list_resources  # type: ignore[method-assign,assignment]
-mcp.read_resource = read_resource  # type: ignore[method-assign,assignment]
-mcp._get_available_categories = _get_available_categories  # type: ignore[attr-defined]
+# MCP Resource Handlers - Now registered dynamically in server_lifespan
+# See _register_category_resources() function above
 
 
 def create_server(

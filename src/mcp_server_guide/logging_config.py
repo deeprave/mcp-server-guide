@@ -98,7 +98,7 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_
     text_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     json_formatter = JSONFormatter()
 
-    # Add file handler if specified
+    # Add a file handler if specified
     if log_file:
         try:
             file_handler = FlushingFileHandler(log_file)
@@ -110,18 +110,32 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_
         except (OSError, IOError) as e:
             # If file logging fails, fall back to console
             if log_console:
-                stderr_handler = logging.StreamHandler(sys.stderr)
-                stderr_handler.setLevel(numeric_level)
-                stderr_handler.setFormatter(text_formatter)
-                logger.addHandler(stderr_handler)
+                fallback_handler = logging.StreamHandler(sys.stderr)
+                fallback_handler.setLevel(numeric_level)
+                fallback_handler.setFormatter(text_formatter)
+                logger.addHandler(fallback_handler)
                 logger.error(f"Failed to setup file logging: {e}")
             return logger
 
     # Add console handler if enabled (always uses text format)
     if log_console:
-        stderr_handler = logging.StreamHandler(sys.stderr)
+        stderr_handler: logging.Handler
+        # Try to use RichHandler if available (matching FastMCP's behavior)
+        try:
+            from rich.console import Console
+            from rich.logging import RichHandler
+
+            stderr_handler = RichHandler(
+                console=Console(stderr=True),
+                rich_tracebacks=True,
+                log_time_format="%Y-%m-%d %H:%M:%S",  # Use ISO format instead of default
+            )
+        except ImportError:
+            # Fall back to standard StreamHandler if Rich not available
+            stderr_handler = logging.StreamHandler(sys.stderr)
+            stderr_handler.setFormatter(text_formatter)
+
         stderr_handler.setLevel(numeric_level)
-        stderr_handler.setFormatter(text_formatter)
         logger.addHandler(stderr_handler)
 
     return logger

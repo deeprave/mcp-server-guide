@@ -116,20 +116,6 @@ async def test_server_display_functions():
 
 async def test_server_file_functions():
     """Test server file-related functions."""
-    # Test list_files
-    result = await server.list_files("guide")
-    assert isinstance(result, list)
-
-    result = await server.list_files("guide", "test_project")
-    assert isinstance(result, list)
-
-    # Test file_exists
-    result = server.file_exists("test.txt")
-    assert isinstance(result, bool)
-
-    result = server.file_exists("test.txt", "test_project")
-    assert isinstance(result, bool)
-
     # Test get_file_content
     result = await server.get_file_content("test.txt")
     assert isinstance(result, str)

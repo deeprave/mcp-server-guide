@@ -287,24 +287,14 @@ async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
     if project is None:
         project = session.get_project_name()
 
-    # Get current config - use get_or_create_project_config for consistency
     config = await session.get_or_create_project_config(project)
     categories = config.get("categories", {})
 
-    # Separate built-in and custom categories
-    builtin = {name: categories.get(name, {}) for name in BUILTIN_CATEGORIES if categories.get(name) is not None}
-    custom = {
-        name: cat
-        for name, cat in categories.items()
-        if not any(name == builtin_name for builtin_name in BUILTIN_CATEGORIES)
-    }
-
     return {
         "success": True,
-        "builtin_categories": builtin,
-        "custom_categories": custom,
-        "total_categories": len(categories),
         "project": project,
+        "categories": categories,
+        "total_categories": len(categories),
     }
 
 

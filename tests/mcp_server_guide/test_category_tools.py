@@ -84,7 +84,7 @@ async def test_list_categories_basic(mock_session):
     result = await list_categories()
 
     assert result["project"] == "test-project"
-    assert len(result["builtin_categories"]) == 3
+    assert len(result["categories"]) == 3
     assert result["total_categories"] == 3
 
 

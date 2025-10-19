@@ -28,5 +28,5 @@ async def test_daic_status_check():
     result = await server.daic_prompt()
 
     # Should return status without trying to access files
-    assert "DAIC" in result
+    assert "DISCUSSION/ALIGNMENT mode" in result or "IMPLEMENTATION/CHECK mode" in result
     assert "mode" in result

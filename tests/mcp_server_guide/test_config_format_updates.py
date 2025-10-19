@@ -24,9 +24,7 @@ class TestConfigFormatUpdates:
         """Test that config serialization has correct structure."""
         from mcp_server_guide.project_config import Category
 
-        config = ProjectConfig(
-            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")}
-        )
+        config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")})
 
         config_dict = config.to_dict()
 

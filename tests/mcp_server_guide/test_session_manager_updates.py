@@ -82,11 +82,7 @@ class TestSessionManagerUpdates:
 
         # Create existing config WITHOUT current_project field
         existing_config = {
-            "projects": {
-                "existing-project": {
-                    "categories": {"guide": {"dir": "guide/", "patterns": ["*.md"]}}
-                }
-            }
+            "projects": {"existing-project": {"categories": {"guide": {"dir": "guide/", "patterns": ["*.md"]}}}}
         }
         config_file.write_text(yaml.dump(existing_config, indent=2))
 
@@ -182,9 +178,7 @@ class TestSessionManagerUpdates:
             # Either backup and recreate, or merge with defaults
             from mcp_server_guide.project_config import Category
 
-            session.session_state.set_project_config(
-                "categories", {"guide": Category(dir="guide/", patterns=["*.md"])}
-            )
+            session.session_state.set_project_config("categories", {"guide": Category(dir="guide/", patterns=["*.md"])})
             # Save session (will auto-detect project name from PWD)
             await session.save_session()
 

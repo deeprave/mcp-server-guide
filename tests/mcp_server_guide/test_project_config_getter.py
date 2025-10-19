@@ -71,9 +71,7 @@ async def test_project_config_manager_load_uses_getter():
         manager.set_config_filename(custom_config_file)
         config_data = {
             "projects": {
-                "test-project": {
-                    "categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test"}}
-                }
+                "test-project": {"categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test"}}}
             }
         }
         custom_config_file.write_text(yaml.dump(config_data))

@@ -59,10 +59,7 @@ async def test_project_config_manager_load_config_with_projects(monkeypatch):
         config_file = Path(temp_dir) / "config.yaml"
 
         # Create config with projects structure (docroot is global, not per-project)
-        config_data = {
-            "docroot": "/test/path",
-            "projects": {"test-project": {"categories": {}}}
-        }
+        config_data = {"docroot": "/test/path", "projects": {"test-project": {"categories": {}}}}
         config_file.write_text(yaml.dump(config_data))
 
         manager = ProjectConfigManager()
@@ -82,10 +79,7 @@ async def test_project_config_manager_load_config_nonexistent():
         config_file = Path(temp_dir) / "config.yaml"
 
         # Create config with projects structure but different project
-        config_data = {
-            "docroot": "/other/path",
-            "projects": {"other-project": {"categories": {}}}
-        }
+        config_data = {"docroot": "/other/path", "projects": {"other-project": {"categories": {}}}}
         config_file.write_text(yaml.dump(config_data))
 
         manager = ProjectConfigManager()

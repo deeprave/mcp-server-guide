@@ -15,9 +15,7 @@ async def test_set_project_config_values_tool(isolated_config_file):
     session_manager.set_project_name("test-project")
 
     # Test batch setting multiple values with valid categories
-    config_dict = {
-        "categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}
-    }
+    config_dict = {"categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}}
 
     result = await set_project_config_values(config_dict)
 
@@ -38,9 +36,7 @@ async def test_set_project_config_values_partial_failure(isolated_config_file):
     session_manager._set_config_filename(isolated_config_file)
 
     # Set valid categories configuration
-    config_dict = {
-        "categories": {"guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide files"}}
-    }
+    config_dict = {"categories": {"guide": {"dir": "guide/", "patterns": ["*.md"], "description": "Guide files"}}}
 
     result = await set_project_config_values(config_dict)
 

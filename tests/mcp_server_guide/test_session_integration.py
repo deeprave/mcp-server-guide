@@ -28,7 +28,8 @@ class TestSessionIntegration:
         """Test session configuration with file patterns."""
         # Test with various file patterns
         result = await set_project_config(
-            "categories", {"context": {"dir": "context/", "patterns": ["*.md", "*.txt"], "description": "Context files"}}
+            "categories",
+            {"context": {"dir": "context/", "patterns": ["*.md", "*.txt"], "description": "Context files"}},
         )
 
         assert result["success"] is True

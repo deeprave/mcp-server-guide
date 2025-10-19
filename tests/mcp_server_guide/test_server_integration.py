@@ -26,9 +26,7 @@ async def test_server_resolves_http_resources():
         # Mock session with HTTP guide in categories
         session = SessionManager()
         session.set_project_name("test-project")
-        categories = {
-            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
-        }
+        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
         session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
@@ -60,9 +58,7 @@ async def test_server_caches_http_resources():
 
         session = SessionManager()
         session.set_project_name("test-project")
-        categories = {
-            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
-        }
+        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
         session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
@@ -112,7 +108,7 @@ async def test_server_handles_mixed_sources():
         session.set_project_name("mixed-project")
         categories = {
             "guide": {"dir": str(readme_path.parent), "patterns": ["README.md"], "description": "Guide files"},
-            "lang": {"url": "https://example.com/lang.md", "description": "Language files"}
+            "lang": {"url": "https://example.com/lang.md", "description": "Language files"},
         }
         session.session_state.set_project_config("categories", categories)
 
@@ -145,9 +141,7 @@ async def test_server_fallback_on_http_error():
 
         session = SessionManager()
         session.set_project_name("fallback-project")
-        categories = {
-            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
-        }
+        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
         session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):
@@ -191,7 +185,7 @@ async def test_server_integration_with_session_paths():
         categories = {
             "guide": {"dir": "./guides/", "patterns": ["local-guide.md"], "description": "Guide files"},
             "lang": {"dir": "./lang/", "patterns": ["server-lang.md"], "description": "Language files"},
-            "context": {"url": "https://example.com/context.md", "description": "Context files"}
+            "context": {"url": "https://example.com/context.md", "description": "Context files"},
         }
         session.session_state.set_project_config("categories", categories)
 
@@ -217,9 +211,7 @@ async def test_server_respects_cache_settings():
 
         session = SessionManager()
         session.set_project_name("cache-test")
-        categories = {
-            "guide": {"url": "https://example.com/guide.md", "description": "Guide files"}
-        }
+        categories = {"guide": {"url": "https://example.com/guide.md", "description": "Guide files"}}
         session.session_state.set_project_config("categories", categories)
 
         with patch.object(server, "_session_manager", session):

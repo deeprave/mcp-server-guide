@@ -106,6 +106,30 @@ mcp-server-guide
 mcp-server-guide --docroot /different/path
 ```
 
+#### Tool Name Prefixing
+
+The `GUIDE_TOOL_PREFIX` environment variable controls how MCP tools are named:
+
+```bash
+# Default behavior - tools prefixed with "guide_"
+# Tools: guide_get_current_project, guide_get_guide, etc.
+# (No environment variable set or explicitly set to "guide_")
+export GUIDE_TOOL_PREFIX="guide_"
+
+# Remove prefix for clients that auto-namespace tools (e.g., Claude Code)
+# Tools: get_current_project, get_guide, etc.
+export GUIDE_TOOL_PREFIX=""
+
+# Use custom prefix for specific clients
+export GUIDE_TOOL_PREFIX="myprefix_"
+```
+
+**Why this matters:**
+
+- **Amazon Q** does not automatically namespace MCP tools, so the `guide_` prefix prevents name collisions with other MCP servers
+- **Claude Code** automatically namespaces tools by server name, so the prefix is redundant and can be removed by setting `GUIDE_TOOL_PREFIX=""`
+- Other clients may have different behaviors - adjust the prefix accordingly
+
 ### Configuration Files
 
 The server supports flexible configuration file management in yaml format
