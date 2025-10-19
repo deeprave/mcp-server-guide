@@ -17,29 +17,25 @@ def mock_session():
     """Mock session manager."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
         from mcp_server_guide.path_resolver import LazyPath
+        from mcp_server_guide.project_config import ProjectConfig, Category
 
         session_instance = Mock()
         mock.return_value = session_instance
         session_instance.get_project_name = Mock(return_value="test-project")
-        session_instance.session_state.get_project_config = Mock(
-            return_value={
-                "categories": {
-                    "guide": {"dir": "guide/", "patterns": ["guidelines.md"]},
-                    "lang": {"dir": "lang/", "patterns": ["python.md"]},
-                    "context": {"dir": "context/", "patterns": ["context.md"]},
-                }
+
+        # Create ProjectConfig with Category objects
+        test_config = ProjectConfig(
+            categories={
+                "guide": Category(dir="guide/", patterns=["guidelines.md"], description="", auto_load=False),
+                "lang": Category(dir="lang/", patterns=["python.md"], description="", auto_load=False),
+                "context": Category(dir="context/", patterns=["context.md"], description="", auto_load=False),
             }
         )
+
+        session_instance.session_state.get_project_config = Mock(return_value=test_config)
         session_instance.session_state.set_project_config = Mock()
-        session_instance.get_or_create_project_config = AsyncMock(
-            return_value={
-                "categories": {
-                    "guide": {"dir": "guide/", "patterns": ["guidelines.md"]},
-                    "lang": {"dir": "lang/", "patterns": ["python.md"]},
-                    "context": {"dir": "context/", "patterns": ["context.md"]},
-                }
-            }
-        )
+        session_instance.get_or_create_project_config = AsyncMock(return_value=test_config)
+
         # Mock config_manager().docroot to return a LazyPath that resolves to current directory
         mock_config_manager = Mock()
         mock_config_manager.docroot = LazyPath(".")
@@ -105,9 +101,12 @@ async def test_get_category_content_no_files(mock_session):
     test_dir.mkdir(exist_ok=True)
 
     # Add categories to config
-    mock_session.get_or_create_project_config = AsyncMock(
-        return_value={"categories": {"testing": {"dir": "test/", "patterns": ["*.md"]}}}
+    from mcp_server_guide.project_config import ProjectConfig, Category
+
+    test_config = ProjectConfig(
+        categories={"testing": Category(dir="test/", patterns=["*.md"], description="", auto_load=False)}
     )
+    mock_session.get_or_create_project_config = AsyncMock(return_value=test_config)
 
     result = await get_category_content("testing")
 

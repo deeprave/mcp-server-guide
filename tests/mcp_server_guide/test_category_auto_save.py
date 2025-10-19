@@ -11,24 +11,22 @@ from mcp_server_guide.session_manager import SessionManager
 def mock_session_with_save():
     """Mock session manager with save functionality."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+        from mcp_server_guide.project_config import ProjectConfig, Category
+
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe = AsyncMock(return_value="test-proj")
+        session_instance.get_project_name = Mock(return_value="test-proj")
 
-        config_data = {
-            "categories": {
-                "guide": {"dir": "guide/", "patterns": ["guidelines.md"], "description": ""},
-                "lang": {"dir": "lang/", "patterns": ["python.md"], "description": ""},
-                "context": {"dir": "context/", "patterns": ["context.md"], "description": ""},
+        config_data = ProjectConfig(
+            categories={
+                "guide": Category(dir="guide/", patterns=["guidelines.md"], description="", auto_load=False),
+                "lang": Category(dir="lang/", patterns=["python.md"], description="", auto_load=False),
+                "context": Category(dir="context/", patterns=["context.md"], description="", auto_load=False),
             }
-        }
+        )
 
-        session_instance.session_state.get_project_config = Mock(return_value=config_data)
         session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
-        session_instance.session_state.set_project_config = Mock()
         session_instance.save_session = AsyncMock()
-        # Mock the session state project name to be short
-        session_instance.session_state.project_name = "test-proj"
 
         # Mock config manager to use temp directory
         import tempfile
@@ -115,21 +113,21 @@ async def test_auto_save_default(mock_session_with_save):
 async def test_auto_save_errors():
     """Test that category operations succeed even if auto-save fails."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+        from mcp_server_guide.project_config import ProjectConfig, Category
+
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe = AsyncMock(return_value="test-proj")
+        session_instance.get_project_name = Mock(return_value="test-proj")
 
-        config_data = {
-            "categories": {
-                "guide": {"dir": "guide/", "patterns": ["guidelines.md"], "description": ""},
-                "lang": {"dir": "lang/", "patterns": ["python.md"], "description": ""},
-                "context": {"dir": "context/", "patterns": ["context.md"], "description": ""},
+        config_data = ProjectConfig(
+            categories={
+                "guide": Category(dir="guide/", patterns=["guidelines.md"], description="", auto_load=False),
+                "lang": Category(dir="lang/", patterns=["python.md"], description="", auto_load=False),
+                "context": Category(dir="context/", patterns=["context.md"], description="", auto_load=False),
             }
-        }
+        )
 
-        session_instance.session_state.get_project_config = Mock(return_value=config_data)
         session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
-        session_instance.session_state.set_project_config = Mock()
         # Make save_session fail
         session_instance.save_session = AsyncMock(side_effect=Exception("Save failed"))
 

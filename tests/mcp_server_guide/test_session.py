@@ -1,13 +1,14 @@
 """Tests for session-scoped project configuration."""
 
 from mcp_server_guide.session import SessionState, ProjectContext
+from mcp_server_guide.project_config import ProjectConfig
 
 
 async def test_session_state_creation():
     """Test creating session state."""
     session = SessionState()
     assert session is not None
-    assert isinstance(session.project_config, dict)
+    assert isinstance(session.project_config, ProjectConfig)
     assert session.project_name is None  # Defaults to None, not empty string
 
 
@@ -22,7 +23,7 @@ async def test_session_config_get_default():
     """Test getting default configuration for project."""
     session = SessionState("test-project")
     config = session.get_project_config()
-    assert isinstance(config, dict)
+    assert isinstance(config, ProjectConfig)
 
 
 async def test_session_config_set_and_get():
@@ -38,7 +39,7 @@ async def test_session_config_set_and_get():
 
     # Get configuration
     config = session.get_project_config()
-    assert config["categories"] == test_categories
+    assert config.to_dict()["categories"] == test_categories
 
 
 async def test_session_config_project_isolation():
@@ -51,7 +52,11 @@ async def test_session_config_project_isolation():
 
     # Verify config
     config = session.get_project_config()
-    assert config["categories"] == test_categories
+    config_dict = config.to_dict()
+    # Check that guide category exists with correct values
+    assert "guide" in config_dict["categories"]
+    assert config_dict["categories"]["guide"]["dir"] == "guide/"
+    assert config_dict["categories"]["guide"]["patterns"] == ["*.md"]
 
 
 async def test_session_config_precedence():
@@ -64,7 +69,9 @@ async def test_session_config_precedence():
 
     # Should have the set value
     config = session.get_project_config()
-    assert config["categories"] == test_categories_v1
+    config_dict = config.to_dict()
+    assert "guide" in config_dict["categories"]
+    assert config_dict["categories"]["guide"]["dir"] == "guide/"
 
     # Update with new value
     test_categories_v2 = {"context": {"dir": "context/", "patterns": ["*.md"]}}
@@ -72,7 +79,9 @@ async def test_session_config_precedence():
 
     # Should have the updated value
     config = session.get_project_config()
-    assert config["categories"] == test_categories_v2
+    config_dict = config.to_dict()
+    assert "context" in config_dict["categories"]
+    assert config_dict["categories"]["context"]["dir"] == "context/"
 
 
 async def test_resolve_session_path_default():
@@ -121,9 +130,15 @@ async def test_session_config_with_categories():
     session.set_project_config("categories", test_categories)
 
     config = session.get_project_config()
-    assert config["categories"] == test_categories
-    assert "local_guide" in config["categories"]
-    assert "remote_lang" in config["categories"]
+    config_dict = config.to_dict()
+    # Check categories exist
+    assert "local_guide" in config_dict["categories"]
+    assert "remote_lang" in config_dict["categories"]
+    # Check specific values
+    assert config_dict["categories"]["local_guide"]["dir"] == "local/guide/"
+    assert config_dict["categories"]["local_guide"]["patterns"] == ["*.md"]
+    assert config_dict["categories"]["remote_lang"]["dir"] == "remote/lang/"
+    assert config_dict["categories"]["remote_lang"]["patterns"] == ["*.py"]
 
 
 async def test_validate_session_path():

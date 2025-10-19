@@ -47,15 +47,15 @@ class TestSessionManagerUpdates:
             config = await session.load_config("project-a")
             if config:
                 session.session_state.set_project_name("project-a")
-                session.session_state.project_config = config.to_dict()
+                session.session_state.project_config = config
 
             # Add a new category to the current project
             from mcp_server_guide.project_config import Category
 
             # Get existing categories and add new one
-            existing_categories = session.session_state.project_config.get("categories", {})
+            existing_categories = dict(session.session_state.project_config.categories)
             existing_categories["language"] = Category(dir="lang/", patterns=["*.ts"])
-            session.session_state.project_config["categories"] = existing_categories
+            session.session_state.project_config.categories = existing_categories
 
             # Save session (will auto-detect project name from PWD)
             await session.save_session()
@@ -228,16 +228,16 @@ class TestSessionManagerUpdates:
             config = await session.load_config("project-1")
             if config:
                 session.session_state.set_project_name("project-1")
-                session.session_state.project_config = config.to_dict()
+                session.session_state.project_config = config
 
             # Operation 1: Add language category
             from mcp_server_guide.project_config import Category
 
             # Get existing categories and add new ones
-            existing_categories = session.session_state.project_config.get("categories", {})
+            existing_categories = dict(session.session_state.project_config.categories)
             existing_categories["lang"] = Category(dir="lang/", patterns=["*.py"])
             existing_categories["context"] = Category(dir="context/", patterns=["*.txt"])
-            session.session_state.project_config["categories"] = existing_categories
+            session.session_state.project_config.categories = existing_categories
 
             # Save all changes
             await session.save_session()

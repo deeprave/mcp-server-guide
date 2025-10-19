@@ -79,12 +79,12 @@ class SessionState:
 
     def __init__(self, project_name: Optional[str] = None) -> None:
         self.project_name: str | None = project_name
-        self.project_config: Dict[str, Any] = {}
+        self.project_config: ProjectConfig = ProjectConfig(categories={})
 
     def reset_project_config(self, project_name: Optional[str] = None) -> None:
         """Reset the current project configuration."""
         self.project_name = project_name or ""
-        self.project_config = {}
+        self.project_config = ProjectConfig(categories={})
 
     def get_project_name(self) -> Optional[str]:
         """Get the current project name."""
@@ -94,7 +94,7 @@ class SessionState:
         """Set the current project name."""
         self.project_name = project_name
 
-    def get_project_config(self) -> Dict[str, Any]:
+    def get_project_config(self) -> ProjectConfig:
         """Get configuration for the current project."""
         return self.project_config
 
@@ -116,16 +116,30 @@ class SessionState:
         according to the ProjectConfig schema.
 
         Args:
-            value: Configuration value
+            value: Configuration dict to merge
 
         Raises:
             ValueError: If the config is invalid (wraps Pydantic ValidationError)
         """
         if value:
-            updated_config = self.project_config | value
-            self._validate_config(updated_config)
+            # Convert current config to dict, deep merge, then validate and convert back
+            def deep_merge(d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:
+                for k, v in d2.items():
+                    if (
+                        k in d1
+                        and isinstance(d1[k], dict)
+                        and isinstance(v, dict)
+                    ):
+                        d1[k] = deep_merge(d1[k], v)
+                    else:
+                        d1[k] = v
+                return d1
+
+            current_dict = self.project_config.to_dict()
+            updated_dict = deep_merge(current_dict, value)
+            self._validate_config(updated_dict)
             # If validation passed, set it
-            self.project_config = updated_config
+            self.project_config = ProjectConfig.from_dict(updated_dict)
 
     def set_project_config(self, config_key: str, value: str | Dict[str, Any] | None) -> None:
         """Set a configuration value for the current project.
@@ -140,8 +154,9 @@ class SessionState:
         Raises:
             ValueError: If the config is invalid (wraps Pydantic ValidationError)
         """
-        # Build updated config with the new value
-        updated_config = {**self.project_config, config_key: value}
-        self._validate_config(updated_config)
-        # If validation passed, set it
-        self.project_config[config_key] = value
+        # Build updated config dict with the new value
+        current_dict = self.project_config.to_dict()
+        updated_dict = {**current_dict, config_key: value}
+        self._validate_config(updated_dict)
+        # If validation passed, update the ProjectConfig
+        self.project_config = ProjectConfig.from_dict(updated_dict)

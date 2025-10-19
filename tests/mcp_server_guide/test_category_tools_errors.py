@@ -58,17 +58,24 @@ class TestAddCategoryErrors:
     @pytest.mark.asyncio
     async def test_duplicate_category_error(self):
         """Test duplicate category name error."""
+        from mcp_server_guide.project_config import ProjectConfig, Category
+
         category_config = {"dir": "test", "patterns": ["*.md"], "description": "Test category"}
 
         # Mock SessionManager and session_state properly
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+            mock_session.get_project_name = Mock(return_value="test_project")
 
-            config_data = {"categories": {"test_cat": {"dir": "existing", "patterns": ["*.txt"]}}}
+            # Create ProjectConfig with existing category
+            config_data = ProjectConfig(
+                categories={"test_cat": Category(dir="existing", patterns=["*.txt"], description="", auto_load=False)}
+            )
             mock_session.session_state.get_project_config = Mock(return_value=config_data)
             mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
             mock_session.session_state.set_project_config = Mock()
+            mock_session.save_session = AsyncMock()
             mock_session_class.return_value = mock_session
 
             result = await add_category("test_cat", **category_config)
@@ -83,20 +90,19 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_no_patterns_defined(self):
         """Test error when category has no patterns."""
+        from mcp_server_guide.project_config import ProjectConfig, Category
+
         # Mock SessionManager properly
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
+            mock_session.get_project_name = Mock(return_value="test_project")
 
-            # Mock get_or_create_project_config
-            mock_session.get_or_create_project_config = AsyncMock(
-                return_value={
-                    "categories": {
-                        "test_cat": {"dir": "test"}  # No patterns
-                    },
-                    "docroot": ".",
-                }
+            # Create ProjectConfig with category that has no patterns
+            config_data = ProjectConfig(
+                categories={"test_cat": Category(dir="test", patterns=None, description="", auto_load=False)}
             )
+            mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
             mock_session_class.return_value = mock_session
 
             result = await get_category_content("test_cat")
@@ -108,6 +114,7 @@ class TestGetCategoryContentErrors:
     async def test_category_directory_not_exists(self):
         """Test error when category directory doesn't exist."""
         from mcp_server_guide.path_resolver import LazyPath
+        from mcp_server_guide.project_config import ProjectConfig, Category
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Mock SessionManager properly
@@ -116,12 +123,13 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
 
-                # Mock get_or_create_project_config
-                mock_session.get_or_create_project_config = AsyncMock(
-                    return_value={
-                        "categories": {"test_cat": {"dir": "nonexistent", "patterns": ["*.md"]}},
+                # Create ProjectConfig with nonexistent directory
+                config_data = ProjectConfig(
+                    categories={
+                        "test_cat": Category(dir="nonexistent", patterns=["*.md"], description="", auto_load=False)
                     }
                 )
+                mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
                 mock_config_manager = Mock()
                 mock_config_manager.docroot = LazyPath(temp_dir)
@@ -153,12 +161,13 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
 
-                # Mock get_or_create_project_config
-                mock_session.get_or_create_project_config = AsyncMock(
-                    return_value={
-                        "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
-                    }
+                # Create ProjectConfig
+                from mcp_server_guide.project_config import ProjectConfig, Category
+
+                config_data = ProjectConfig(
+                    categories={"test_cat": Category(dir="test", patterns=["*.md"], description="", auto_load=False)}
                 )
+                mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
                 mock_config_manager = Mock()
                 mock_config_manager.docroot = LazyPath(temp_dir)
@@ -194,11 +203,13 @@ class TestGetCategoryContentErrors:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
-                mock_session.get_or_create_project_config = AsyncMock(
-                    return_value={
-                        "categories": {"test_cat": {"dir": "test", "patterns": ["*.md"]}},
-                    }
+                # Create ProjectConfig
+                from mcp_server_guide.project_config import ProjectConfig, Category
+
+                config_data = ProjectConfig(
+                    categories={"test_cat": Category(dir="test", patterns=["*.md"], description="", auto_load=False)}
                 )
+                mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
                 mock_config_manager = Mock()
                 mock_config_manager.docroot = LazyPath(temp_dir)
@@ -233,12 +244,15 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = AsyncMock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
 
-                # Mock get_or_create_project_config
-                mock_session.get_or_create_project_config = AsyncMock(
-                    return_value={
-                        "categories": {"test_cat": {"dir": "test", "patterns": ["*.nonexistent"]}},
+                # Create ProjectConfig
+                from mcp_server_guide.project_config import ProjectConfig, Category
+
+                config_data = ProjectConfig(
+                    categories={
+                        "test_cat": Category(dir="test", patterns=["*.nonexistent"], description="", auto_load=False)
                     }
                 )
+                mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
                 mock_config_manager = Mock()
                 mock_config_manager.docroot = LazyPath(temp_dir)

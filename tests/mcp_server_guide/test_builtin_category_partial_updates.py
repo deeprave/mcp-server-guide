@@ -9,36 +9,36 @@ from mcp_server_guide.tools.category_tools import update_category
 def mock_session():
     """Mock session manager with builtin categories."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+        from mcp_server_guide.project_config import ProjectConfig, Category
+
         session_instance = Mock()
         mock.return_value = session_instance
-        session_instance.get_current_project_safe = AsyncMock(return_value="test-project")
+        session_instance.get_project_name = Mock(return_value="test-project")
 
-        config_data = {
-            "categories": {
-                "guide": {
-                    "dir": "guide/",
-                    "patterns": ["guidelines.md"],
-                    "description": "Project guidelines",
-                    "auto_load": False,
-                },
-                "lang": {
-                    "dir": "lang/",
-                    "patterns": ["python.md"],
-                    "description": "Language guides",
-                    "auto_load": True,
-                },
-                "context": {
-                    "dir": "context/",
-                    "patterns": ["context.md"],
-                    "description": "Context files",
-                    "auto_load": False,
-                },
+        config_data = ProjectConfig(
+            categories={
+                "guide": Category(
+                    dir="guide/",
+                    patterns=["guidelines.md"],
+                    description="Project guidelines",
+                    auto_load=False,
+                ),
+                "lang": Category(
+                    dir="lang/",
+                    patterns=["python.md"],
+                    description="Language guides",
+                    auto_load=True,
+                ),
+                "context": Category(
+                    dir="context/",
+                    patterns=["context.md"],
+                    description="Context files",
+                    auto_load=False,
+                ),
             }
-        }
+        )
 
-        session_instance.session_state.get_project_config = Mock(return_value=config_data)
         session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
-        session_instance.session_state.set_project_config = Mock()
         session_instance.save_session = AsyncMock()
         yield session_instance
 

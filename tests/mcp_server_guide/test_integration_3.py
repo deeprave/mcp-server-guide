@@ -68,18 +68,18 @@ async def test_search_content_failed_category():
 async def test_category_content_directory_not_exists():
     """Test get_category_content when directory doesn't exist."""
     from mcp_server_guide.path_resolver import LazyPath
+    from mcp_server_guide.project_config import ProjectConfig, Category
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Set up session with non-existent directory
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
             mock_session.return_value.get_project_name = Mock(return_value="test-project")
-            mock_session.return_value.get_or_create_project_config = AsyncMock(
-                return_value={
-                    "categories": {
-                        "test": {"dir": "nonexistent/", "patterns": ["*.md"], "description": "Test category"}
-                    },
+            config_data = ProjectConfig(
+                categories={
+                    "test": Category(dir="nonexistent/", patterns=["*.md"], description="Test category", auto_load=False)
                 }
             )
+            mock_session.return_value.get_or_create_project_config = AsyncMock(return_value=config_data)
             # Mock config_manager().docroot
             mock_config_manager = Mock()
             mock_config_manager.docroot = LazyPath(temp_dir)

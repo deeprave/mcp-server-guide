@@ -210,8 +210,8 @@ class TestSwitchProjectMethod:
 
         assert session_manager.get_project_name() == "existing-project"
         config = session_manager.session_state.get_project_config()
-        assert "categories" in config
-        assert "test" in config["categories"]
+        assert hasattr(config, "categories")
+        assert "test" in config.categories
 
     async def test_switch_to_same_project_no_op(self, isolated_config_file):
         """Test switch_project to same project is a no-op."""

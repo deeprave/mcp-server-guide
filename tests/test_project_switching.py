@@ -21,7 +21,7 @@ async def test_switch_to_new_project_creates_builtin_categories(isolated_config_
 
     # Check that built-in categories were created in session state
     config = session.session_state.get_project_config()
-    categories = config.get("categories", {})
+    categories = config.categories
 
     # Should have the 3 built-in categories
     assert len(categories) == 3, f"Should have 3 builtin categories, got {len(categories)}"
@@ -32,8 +32,7 @@ async def test_switch_to_new_project_creates_builtin_categories(isolated_config_
     # Check that each category has auto_load=true
     for name in ["guide", "lang", "context"]:
         category = categories[name]
-        auto_load = category.auto_load if hasattr(category, "auto_load") else category.get("auto_load", False)
-        assert auto_load is True, f"Category {name} should have auto_load=true"
+        assert category.auto_load is True, f"Category {name} should have auto_load=true"
 
 
 async def test_builtin_categories_structure(isolated_config_file):

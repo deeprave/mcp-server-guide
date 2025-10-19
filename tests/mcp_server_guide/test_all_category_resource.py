@@ -2,6 +2,7 @@
 
 import pytest
 from unittest.mock import patch
+from mcp_server_guide.project_config import ProjectConfig, Category
 
 
 @pytest.mark.asyncio
@@ -14,29 +15,29 @@ async def test_read_all_categories_resource_formats_content_as_markdown():
     # Create a test server
     server = FastMCP(name="test")
 
-    # Mock config with auto_load categories
-    config = {
-        "categories": {
-            "guide": {
-                "dir": "guide/",
-                "patterns": ["*.md"],
-                "description": "Development guidelines",
-                "auto_load": True,
-            },
-            "context": {
-                "dir": "context/",
-                "patterns": ["*.md"],
-                "description": "Project context",
-                "auto_load": True,
-            },
-            "lang": {
-                "dir": "lang/",
-                "patterns": ["*.md"],
-                "description": "Language guidelines",
-                "auto_load": False,  # Should not be included
-            },
+    # Create ProjectConfig with auto_load categories
+    config = ProjectConfig(
+        categories={
+            "guide": Category(
+                dir="guide/",
+                patterns=["*.md"],
+                description="Development guidelines",
+                auto_load=True,
+            ),
+            "context": Category(
+                dir="context/",
+                patterns=["*.md"],
+                description="Project context",
+                auto_load=True,
+            ),
+            "lang": Category(
+                dir="lang/",
+                patterns=["*.md"],
+                description="Language guidelines",
+                auto_load=False,  # Should not be included
+            ),
         }
-    }
+    )
 
     # Mock get_all_guides to return expected dict format
     async def mock_get_all_guides_impl(project):
@@ -79,17 +80,17 @@ async def test_read_all_categories_resource_handles_empty_result():
 
     server = FastMCP(name="test")
 
-    # Config with auto_load categories
-    config = {
-        "categories": {
-            "guide": {
-                "dir": "guide/",
-                "patterns": ["*.md"],
-                "description": "Development guidelines",
-                "auto_load": True,
-            },
+    # Create ProjectConfig with auto_load categories
+    config = ProjectConfig(
+        categories={
+            "guide": Category(
+                dir="guide/",
+                patterns=["*.md"],
+                description="Development guidelines",
+                auto_load=True,
+            ),
         }
-    }
+    )
 
     # Mock get_all_guides to return empty dict
     async def mock_get_all_guides_impl(project):
@@ -122,17 +123,17 @@ async def test_read_all_categories_resource_handles_exception():
 
     server = FastMCP(name="test")
 
-    # Config with auto_load categories
-    config = {
-        "categories": {
-            "guide": {
-                "dir": "guide/",
-                "patterns": ["*.md"],
-                "description": "Development guidelines",
-                "auto_load": True,
-            },
+    # Create ProjectConfig with auto_load categories
+    config = ProjectConfig(
+        categories={
+            "guide": Category(
+                dir="guide/",
+                patterns=["*.md"],
+                description="Development guidelines",
+                auto_load=True,
+            ),
         }
-    }
+    )
 
     # Mock get_all_guides to raise an exception
     async def mock_get_all_guides_impl(project):
