@@ -1,8 +1,5 @@
 #!/bin/zsh
-echo "Loading all project guides and documentation..."
-echo "📋 DAIC Process Required:"
-echo "- Detailed Analysis"
-echo "- Implementation Planning"
-echo "- User Consent"
-echo "Use @guide to access project documentation."
+echo "📋 DISCUSSION is required:"
+echo "- Detailed Analysis, Context Gathering and Planning is required before any implementation."
+echo "- User Consent is **MANDATORY** before IMPLEMENTATION can commence."
 exit 0

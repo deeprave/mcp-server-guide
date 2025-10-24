@@ -29,7 +29,11 @@ async def test_server_resolves_http_resources() -> None:
         session = SessionManager()
         session.set_project_name("test-project")
         config = mcp_server_guide.project_config.ProjectConfig(
-            categories={"guide": mcp_server_guide.project_config.Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+            categories={
+                "guide": mcp_server_guide.project_config.Category(
+                    url="https://example.com/guide.md", description="Guide files", auto_load=False
+                )
+            }
         )
         session.session_state.project_config = config
 
@@ -65,7 +69,9 @@ async def test_server_caches_http_resources():
         session = SessionManager()
         session.set_project_name("test-project")
         config = ProjectConfig(
-            categories={"guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+            categories={
+                "guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)
+            }
         )
         session.session_state.project_config = config
 
@@ -156,7 +162,9 @@ async def test_server_fallback_on_http_error():
         session = SessionManager()
         session.set_project_name("fallback-project")
         config = ProjectConfig(
-            categories={"guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+            categories={
+                "guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)
+            }
         )
         session.session_state.project_config = config
 
@@ -202,8 +210,12 @@ async def test_server_integration_with_session_paths():
         # Test different category types: local files and HTTP URLs
         config = ProjectConfig(
             categories={
-                "guide": Category(dir="./guides/", patterns=["local-guide.md"], description="Guide files", auto_load=False),
-                "lang": Category(dir="./lang/", patterns=["server-lang.md"], description="Language files", auto_load=False),
+                "guide": Category(
+                    dir="./guides/", patterns=["local-guide.md"], description="Guide files", auto_load=False
+                ),
+                "lang": Category(
+                    dir="./lang/", patterns=["server-lang.md"], description="Language files", auto_load=False
+                ),
                 "context": Category(url="https://example.com/context.md", description="Context files", auto_load=False),
             }
         )
@@ -234,7 +246,9 @@ async def test_server_respects_cache_settings():
         session = SessionManager()
         session.set_project_name("cache-test")
         config = ProjectConfig(
-            categories={"guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)}
+            categories={
+                "guide": Category(url="https://example.com/guide.md", description="Guide files", auto_load=False)
+            }
         )
         session.session_state.project_config = config
 

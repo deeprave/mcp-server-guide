@@ -70,7 +70,9 @@ async def test_list_categories_includes_descriptions(mock_session):
     # Setup categories with descriptions
     config_data = ProjectConfig(
         categories={
-            "guide": Category(dir="guide/", patterns=["guidelines"], description="Development guidelines", auto_load=False),
+            "guide": Category(
+                dir="guide/", patterns=["guidelines"], description="Development guidelines", auto_load=False
+            ),
             "testing": Category(dir="test/", patterns=["*.md"], description="Test documentation", auto_load=False),
         }
     )
@@ -90,9 +92,7 @@ async def test_list_categories_handles_missing_descriptions(mock_session):
 
     # Setup category without description (empty string is the default)
     config_data = ProjectConfig(
-        categories={
-            "testing": Category(dir="test/", patterns=["*.md"], description="", auto_load=False)
-        }
+        categories={"testing": Category(dir="test/", patterns=["*.md"], description="", auto_load=False)}
     )
     mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 

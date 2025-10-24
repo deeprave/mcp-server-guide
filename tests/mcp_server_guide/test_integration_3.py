@@ -76,7 +76,9 @@ async def test_category_content_directory_not_exists():
             mock_session.return_value.get_project_name = Mock(return_value="test-project")
             config_data = ProjectConfig(
                 categories={
-                    "test": Category(dir="nonexistent/", patterns=["*.md"], description="Test category", auto_load=False)
+                    "test": Category(
+                        dir="nonexistent/", patterns=["*.md"], description="Test category", auto_load=False
+                    )
                 }
             )
             mock_session.return_value.get_or_create_project_config = AsyncMock(return_value=config_data)

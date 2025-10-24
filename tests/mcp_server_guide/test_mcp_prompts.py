@@ -15,12 +15,17 @@ class TestMCPPrompts:
         session_manager._set_config_filename(isolated_config_file)
 
         prompts = await mcp.list_prompts()
-        assert len(prompts) == 3
+        assert len(prompts) == 7
 
         prompt_names = [p.name for p in prompts]
         assert "guide" in prompt_names
         assert "category" in prompt_names
-        assert "daic" in prompt_names
+        assert "discuss" in prompt_names
+        assert "plan" in prompt_names
+        assert "status" in prompt_names
+        assert "implement" in prompt_names
+        assert "check" in prompt_names
+        assert "status" in prompt_names
 
     async def test_get_prompt_with_unknown_name_raises_error(self, isolated_config_file):
         """Test that get_prompt handler raises error for unknown prompt name."""

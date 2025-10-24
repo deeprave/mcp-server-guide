@@ -4,12 +4,12 @@ import functools
 from typing import Dict, Any, Optional, List, TYPE_CHECKING
 from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
-from pathlib import Path
 from .session_manager import SessionManager
 from .file_source import FileSource, FileAccessor
 from .logging_config import get_logger
 from .error_handler import ErrorHandler
 from . import tools
+from .prompts import register_prompts
 
 if TYPE_CHECKING:
     from .project_config import ProjectConfig
@@ -28,9 +28,7 @@ async def _register_category_resources(server: FastMCP, config: "ProjectConfig")
     from .tools.content_tools import get_all_guides
 
     auto_load_categories = [
-        (name, category_config)
-        for name, category_config in config.categories.items()
-        if category_config.auto_load
+        (name, category_config) for name, category_config in config.categories.items() if category_config.auto_load
     ]
 
     # Register aggregate resource for all auto-load categories
@@ -114,6 +112,9 @@ async def server_lifespan(server: FastMCP) -> Any:
 
 
 mcp = FastMCP(name="Developer Guide MCP", lifespan=server_lifespan)
+
+# Register prompts with the global MCP instance
+register_prompts(mcp)
 
 
 def log_tool_usage(func: Any) -> Any:
@@ -426,17 +427,22 @@ async def category_prompt(
 
         # Use provided values or fall back to current values
         new_dir = dir or current_category["dir"]
+
         def parse_patterns(patterns_str: str) -> list:
             import re
+
             # This regex splits on commas not inside quotes
-            pattern = r'''((?:[^,"']|"[^"]*"|'[^']*')+)'''
+            pattern = r"""((?:[^,"']|"[^"]*"|'[^']*')+)"""
             items = [item.strip() for item in re.findall(pattern, patterns_str) if item.strip()]
+
             # Remove surrounding quotes if present
             def unquote(s: str) -> str:
                 if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
                     return s[1:-1]
                 return s
+
             return [unquote(item) for item in items]
+
         new_patterns = parse_patterns(patterns) if patterns else current_category["patterns"]
         new_auto_load = auto_load == "true" if auto_load else current_category.get("auto_load", False)
 
@@ -464,67 +470,6 @@ async def category_prompt(
 
     else:
         return f"Error: Unknown action '{action}'. Use 'new', 'edit', or 'del'."
-
-
-DAIC_ENABLED = "DISCUSSION/ALIGNMENT mode"
-DAIC_DESC = "Discussion-Alignment-Implementation-Check"
-DAIC_DISABLED = "IMPLEMENTATION/CHECK mode"
-
-# Agent instruction constants for file operations
-DAIC_ENABLE_INSTRUCTION: str = "\nAfter completing implementation and running checks, please remove the .consent file from the project root to enable DISCUSSION/ALIGNMENT mode."
-DAIC_DISABLE_INSTRUCTION: str = "\nPlease create a .consent file in the project root to enable IMPLEMENTATION/CHECK mode."
-
-
-async def check_daic_status() -> bool:
-    """Check if DAIC mode is enabled."""
-    result = await daic_status()
-    return result is True
-
-
-async def daic_status(state: bool | None = None) -> bool | None:
-    """Set or check the current DAIC status."""
-
-    # Check for .consent file in current working directory (PWD-based)
-    consent_file = Path.cwd() / ".consent"
-
-    if state is None:
-        # Getting state - check if consent file exists
-        # DAIC is enabled when consent file does NOT exist
-        return not consent_file.exists()
-    # Setting state - create or remove consent file
-    if state:
-        # Enable DAIC - remove consent file if it exists
-        if consent_file.exists():
-            consent_file.unlink()
-    else:
-        # Disable DAIC - create consent file
-        consent_file.touch()
-    return state
-
-
-@mcp.prompt("daic")
-async def daic_prompt(arg: Optional[str] = None) -> str:
-    """Manage DAIC (Discussion-Alignment-Implementation-Check) state."""
-
-    if arg is not None:
-        arg = arg.strip()
-    if not arg or arg.lower() in {"status", "check"}:
-        # Return current state - check actual consent file status
-        is_enabled = await daic_status()
-        if is_enabled:
-            return f"{DAIC_ENABLED} ({DAIC_DESC})"
-        else:
-            return f"{DAIC_DISABLED} (Implementation allowed)"
-
-    if arg.lower() in {"on", "enable", "true", "1"}:
-        # Enable DAIC - instruct agent to remove .consent file
-        return f"{DAIC_ENABLED} ({DAIC_DESC}){DAIC_ENABLE_INSTRUCTION}"
-
-    # Disable DAIC - instruct agent to create .consent file
-    return f"{DAIC_DISABLED} - {arg.strip()}{DAIC_DISABLE_INSTRUCTION}"
-
-# MCP Resource Handlers - Now registered dynamically in server_lifespan
-# See _register_category_resources() function above
 
 
 def create_server(
@@ -633,6 +578,9 @@ def create_server(
     server.read_guide = read_guide  # type: ignore[attr-defined]
     server.read_language = read_language  # type: ignore[attr-defined]
 
+    # Register all prompt handlers
+    register_prompts(server)
+
     return server
 
 
@@ -659,5 +607,8 @@ def create_server_with_config(config: Dict[str, Any]) -> FastMCP:
             handler.flush()
 
         raise
+
+    # Register all prompt handlers
+    register_prompts(server)
 
     return server

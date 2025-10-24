@@ -125,11 +125,7 @@ class SessionState:
             # Convert current config to dict, deep merge, then validate and convert back
             def deep_merge(d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:
                 for k, v in d2.items():
-                    if (
-                        k in d1
-                        and isinstance(d1[k], dict)
-                        and isinstance(v, dict)
-                    ):
+                    if k in d1 and isinstance(d1[k], dict) and isinstance(v, dict):
                         d1[k] = deep_merge(d1[k], v)
                     else:
                         d1[k] = v

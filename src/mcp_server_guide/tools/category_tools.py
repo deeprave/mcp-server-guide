@@ -7,6 +7,7 @@ import re
 import aiofiles
 from ..project_config import Category
 from ..session_manager import SessionManager
+from ..document_cache import CategoryDocumentCache
 from ..logging_config import get_logger
 
 
@@ -224,6 +225,9 @@ async def update_category(
     # Update the category (keep as Category object)
     categories[name] = category
 
+    # Invalidate cache for this category before updating session
+    await CategoryDocumentCache.invalidate_category(name)
+
     # Update session
     session.session_state.set_project_config("categories", categories)
 
@@ -248,21 +252,27 @@ async def remove_category(name: str, project: Optional[str] = None) -> Dict[str,
         return {"success": False, "error": f"Cannot remove built-in category '{name}'"}
 
     session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
 
-    # Get current config
-    config = await session.get_or_create_project_config(project)
-    categories = config.categories
+    # Use current session config directly instead of loading from disk
+    config = session.session_state.project_config
 
-    if name not in categories:
+    if name not in config.categories:
         return {"success": False, "error": f"Category '{name}' does not exist"}
 
-    # Remove the category
-    removed_category = categories.pop(name)
+    # Store the removed category for return
+    removed_category = config.categories[name]
 
-    # Update session
-    session.session_state.set_project_config("categories", categories)
+    # Create new categories dict without the removed category
+    new_categories = {k: v for k, v in config.categories.items() if k != name}
+
+    # Create new ProjectConfig preserving all existing fields
+    updated_config = config.model_copy(update={"categories": new_categories})
+
+    # Invalidate cache for this category before updating session
+    await CategoryDocumentCache.invalidate_category(name)
+
+    # Update session state with the new config
+    session.session_state.project_config = updated_config
 
     # Auto-save
     await _auto_save_session(session)

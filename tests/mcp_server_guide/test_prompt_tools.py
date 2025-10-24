@@ -16,16 +16,21 @@ async def test_list_prompts_returns_expected_structure():
 
 
 async def test_list_prompts_includes_all_registered_prompts():
-    """Test that list_prompts includes all 3 registered prompts."""
+    """Test that list_prompts includes all 6 registered prompts."""
     result = await list_prompts()
 
     assert result["success"] is True
-    assert result["total_prompts"] == 3
+    assert result["total_prompts"] == 7
 
     prompt_names = {p["name"] for p in result["prompts"]}
     assert "guide" in prompt_names
     assert "category" in prompt_names
-    assert "daic" in prompt_names
+    assert "discuss" in prompt_names
+    assert "plan" in prompt_names
+    assert "status" in prompt_names
+    assert "implement" in prompt_names
+    assert "check" in prompt_names
+    assert "status" in prompt_names
 
 
 async def test_list_prompts_includes_prompt_metadata():

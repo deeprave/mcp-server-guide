@@ -2,6 +2,7 @@
 
 EXEMPT_PATHS=(
     ".consent"
+    ".issue"
     ".todo/*"
     "/tmp/*"
     "tasks/*"
@@ -14,17 +15,20 @@ function is_path_exempt() {
     local relative_path="${check_path#$PWD/}"
 
     for pattern in "${EXEMPT_PATHS[@]}"; do
-        if [[ "$relative_path" == $pattern ]]; then
-            return 0
-        fi
+      if [[ "$relative_path" == $pattern ]]; then
+        return 0
+      fi
     done
     return 1
 }
 
 function has_consent() {
     if [ ! -f ".consent" ]; then
-        echo "DAIC MODE IS ENABLED - CONSENT REQUIRED - Request approval before making changes." >&2
-        exit 2
+      (
+        echo "DISCUSSION or PLANNING MODE IS ENABLED"
+        echo "You cannot make changes until consent is granted"
+      ) >&2
+      exit 2
     fi
 }
 
@@ -61,8 +65,9 @@ elif [[ "$tool_name" == "execute_bash" ]]; then
     command=$(echo "$hook_data" | jq -r '.tool_input.command // "No command found"')
     summary=$(echo "$hook_data" | jq -r '.tool_input.summary // empty')
 
-    message="DAIC MODE: Approve this bash command?
-Command: $command"
+    message="DISCUSSION/PLANNING mode is active: Approve this shell command?
+Command: $command
+"
 
     # Only add summary line if summary exists and is not empty
     if [[ -n "$summary" && "$summary" != "null" ]]; then
@@ -74,4 +79,3 @@ Summary: $summary"
 fi
 
 exit 0
-

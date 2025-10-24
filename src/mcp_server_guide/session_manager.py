@@ -79,9 +79,8 @@ class SessionManager:
         elif isinstance(config, ProjectConfig):
             self._session_state.project_config = config
         else:
-            raise TypeError(
-                f"config must be a dict or ProjectConfig instance, got {type(config).__name__}"
-            )
+            raise TypeError(f"config must be a dict or ProjectConfig instance, got {type(config).__name__}")
+
     def reset_session_config(self, project_name: Optional[str] = None) -> None:
         """Reset the session configuration to defaults."""
         self._session_state.reset_project_config(project_name)
@@ -156,13 +155,13 @@ class SessionManager:
             category_objects = {
                 cat_name: (
                     cat_data
-                    if isinstance(cat_data, Category)
-                    or not isinstance(cat_data, dict)
+                    if isinstance(cat_data, Category) or not isinstance(cat_data, dict)
                     else Category(**cat_data)
                 )
                 for cat_name, cat_data in session_config.categories.items()
             }
-            existing_config.categories.update(category_objects)
+            # Replace categories completely instead of updating to handle removals
+            existing_config.categories = category_objects
             project_config = existing_config
         else:
             # No existing config, use session state directly

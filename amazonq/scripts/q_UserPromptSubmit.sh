@@ -1,18 +1,15 @@
 #!/bin/zsh
 if [[ ! -f ".consent" ]]; then
   cat << 'EOF'
-🚨 YOU ARE IN DAIC MODE
-REMINDER: Before ANY implementation or architectural changes:
-  1. Create detailed plan
-  2. Request explicit user consent
-  3. Wait for approval
-  4. **NO EXCEPTIONS**
+🚨 CONSENT TO CHANGE NOT GRANTED
+You are in DISCUSSION or PLANNING mode and may not make any changes
+REMINDER: Before ANY implementing changes you must have explicit user consent. **NO EXCEPTIONS**
 EOF
 else
   cat << 'EOF'
-✅ IMPLEMENTATION MODE
-You may proceed with implementation and architectural changes.
-If you have completed the implementation you MUST remove the .consent file to return to DAIC mode.
+✅ CONSENT TO MAKE CHANGES GRANTED
+You are in IMPLEMENTATION or CHECK mode.
+Once you have completed implementation and checks you MUST remove the .consent and return to DISCUSSION mode.
 EOF
 fi
 exit 0

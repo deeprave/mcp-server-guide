@@ -17,7 +17,9 @@ async def test_get_all_guides_returns_only_auto_load_true_categories():
         config_data = ProjectConfig(
             categories={
                 "guide": Category(dir="guide/", patterns=["*.md"], description="Guide", auto_load=True),
-                "lang": Category(dir="lang/", patterns=["*.md"], description="Language", auto_load=False),  # No auto_load = False
+                "lang": Category(
+                    dir="lang/", patterns=["*.md"], description="Language", auto_load=False
+                ),  # No auto_load = False
                 "context": Category(dir="context/", patterns=["*.md"], description="Context", auto_load=True),
                 "custom": Category(dir="custom/", patterns=["*.md"], description="Custom", auto_load=False),
             }
