@@ -15,7 +15,7 @@ class TestMCPPrompts:
         session_manager._set_config_filename(isolated_config_file)
 
         prompts = await mcp.list_prompts()
-        assert len(prompts) == 7
+        assert len(prompts) == 8
 
         prompt_names = [p.name for p in prompts]
         assert "guide" in prompt_names

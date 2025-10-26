@@ -88,7 +88,7 @@ class TestSessionManagerCore:
 
 
 class TestResetProjectConfig:
-    """Test reset_project_config function missing coverage."""
+    """Tests for reset_project_config function behavior."""
 
     async def test_reset_project_config_project_exists(self):
         """Test reset_project_config when project exists in session state."""
@@ -120,7 +120,7 @@ class TestResetProjectConfig:
 
 
 class TestSwitchProject:
-    """Test switch_project function missing coverage."""
+    """Tests for switch_project function behavior."""
 
     async def test_switch_project_success(self):
         """Test switch_project successful execution."""
@@ -166,7 +166,7 @@ class TestSwitchProject:
 
 
 class TestSaveSession:
-    """Test save_session method coverage."""
+    """Tests for save_session method behavior."""
 
     async def test_save_session_with_empty_project_name(self, isolated_config_file):
         """Test save_session when get_project_name returns empty string."""
@@ -188,7 +188,7 @@ class TestSaveSession:
 
 
 class TestSwitchProjectMethod:
-    """Test SessionManager.switch_project method coverage."""
+    """Tests for SessionManager.switch_project method behavior."""
 
     async def test_switch_to_existing_project_loads_config(self, isolated_config_file):
         """Test switch_project loads existing config from file."""

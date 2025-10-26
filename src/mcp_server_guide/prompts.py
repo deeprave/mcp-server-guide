@@ -6,22 +6,27 @@ from .tools.content_tools import get_content
 
 
 async def execute_prompt_with_guide(
-    prompt_name: str, base_response: str, user_arg: Optional[str] = None, pre_text: Optional[str] = None
+    prompt_name: str,
+    base_response: str,
+    user_arg: Optional[str] = None,
+    pre_text: Optional[str] = None,
+    content: Optional[str] = None,
 ) -> str:
     """Execute prompt and use guide content if available, otherwise fallback to base response."""
     guide_content = await get_content("prompt", prompt_name)
 
     # Choose primary content
-    if guide_content:
-        primary_content = guide_content
-    else:
-        primary_content = base_response
-
+    primary_content = guide_content or base_response
     # Add user arg if provided
     if pre_text:
         primary_content = f"{pre_text}\n\n{primary_content}"
     if user_arg:
         primary_content = f"{primary_content}\n\n🎯 Focus: {user_arg}"
+
+    # Add additional content if provided and not empty/whitespace
+    if content and content.strip():
+        primary_content = f"{primary_content}\n\n📄 **Additional Content:**\n{content.strip()}"
+
     return primary_content
 
 
@@ -31,51 +36,52 @@ async def status_prompt(arg: Optional[str] = None) -> str:
 - If `.consent` file exists
     → .consent contains 'check' → CHECK mode
     → otherwise → IMPLEMENTATION mode
+    → if '.issue' file exists → content is the current issue
 - Otherwise
-    → if `.issue` file exists → PLAN mode
+    → if `.issue` file exists and is non empty → PLAN mode
     → otherwise → DISCUSSION mode
 """
     return await execute_prompt_with_guide("status", base_response, arg)
 
 
-async def discuss_prompt(arg: Optional[str] = None) -> str:
+async def discuss_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter discuss mode for ideation, concepts, and exploration."""
     pre_text = """☑️ **Required Actions:**
 - Remove `.consent` file (if it exists)
-- Remove `.issue` file (if it exists)
+- If `.issue` file exists, ask the user if they wish to remove it (and do so if confirmed)
 """
-    base_response = """✅ **Discuss Mode Instructions**
+    base_response = """💬 **Discussion Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Ideation and conceptual exploration
-  - AI agent can: Brainstorm ideas, explore concepts, analyze requirements, discuss architecture
-  - AI agent cannot: Make code changes, create files, implement solutions
+  - Brainstorm ideas, explore concepts, analyze requirements, discuss architecture
+  - You may NOT make code changes, create files, implement solutions other than plans, specifications, or checklists
 
-🔄 **Next Step:** Use @plan when ready for concrete planning
-📍 Next step will be: Concrete planning and specification creation
-  - AI agent will be able to: Create task specifications, design documents, implementation plans
-  - AI agent will not be able to: Make code changes"""
+🔄 **Next Step:** plan when ready for concrete planning
+📍 Next step will be PLANNING and task and specification creation
+  - You will still not be able to make code changes"""
 
-    return await execute_prompt_with_guide("discuss", base_response, arg, pre_text)
+    return await execute_prompt_with_guide("discuss", base_response, arg, pre_text, content)
 
 
 async def plan_prompt(arg: Optional[str] = None) -> str:
     """Enter plan mode for concrete planning and specification creation."""
     pre_text = """☑️ **Required Actions:**
 - Remove `.consent` file (if it exists)
-- Create empty `.issue` file (if it doesn't exist)
+- Create empty `.issue` file (if it doesn't already exist)
+- Add paths of documents created during planning to the `.issue` file
 """
     base_response = """✅ **Plan Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Concrete planning and specification creation
-  - AI agent can: Create task specifications, design documents, implementation plans, analyze requirements
-  - AI agent cannot: Make code changes, modify existing files, implement solutions
+  - You may create task specifications, design documents, implementation plans, analyze and gather requirements
+  - You may NOT make code changes or implement solutions
 
-🔄 **Next Step:** Use @implement when ready for implementation (requires user consent)"""
+🔄 **Next Step:** IMPLEMENTATION (requires user consent)"""
 
     return await execute_prompt_with_guide("plan", base_response, arg, pre_text)
 
 
-async def implement_prompt(arg: Optional[str] = None) -> str:
+async def implement_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter implementation mode for code changes and implementation activities."""
     pre_text = """☑️ **Required Actions:**
 - Create `.consent` file with content: `implementation`
@@ -83,18 +89,16 @@ async def implement_prompt(arg: Optional[str] = None) -> str:
     base_response = """⚙️ **Implementation Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Implementation and code changes
-  - AI agent can: Create/modify files, write code, implement solutions, make architectural changes
-  - AI agent cannot: Skip testing, ignore quality requirements, bypass validation
+  - You may create, modify and remove files, write code, implement solutions, make architectural changes as planned
+  - You may not ignore quality requirements or bypass validation
+  - You must implement features completely as specified in plans and specifications
 
-🔄 **Next Step:** Use @check when ready for verification (update .consent file content to 'check')
-📍 Next step will be: Verification and quality assurance
-  - AI agent will be able to: Run tests, check code quality, validate implementation
-  - AI agent will not be able to: Make further code changes, modify implementation"""
+🔄 **Next Step:** CHECK when ready for verification (update .consent file content to 'check')"""
 
-    return await execute_prompt_with_guide("implement", base_response, arg, pre_text)
+    return await execute_prompt_with_guide("implement", base_response, arg, pre_text, content)
 
 
-async def check_prompt(arg: Optional[str] = None) -> str:
+async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter check mode for verification and cleanup activities."""
     pre_text = """☑️ **Required Actions:**
 - Update `.consent` file content to: `check`
@@ -102,22 +106,18 @@ async def check_prompt(arg: Optional[str] = None) -> str:
     base_response = """🔍 **Check Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Verification and quality assurance
-  - AI agent can: Run tests, check code quality, validate implementation, run linting/formatting
-  - AI agent cannot: Make code changes, modify implementation, alter functionality
-
-🔄 **Next Step:** Remove `.consent` file when all checks pass and user approves
-  - Next step will be: Return to planning mode (discuss/plan)
-  - AI agent will be able to: Discuss concepts, create plans, analyze requirements
-  - AI agent will not be able to: Make code changes, implement solutions
+  - You MUST Run tests, use code quality tools, validate the implementation, run linting/formatting
+  - You may NOT make further code changes except to fix errors, modify implementation, alter functionality
 
 📋 **Verification Checklist:**
   * Test suite execution
-  * Coverage analysis
   * Code linting
   * Format checking
-  * Type checking"""
+  * Type checking
 
-    return await execute_prompt_with_guide("check", base_response, arg, pre_text)
+🔄 **Next Step:** DISCUSSION - return to discussion mode (discuss/plan)"""
+
+    return await execute_prompt_with_guide("check", base_response, arg, pre_text, content)
 
 
 def register_prompts(mcp: FastMCP) -> None:
@@ -137,13 +137,17 @@ def register_prompts(mcp: FastMCP) -> None:
         return await plan_prompt(arg)
 
     @mcp.prompt("discuss")
-    async def _discuss_prompt(arg: Optional[str] = None) -> str:
-        return await discuss_prompt(arg)
+    async def _discuss_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
+        return await discuss_prompt(arg, content)
 
     @mcp.prompt("implement")
-    async def _implement_prompt(arg: Optional[str] = None) -> str:
-        return await implement_prompt(arg)
+    async def _implement_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
+        return await implement_prompt(arg, content)
 
     @mcp.prompt("check")
-    async def _check_prompt(arg: Optional[str] = None) -> str:
-        return await check_prompt(arg)
+    async def _check_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
+        return await check_prompt(arg, content)
+
+    @mcp.prompt("debug")
+    async def _debug_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
+        return f"arg: '{arg}'\ncontent: '{content}'\narg type: {type(arg)}\ncontent type: {type(content)}"

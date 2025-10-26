@@ -1,4 +1,4 @@
-"""Tests to improve session management functionality coverage above 90%."""
+"""Tests for session management functionality and error handling."""
 
 import tempfile
 from pathlib import Path
@@ -17,9 +17,7 @@ async def test_get_project_config():
     # Set up some project data first
     session = SessionManager()
     session.set_project_name("test-project")
-    config = ProjectConfig(
-        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
-    )
+    config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")})
     session.session_state.project_config = config
 
     # This should return current project config
@@ -38,9 +36,7 @@ async def test_set_project_config():
     # Set up project data first
     session = SessionManager()
     session.set_project_name("test-project")
-    config1 = ProjectConfig(
-        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
-    )
+    config1 = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")})
     session.session_state.project_config = config1
 
     # Update the categories
@@ -81,7 +77,7 @@ async def test_session_manager_save_session(isolated_config_file):
 
         session.set_project_name("test-project")
         config = ProjectConfig(
-            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
+            categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")}
         )
         session.session_state.project_config = config
 
@@ -99,7 +95,7 @@ async def test_session_manager_get_or_create_project_config():
     session = SessionManager()
     session.set_project_name("test-project")
     test_config = ProjectConfig(
-        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category", auto_load=False)}
+        categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")}
     )
     session.session_state.project_config = test_config
 

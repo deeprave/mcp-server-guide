@@ -2,6 +2,7 @@
 
 import functools
 from typing import Dict, Any, Optional, List, TYPE_CHECKING
+from .project_config import Category, Collection
 from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
 from .session_manager import SessionManager
@@ -19,59 +20,72 @@ error_handler = ErrorHandler(logger)
 
 
 async def _register_category_resources(server: FastMCP, config: "ProjectConfig") -> None:
-    """Register dynamic resources for auto_load categories.
-
-    This function is called during server initialization to register resources
-    based on the current project configuration.
-    """
+    """Register dynamic resources for categories and collections."""
     from .tools.category_tools import get_category_content
     from .tools.content_tools import get_all_guides
 
-    auto_load_categories = [
-        (name, category_config) for name, category_config in config.categories.items() if category_config.auto_load
-    ]
+    # Register aggregate resource for built-in guides
+    @server.resource(
+        "guide://category/all",
+        name="all",
+        description="All guide content from built-in categories",
+        mime_type="text/markdown",
+    )
+    async def read_all_categories() -> str:
+        """All built-in guide categories combined."""
+        result = await get_all_guides(None)
+        if not result:
+            return ""
+        content_parts = [f"# {category_name}\n\n{content}" for category_name, content in result.items()]
+        return "\n\n".join(content_parts)
 
-    # Register aggregate resource for all auto-load categories
-    if auto_load_categories:
+    logger.info("Registered resource: guide://category/all")
 
-        @server.resource(
-            "guide://category/all",
-            name="all",
-            description="All auto-load guide categories combined",
-            mime_type="text/markdown",
-        )
-        async def read_all_categories() -> str:
-            """All auto-load guide categories combined."""
-            result = await get_all_guides(None)
-            # get_all_guides returns Dict[str, str] mapping category names to content
-            if not result:
-                return ""
-            # Format as markdown sections
-            content_parts = [f"# {category_name}\n\n{content}" for category_name, content in result.items()]
-            return "\n\n".join(content_parts)
+    def make_category_reader(cat_name: str, cat_config: Category) -> object:
+        desc = cat_config.description
+        if desc is None or (isinstance(desc, str) and not desc.strip()):
+            desc = cat_name
 
-        logger.info("Registered resource: guide://category/all")
+        @server.resource(f"guide://category/{cat_name}", name=cat_name, description=desc, mime_type="text/markdown")
+        async def read_category() -> str:
+            """Get content for a specific category."""
+            result = await get_category_content(cat_name, None)
+            if result.get("success"):
+                return str(result.get("content", ""))
+            raise ValueError(f"Failed to load category '{cat_name}': {result.get('error', 'Unknown error')}")
 
-    # Register individual category resources
-    for category_name, category_config in auto_load_categories:
-        # Create a closure to capture the category_name
-        def make_category_reader(cat_name: str) -> object:
-            desc = category_config.description
-            if desc is None or (isinstance(desc, str) and not desc.strip()):
-                desc = cat_name
+        return read_category
 
-            @server.resource(f"guide://category/{cat_name}", name=cat_name, description=desc, mime_type="text/markdown")
-            async def read_category() -> str:
-                """Get content for a specific category."""
-                result = await get_category_content(cat_name, None)
+    # Register individual category resources for all categories
+    for category_name, category_config in config.categories.items():
+        make_category_reader(category_name, category_config)
+        logger.info(f"Registered resource: guide://category/{category_name}")
+
+    # Register collection resources
+    from .tools.collection_tools import get_collection_content
+
+    def make_collection_reader(coll_name: str, coll_config: Collection) -> object:
+        desc = coll_config.description
+        if desc is None or (isinstance(desc, str) and not desc.strip()):
+            desc = coll_name
+
+        @server.resource(f"guide://collection/{coll_name}", name=coll_name, description=desc, mime_type="text/markdown")
+        async def read_collection() -> str:
+            try:
+                result = await get_collection_content(coll_name, None)
                 if result.get("success"):
                     return str(result.get("content", ""))
-                raise ValueError(f"Failed to load category '{cat_name}': {result.get('error', 'Unknown error')}")
+                else:
+                    return f"Error loading collection '{coll_name}': {result.get('error', 'Unknown error')}"
+            except Exception as e:
+                logger.error(f"Error in collection reader for '{coll_name}': {e}")
+                return f"Error loading collection '{coll_name}': {str(e)}"
 
-            return read_category
+        return read_collection
 
-        make_category_reader(category_name)
-        logger.info(f"Registered resource: guide://category/{category_name}")
+    for collection_name, collection_config in config.collections.items():
+        make_collection_reader(collection_name, collection_config)
+        logger.info(f"Registered resource: guide://collection/{collection_name}")
 
 
 @asynccontextmanager
@@ -93,7 +107,7 @@ async def server_lifespan(server: FastMCP) -> Any:
             config = await session_manager.get_or_create_project_config(project_name)
             logger.info(f"Project configuration initialized for: {project_name}")
 
-            # Register dynamic resources based on auto_load categories
+            # Register dynamic resources based on categories and collections
             await _register_category_resources(server, config)
             logger.info("Dynamic resources registered successfully")
 
@@ -320,16 +334,15 @@ async def add_category(
     patterns: List[str],
     project: Optional[str] = None,
     description: str = "",
-    auto_load: bool = False,
 ) -> Dict[str, Any]:
     """Add a new custom category."""
-    return await tools.add_category(name, dir, patterns, description, project, auto_load)
+    return await tools.add_category(name, dir, patterns, description)
 
 
 @guide.tool()
 async def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Remove a custom category."""
-    return await tools.remove_category(name, project)
+    return await tools.remove_category(name)
 
 
 @guide.tool()
@@ -339,16 +352,58 @@ async def update_category(
     patterns: List[str],
     project: Optional[str] = None,
     description: str = "",
-    auto_load: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Update an existing category."""
-    return await tools.update_category(name, dir, patterns, description, project, auto_load)
+    return await tools.update_category(name, description=description, dir=dir, patterns=patterns)
 
 
 @guide.tool()
-async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
-    """List all categories (built-in and custom)."""
-    return await tools.list_categories(project)
+async def add_collection(
+    name: str,
+    categories: List[str],
+    description: str = "",
+) -> Dict[str, Any]:
+    """Add a new collection."""
+    from .tools.collection_tools import add_collection as add_coll
+
+    return await add_coll(name, categories, description)
+
+
+@guide.tool()
+async def update_collection(
+    name: str,
+    description: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Update an existing collection."""
+    from .tools.collection_tools import update_collection as update_coll
+
+    return await update_coll(name, description=description)
+
+
+@guide.tool()
+async def list_collections(verbose: bool = False) -> Dict[str, Any]:
+    """List all collections."""
+    from .tools.collection_tools import list_collections as list_colls
+
+    return await list_colls(verbose)
+
+
+@guide.tool()
+async def remove_collection(name: str) -> Dict[str, Any]:
+    """Remove a collection."""
+    from .tools.collection_tools import remove_collection as remove_coll
+
+    return await remove_coll(name)
+
+
+@guide.tool()
+async def list_categories(verbose: bool = False) -> Dict[str, Any]:
+    """List all categories (built-in and custom).
+
+    Args:
+        verbose (bool): If True, include verbose output. Defaults to False.
+    """
+    return await tools.list_categories(verbose=verbose)
 
 
 @guide.tool()
@@ -366,13 +421,10 @@ async def list_prompts() -> Dict[str, Any]:
 # MCP Prompt Handlers
 @mcp.prompt("guide")
 async def guide_prompt(category: Optional[str] = None) -> str:
-    """Get all auto-load guides or specific category."""
-    # No initialization needed - PWD-based project detection handles context
-
-    # Normalize input: strip whitespace and convert to lowercase
+    """Get built-in guides or specific category/collection."""
     normalized_category = category.strip().lower() if category else None
 
-    if not normalized_category or normalized_category in ("all", "*", "?", "-"):
+    if not normalized_category:
         guides = await tools.get_all_guides(None)
         if guides:
             content_parts = [f"## {category_name}\n\n{content}" for category_name, content in guides.items()]
@@ -380,35 +432,39 @@ async def guide_prompt(category: Optional[str] = None) -> str:
         else:
             return "No guides available."
     else:
-        # Use normalized category name for lookup
+        # Try category first
         result = await tools.get_category_content(normalized_category, None)
         if result.get("success"):
-            return str(result.get("content", ""))
-        else:
-            return f"Error: {result.get('error', 'Failed to get category')}"
+            content = result.get("content", "")
+            return content if isinstance(content, str) else str(content)
+
+        # Try collection if category failed
+        from .tools.collection_tools import get_collection_content
+
+        result = await get_collection_content(normalized_category, None)
+        if result.get("success"):
+            content = result.get("content", "")
+            return content if isinstance(content, str) else str(content)
+
+        return f"Category or collection '{normalized_category}' not found."
 
 
 @mcp.prompt("category")
-async def category_prompt(
-    action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None, auto_load: Optional[str] = None
-) -> str:
+async def category_prompt(action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None) -> str:
     """Manage categories (new, edit, del)."""
     # No initialization needed - PWD-based project detection handles context
 
     if action == "new":
         # Check for duplicate category name
-        categories_result = await tools.list_categories(None)
+        categories_result = await tools.list_categories(verbose=False)
         all_categories = categories_result["categories"]
         if name in all_categories:
             return f"Error: Category with name '{name}' already exists."
 
         # Parse patterns from comma-separated string
         pattern_list = patterns.split(",") if patterns else ["*.md"]
-        auto_load_bool = auto_load == "true" if auto_load else False
 
-        result = await tools.add_category(
-            name=name, dir=dir or name, patterns=pattern_list, description="", project=None, auto_load=auto_load_bool
-        )
+        result = await tools.add_category(name=name, dir=dir or name, patterns=pattern_list, description="")
 
         if result.get("success"):
             return f"Successfully created category '{name}'"
@@ -417,7 +473,7 @@ async def category_prompt(
 
     elif action == "edit":
         # Get current category to preserve existing values
-        categories_result = await tools.list_categories(None)
+        categories_result = await tools.list_categories(verbose=False)
         existing_categories = categories_result["categories"]
 
         if name not in existing_categories:
@@ -444,15 +500,12 @@ async def category_prompt(
             return [unquote(item) for item in items]
 
         new_patterns = parse_patterns(patterns) if patterns else current_category["patterns"]
-        new_auto_load = auto_load == "true" if auto_load else current_category.get("auto_load", False)
 
         result = await tools.update_category(
             name=name,
+            description=current_category.get("description", ""),
             dir=new_dir,
             patterns=new_patterns,
-            description=current_category.get("description", ""),
-            project=None,
-            auto_load=new_auto_load,
         )
 
         if result.get("success"):
@@ -461,7 +514,7 @@ async def category_prompt(
             return f"Error updating category: {result.get('error', 'Unknown error')}"
 
     elif action == "del":
-        result = await tools.remove_category(name, None)
+        result = await tools.remove_category(name)
 
         if result.get("success"):
             return f"Successfully deleted category '{name}'"

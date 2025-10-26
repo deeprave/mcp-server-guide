@@ -29,10 +29,9 @@ async def test_switch_to_new_project_creates_builtin_categories(isolated_config_
     assert "lang" in categories
     assert "context" in categories
 
-    # Check that each category has auto_load=true
+    # Check that each category exists
     for name in ["guide", "lang", "context"]:
-        category = categories[name]
-        assert category.auto_load is True, f"Category {name} should have auto_load=true"
+        assert name in categories
 
 
 async def test_builtin_categories_structure(isolated_config_file):
@@ -49,7 +48,6 @@ async def test_builtin_categories_structure(isolated_config_file):
 
     for name, cat_config in builtin_cats.items():
         # cat_config is a Category object
-        assert cat_config.auto_load is True
         assert hasattr(cat_config, "dir")
         assert hasattr(cat_config, "patterns")
         assert hasattr(cat_config, "description")

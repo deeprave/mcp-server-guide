@@ -60,11 +60,11 @@ async def test_error_handling_missing_params():
     """Test error handling for missing required parameters."""
     handler = CommandHandler()
 
-    # Test guide-new without category name
-    result = await handler.execute_command("guide-new", [], {})
+    # Test category add without required parameters
+    result = await handler.execute_command("category", ["add"], {})
 
     assert result["success"] is False
-    assert "required" in result["error"].lower()
+    assert "Usage:" in result["error"]
 
 
 def test_command_help_structure():

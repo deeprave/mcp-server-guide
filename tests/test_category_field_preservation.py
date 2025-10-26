@@ -1,9 +1,9 @@
 """Test that category operations preserve all ProjectConfig fields."""
 
 import pytest
-from src.mcp_server_guide.tools.category_tools import remove_category
-from src.mcp_server_guide.project_config import ProjectConfig, Category
-from src.mcp_server_guide.session_manager import SessionManager
+from mcp_server_guide.tools.category_tools import remove_category
+from mcp_server_guide.project_config import ProjectConfig, Category
+from mcp_server_guide.session_manager import SessionManager
 
 
 @pytest.fixture
@@ -15,8 +15,8 @@ def session_with_categories(isolated_config_file):
     # Create config with multiple categories
     config = ProjectConfig(
         categories={
-            "test_category": Category(dir="test_dir", patterns=["*.md"], description="Test category", auto_load=True),
-            "keep_category": Category(dir="keep_dir", patterns=["*.txt"], description="Keep this one", auto_load=False),
+            "test_category": Category(dir="test_dir", patterns=["*.md"], description="Test category"),
+            "keep_category": Category(dir="keep_dir", patterns=["*.txt"], description="Keep this one"),
         }
     )
 
@@ -34,9 +34,7 @@ async def test_remove_category_preserves_other_categories_and_their_fields(sessi
     assert "test_category" in original_config.categories
     assert "keep_category" in original_config.categories
     assert original_config.categories["test_category"].description == "Test category"
-    assert original_config.categories["test_category"].auto_load is True
     assert original_config.categories["keep_category"].description == "Keep this one"
-    assert original_config.categories["keep_category"].auto_load is False
 
     # Remove one category
     await remove_category("test_category")
@@ -49,7 +47,6 @@ async def test_remove_category_preserves_other_categories_and_their_fields(sessi
     # Critical: All fields of remaining category should be preserved
     kept_category = updated_config.categories["keep_category"]
     assert kept_category.description == "Keep this one"  # Field preservation test
-    assert kept_category.auto_load is False  # Field preservation test
     assert kept_category.dir == "keep_dir/"  # Field preservation test (normalized with trailing slash)
     assert kept_category.patterns == ["*.txt"]  # Field preservation test
 
@@ -66,7 +63,7 @@ class TestCategoryUpdatesAndEdgeCases:
         # Create config with single category
         config = ProjectConfig(
             categories={
-                "only_category": Category(dir="only_dir", patterns=["*.md"], description="Only one", auto_load=True),
+                "only_category": Category(dir="only_dir", patterns=["*.md"], description="Only one"),
             }
         )
         session_manager.session_state.project_config = config
@@ -106,7 +103,7 @@ class TestCategoryUpdatesAndEdgeCases:
     @pytest.mark.asyncio
     async def test_category_update_preserves_fields(self, isolated_config_file):
         """Test that updating categories preserves all fields."""
-        from src.mcp_server_guide.tools.category_tools import update_category
+        from mcp_server_guide.tools.category_tools import update_category
 
         session_manager = SessionManager()
         session_manager._set_config_filename(isolated_config_file)
@@ -114,7 +111,7 @@ class TestCategoryUpdatesAndEdgeCases:
         # Create config with category having all fields
         config = ProjectConfig(
             categories={
-                "update_me": Category(dir="old_dir", patterns=["*.old"], description="Old description", auto_load=True),
+                "update_me": Category(dir="old_dir", patterns=["*.old"], description="Old description"),
             }
         )
         session_manager.session_state.project_config = config
@@ -123,9 +120,7 @@ class TestCategoryUpdatesAndEdgeCases:
         await session_manager.save_session()
 
         # Update category
-        result = await update_category(
-            "update_me", "new_dir", ["*.new"], description="New description", auto_load=False
-        )
+        result = await update_category("update_me", description="New description", dir="new_dir", patterns=["*.new"])
 
         # Ensure update succeeded
         assert result["success"], f"Update failed: {result.get('error', 'Unknown error')}"
@@ -133,7 +128,6 @@ class TestCategoryUpdatesAndEdgeCases:
         # All fields should be updated correctly
         updated_config = session_manager.session_state.project_config
         updated_category = updated_config.categories["update_me"]
-        assert updated_category.dir == "new_dir/"
+        assert updated_category.dir == "new_dir"
         assert updated_category.patterns == ["*.new"]
         assert updated_category.description == "New description"
-        assert updated_category.auto_load is False

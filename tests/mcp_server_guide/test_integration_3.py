@@ -1,4 +1,4 @@
-"""Additional tests to boost coverage for content tools and other areas."""
+"""Additional tests for content tools and search functionality."""
 
 import tempfile
 from pathlib import Path
@@ -75,11 +75,7 @@ async def test_category_content_directory_not_exists():
         with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
             mock_session.return_value.get_project_name = Mock(return_value="test-project")
             config_data = ProjectConfig(
-                categories={
-                    "test": Category(
-                        dir="nonexistent/", patterns=["*.md"], description="Test category", auto_load=False
-                    )
-                }
+                categories={"test": Category(dir="nonexistent/", patterns=["*.md"], description="Test category")}
             )
             mock_session.return_value.get_or_create_project_config = AsyncMock(return_value=config_data)
             # Mock config_manager().docroot

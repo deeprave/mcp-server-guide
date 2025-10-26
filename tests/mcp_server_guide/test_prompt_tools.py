@@ -20,7 +20,7 @@ async def test_list_prompts_includes_all_registered_prompts():
     result = await list_prompts()
 
     assert result["success"] is True
-    assert result["total_prompts"] == 7
+    assert result["total_prompts"] == 8
 
     prompt_names = {p["name"] for p in result["prompts"]}
     assert "guide" in prompt_names

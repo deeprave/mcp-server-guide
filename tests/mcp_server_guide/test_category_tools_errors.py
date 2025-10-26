@@ -70,7 +70,7 @@ class TestAddCategoryErrors:
 
             # Create ProjectConfig with existing category
             config_data = ProjectConfig(
-                categories={"test_cat": Category(dir="existing", patterns=["*.txt"], description="", auto_load=False)}
+                categories={"test_cat": Category(dir="existing", patterns=["*.txt"], description="")}
             )
             mock_session.session_state.get_project_config = Mock(return_value=config_data)
             mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
@@ -99,9 +99,7 @@ class TestGetCategoryContentErrors:
             mock_session.get_project_name = Mock(return_value="test_project")
 
             # Create ProjectConfig with category that has no patterns
-            config_data = ProjectConfig(
-                categories={"test_cat": Category(dir="test", patterns=None, description="", auto_load=False)}
-            )
+            config_data = ProjectConfig(categories={"test_cat": Category(dir="test", patterns=None, description="")})
             mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
             mock_session_class.return_value = mock_session
 
@@ -122,9 +120,7 @@ class TestGetCategoryContentErrors:
             mock_session.get_project_name = Mock(return_value="test_project")
 
             # Create ProjectConfig with category that has empty patterns list
-            config_data = ProjectConfig(
-                categories={"test_cat": Category(dir="test", patterns=[], description="", auto_load=False)}
-            )
+            config_data = ProjectConfig(categories={"test_cat": Category(dir="test", patterns=[], description="")})
             mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
             mock_session_class.return_value = mock_session
 
@@ -148,9 +144,7 @@ class TestGetCategoryContentErrors:
 
                 # Create ProjectConfig with nonexistent directory
                 config_data = ProjectConfig(
-                    categories={
-                        "test_cat": Category(dir="nonexistent", patterns=["*.md"], description="", auto_load=False)
-                    }
+                    categories={"test_cat": Category(dir="nonexistent", patterns=["*.md"], description="")}
                 )
                 mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
@@ -188,7 +182,7 @@ class TestGetCategoryContentErrors:
                 from mcp_server_guide.project_config import ProjectConfig, Category
 
                 config_data = ProjectConfig(
-                    categories={"test_cat": Category(dir="test", patterns=["*.md"], description="", auto_load=False)}
+                    categories={"test_cat": Category(dir="test", patterns=["*.md"], description="")}
                 )
                 mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
@@ -230,7 +224,7 @@ class TestGetCategoryContentErrors:
                 from mcp_server_guide.project_config import ProjectConfig, Category
 
                 config_data = ProjectConfig(
-                    categories={"test_cat": Category(dir="test", patterns=["*.md"], description="", auto_load=False)}
+                    categories={"test_cat": Category(dir="test", patterns=["*.md"], description="")}
                 )
                 mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot
@@ -271,9 +265,7 @@ class TestGetCategoryContentErrors:
                 from mcp_server_guide.project_config import ProjectConfig, Category
 
                 config_data = ProjectConfig(
-                    categories={
-                        "test_cat": Category(dir="test", patterns=["*.nonexistent"], description="", auto_load=False)
-                    }
+                    categories={"test_cat": Category(dir="test", patterns=["*.nonexistent"], description="")}
                 )
                 mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
                 # Mock config_manager().docroot

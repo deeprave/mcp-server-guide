@@ -1,4 +1,4 @@
-"""Tests for SecureHTTPClient missing coverage."""
+"""Tests for SecureHTTPClient error handling and edge cases."""
 
 import pytest
 from unittest.mock import Mock, patch
@@ -7,8 +7,8 @@ from mcp_server_guide.http.secure_client import SecureHTTPClient, get_default_cl
 from mcp_server_guide.exceptions import SecurityError, NetworkError
 
 
-class TestSecureHTTPClient:
-    """Test SecureHTTPClient missing coverage."""
+class TestSecureHTTPClientErrors:
+    """Tests for SecureHTTPClient error conditions."""
 
     def test_validate_url_no_hostname(self):
         """Test URL validation with no hostname (line 108)."""
@@ -111,8 +111,8 @@ class TestSecureHTTPClient:
         assert client is existing_client
 
 
-class TestRateLimiter:
-    """Test RateLimiter missing coverage."""
+class TestRateLimiterBehavior:
+    """Tests for RateLimiter behavior and edge cases."""
 
     def test_rate_limiter_window_cleanup(self):
         """Test rate limiter cleans up old requests."""

@@ -1,4 +1,4 @@
-"""Tests to improve path validator coverage."""
+"""Tests for path validator error handling."""
 
 import pytest
 from unittest.mock import patch

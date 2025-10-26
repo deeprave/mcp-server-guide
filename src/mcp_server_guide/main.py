@@ -227,7 +227,8 @@ async def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
 
                 # Find existing built-in category
                 existing_category = None
-                for cat in categories_result.get("builtin_categories", []):
+                builtin_categories = categories_result.get("categories", {}).get("builtin_categories", [])
+                for cat in builtin_categories:
                     if cat["name"] == category_name:
                         existing_category = cat
                         break

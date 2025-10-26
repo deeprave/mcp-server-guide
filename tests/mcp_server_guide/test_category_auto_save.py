@@ -19,9 +19,9 @@ def mock_session_with_save():
 
         config_data = ProjectConfig(
             categories={
-                "guide": Category(dir="guide/", patterns=["guidelines.md"], description="", auto_load=False),
-                "lang": Category(dir="lang/", patterns=["python.md"], description="", auto_load=False),
-                "context": Category(dir="context/", patterns=["context.md"], description="", auto_load=False),
+                "guide": Category(dir="guide/", patterns=["guidelines.md"], description=""),
+                "lang": Category(dir="lang/", patterns=["python.md"], description=""),
+                "context": Category(dir="context/", patterns=["context.md"], description=""),
             }
         )
 
@@ -71,7 +71,7 @@ async def test_update_auto_save():
         await add_category("testing", "test/", ["*.md"])
 
         # Update it
-        result = await update_category("testing", "updated-test/", ["*.txt"], description="Updated")
+        result = await update_category("testing", description="Updated", dir="updated-test/", patterns=["*.txt"])
 
         assert result["success"] is True
         # Verify config file was updated by auto-save
@@ -121,9 +121,9 @@ async def test_auto_save_errors():
 
         config_data = ProjectConfig(
             categories={
-                "guide": Category(dir="guide/", patterns=["guidelines.md"], description="", auto_load=False),
-                "lang": Category(dir="lang/", patterns=["python.md"], description="", auto_load=False),
-                "context": Category(dir="context/", patterns=["context.md"], description="", auto_load=False),
+                "guide": Category(dir="guide/", patterns=["guidelines.md"], description=""),
+                "lang": Category(dir="lang/", patterns=["python.md"], description=""),
+                "context": Category(dir="context/", patterns=["context.md"], description=""),
             }
         )
 

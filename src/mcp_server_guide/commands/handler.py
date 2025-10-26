@@ -1,8 +1,54 @@
 """Command handler for executing slash commands."""
 
+import shlex
 from typing import Dict, Any, List, Optional
+
+from ..utils import normalize_patterns, is_valid_name
 from ..tools.content_tools import get_all_guides, get_category_content
-from ..tools.category_tools import add_category, update_category, list_categories
+from ..tools.category_tools import (
+    add_category,
+    update_category,
+    list_categories,
+    add_to_category,
+    remove_from_category,
+    remove_category,
+)
+from ..tools.collection_tools import (
+    add_collection,
+    update_collection,
+    list_collections,
+    add_to_collection,
+    remove_from_collection,
+    remove_collection,
+)
+
+
+def _parse_verbose_flag(params: Dict[str, Any], args: List[str]) -> bool:
+    """Parse verbose flag from params and args."""
+    verbose = False
+
+    # Check params for verbose
+    verbose_param = params.get("verbose", False)
+    if isinstance(verbose_param, str):
+        verbose_param_str = verbose_param.strip().lower()
+        verbose = verbose_param_str in ("true", "1", "yes", "on")
+    elif isinstance(verbose_param, bool):
+        verbose = verbose_param
+    else:
+        verbose = bool(verbose_param)
+
+    # Check args for verbose flags and --verbose=<value>
+    for arg in args:
+        if arg in ("-v", "--verbose"):
+            verbose = True
+        elif arg.startswith("--verbose="):
+            value = arg.split("=", 1)[1].strip().lower()
+            if value in ("true", "1", "yes", "on"):
+                verbose = True
+            elif value in ("false", "0", "no", "off"):
+                verbose = False
+
+    return verbose
 
 
 class CommandHandler:
@@ -30,219 +76,262 @@ class CommandHandler:
 
         if command == "guide":
             return await self._execute_guide_command(args)
-        elif command == "guide-new":
-            return await self._execute_guide_new_command(args, params)
-        elif command == "guide-edit":
-            return await self._execute_guide_edit_command(args, params)
-        elif command == "guide-del":
-            return await self._execute_guide_del_command(args, params)
+        elif command == "category":
+            return await self._execute_category_command(args, params)
+        elif command == "collection":
+            return await self._execute_collection_command(args, params)
 
-        # Try as category shortcut (/<category>)
-        return await self._try_category_shortcut(command, args)
+        # Try as content shortcut (collections first, then categories)
+        return await self._try_content_shortcut(command, args)
 
     async def _execute_guide_command(self, args: List[str]) -> Dict[str, Any]:
-        """Execute guide command variants.
-
-        Args:
-            args: Command arguments
-
-        Returns:
-            Dict with success status and content
-        """
+        """Execute guide command variants."""
         try:
-            if not args or (len(args) == 1 and args[0] == "all"):
-                # /guide or /guide all - show all guides
+            if not args:
+                # /guide - show usage and built-in guide content
                 content = await get_all_guides()
                 return {"success": True, "content": content}
             else:
-                # /guide <category> - show specific category
-                category = args[0]
-                # Validate category: non-empty, only allow alphanumeric, dash, underscore
-                import re
+                # /guide <name> - try category first, then collection
+                name = args[0]
 
-                if not category or not re.match(r"^[\w-]+$", category):
+                # Standardized name validation (matches _try_content_shortcut)
+                if not is_valid_name(name):
                     return {
                         "success": False,
-                        "error": f"Invalid category name: '{category}'. "
-                        "Only letters, numbers, dash, and underscore are allowed.",
+                        "error": f"Invalid category/collection name: '{name}'. Only letters, numbers, dash, and underscore are allowed.",
                     }
-                result = await get_category_content(category, None)
+
+                # Try category first
+                result = await get_category_content(name, None)
                 if result.get("success"):
                     return {"success": True, "content": result["content"]}
-                else:
-                    return {"success": False, "error": result.get("error", f"Failed to get category: {category}")}
+
+                # Try collection if category failed
+                from ..tools.collection_tools import get_collection_content
+
+                result = await get_collection_content(name, None)
+                if result.get("success"):
+                    return {"success": True, "content": result["content"]}
+
+                return {"success": False, "error": f"Category or collection '{name}' not found"}
         except Exception as e:
             return {"success": False, "error": f"Error executing guide command: {str(e)}"}
 
-    async def _execute_guide_new_command(self, args: List[str], params: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute guide-new command.
-
-        Args:
-            args: Command arguments (category name)
-            params: Command parameters
-
-        Returns:
-            Dict with success status and message
-        """
+    async def _execute_category_command(self, args: List[str], params: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute category command with subcommands."""
         if not args:
-            return {"success": False, "error": "Category name is required for guide-new command"}
-
-        category_name = args[0]
-
-        # Sanitize category_name for use as a directory name
-        import re
-
-        def sanitize_dir_name(name: str) -> str:
-            return re.sub(r"[^A-Za-z0-9_\-]", "_", name.strip())
-
-        # Apply defaults
-        if "dir" in params:
-            dir_path = params["dir"]
-        else:
-            dir_path = sanitize_dir_name(category_name)
-        patterns = params.get("patterns", ["*.md"])
-        auto_load = params.get("auto-load", False)
-        description = params.get("description", "")
-
-        try:
-            result = await add_category(
-                name=category_name,
-                dir=dir_path,
-                patterns=patterns,
-                description=description,
-                project=None,
-                auto_load=auto_load,
-            )
-            return result
-        except Exception as e:
-            return {"success": False, "error": f"Error creating category: {str(e)}"}
-
-    async def _execute_guide_edit_command(self, args: List[str], params: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute guide-edit command.
-
-        Args:
-            args: Command arguments (category name)
-            params: Command parameters (only provided ones will be updated)
-
-        Returns:
-            Dict with success status and message
-        """
-        if not args:
-            return {"success": False, "error": "Category name is required for guide-edit command"}
-
-        category_name = args[0]
-
-        try:
-            # Get current categories to find existing values
-            categories_result = await list_categories(None)
-            all_categories = {**categories_result["builtin_categories"], **categories_result["custom_categories"]}
-
-            if category_name not in all_categories:
-                return {"success": False, "error": f"Category '{category_name}' not found"}
-
-            current_category = all_categories[category_name]
-
-            # Use provided params or fall back to current values
-            dir_path = params.get("dir", current_category["dir"])
-            patterns = params.get("patterns", current_category["patterns"])
-            description = params.get("description", current_category.get("description", ""))
-            auto_load = params.get("auto-load", current_category.get("auto_load"))
-
-            result = await update_category(
-                name=category_name,
-                dir=dir_path,
-                patterns=patterns,
-                description=description,
-                project=None,
-                auto_load=auto_load,
-            )
-            return result
-        except Exception as e:
-            return {"success": False, "error": f"Error updating category: {str(e)}"}
-
-    async def _execute_guide_del_command(self, args: List[str], params: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute guide-del command with confirmation.
-
-        Args:
-            args: Command arguments (category name)
-            params: Command parameters
-
-        Returns:
-            Dict with success status and confirmation request
-        """
-        if not args:
-            return {"success": False, "error": "Category name is required for guide-del command"}
-
-        category_name = args[0]
-
-        # For now, just return confirmation request
-        # In a real implementation, this would need a confirmation mechanism
-        return {
-            "success": True,
-            "confirm": f"Are you sure you want to delete category '{category_name}'?",
-            "category": category_name,
-        }
-
-    async def _try_category_shortcut(self, category: str, args: List[str]) -> Dict[str, Any]:
-        """Try to execute command as category shortcut.
-
-        Args:
-            category: Category name to try
-            args: Command arguments (should be empty for shortcuts)
-
-        Returns:
-            Dict with success status and content or error
-        """
-        # Validate category: non-empty, only allow alphanumeric, dash, underscore
-        import re
-
-        if not category or not re.match(r"^[\w-]+$", category):
             return {
                 "success": False,
-                "error": f"Invalid category name: '{category}'. "
-                "Only letters, numbers, dash, and underscore are allowed.",
+                "error": "Category subcommand required (add, update, add-to, remove-from, remove, list)",
+            }
+
+        subcommand = args[0]
+
+        if subcommand == "add":
+            if len(args) < 3:
+                return {
+                    "success": False,
+                    "error": (
+                        "Usage: category add <name> <dir> [pattern1] [pattern2...] [--description 'desc']\n"
+                        'Patterns are parsed using shell-like quoting rules. If a pattern contains spaces, enclose it in quotes (e.g., "my pattern").\n'
+                        "Multiple patterns can be separated by spaces or quoted as needed."
+                    ),
+                }
+            name, dir_path = args[1], args[2]
+            # Use shlex to parse patterns, handling quoted patterns with spaces
+            # **IMPORTANT INSTRUCTION**:
+            # Don't do manual handling here, as it can lead to incorrect parsing.
+            patterns_args = []
+            i = 3
+            while i < len(args) and not args[i].startswith("--"):
+                patterns_args.append(args[i])
+                i += 1
+
+            # Join and robustly parse with shlex to handle quoted patterns properly
+            if patterns_args:
+                patterns_str = " ".join(patterns_args)
+                try:
+                    parsed_patterns = shlex.split(patterns_str)
+                    add_patterns = normalize_patterns(parsed_patterns)
+                except ValueError as e:
+                    return {
+                        "success": False,
+                        "error": f"Malformed pattern input: {e}",
+                    }
+            else:
+                add_patterns = []
+
+            description = params.get("description")
+            return await add_category(name, dir_path, add_patterns, description)
+
+        elif subcommand == "update":
+            if len(args) < 2:
+                return {
+                    "success": False,
+                    "error": "Usage: category update <name> [--description 'desc'] [--dir 'path'] [--patterns 'p1,p2']",
+                }
+            name = args[1]
+            description = params.get("description")
+            dir_path = params.get("dir")  # type: ignore
+            clear_patterns = params.get("clear-patterns", False)
+            patterns_str_provided = "patterns" in params
+            patterns_str = params.get("patterns")  # type: ignore
+
+            # Validate conflicting pattern options
+            if clear_patterns and patterns_str_provided:
+                return {
+                    "success": False,
+                    "error": "Conflicting pattern options: Use either --clear-patterns to remove all patterns or --patterns to set new patterns.",
+                }
+
+            # Explicit clearing of patterns if --clear-patterns is set,
+            # or if --patterns is provided as an empty string (documented behavior)
+            patterns: Optional[List[str]]
+            if clear_patterns:
+                patterns = []
+            elif patterns_str_provided:
+                if patterns_str is not None and str(patterns_str).strip() != "":
+                    patterns = normalize_patterns(patterns_str)
+                else:
+                    # Documented behavior: empty string for patterns clears all patterns
+                    patterns = []
+            else:
+                patterns = None
+            return await update_category(name, description=description, dir=dir_path, patterns=patterns)
+
+        elif subcommand == "add-to":
+            if len(args) < 3:
+                return {"success": False, "error": "Usage: category add-to <name> <pattern1> [pattern2...]"}
+            name = args[1]
+            patterns = normalize_patterns(args[2:])
+            return await add_to_category(name, patterns)
+
+        elif subcommand == "remove-from":
+            if len(args) < 3:
+                return {"success": False, "error": "Usage: category remove-from <name> <pattern1> [pattern2...]"}
+            name = args[1]
+            patterns = normalize_patterns(args[2:])
+            return await remove_from_category(name, patterns)
+
+        elif subcommand == "remove":
+            if len(args) < 2:
+                return {"success": False, "error": "Usage: category remove <name>"}
+            name = args[1]
+            return await remove_category(name)
+
+        elif subcommand == "list":
+            verbose = _parse_verbose_flag(params, args)
+            return await list_categories(verbose)
+
+        else:
+            return {"success": False, "error": f"Unknown category subcommand: {subcommand}"}
+
+    async def _execute_collection_command(self, args: List[str], params: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute collection command with subcommands."""
+        if not args:
+            return {
+                "success": False,
+                "error": "Collection subcommand required (add, update, add-to, remove-from, remove, list)",
+            }
+
+        subcommand = args[0]
+
+        if subcommand == "add":
+            if len(args) < 3:
+                return {
+                    "success": False,
+                    "error": "Usage: collection add <name> <cat1> [cat2...] [--description 'desc']",
+                }
+            name = args[1]
+            categories = args[2:]
+            description = params.get("description")
+            return await add_collection(name, categories, description)
+
+        elif subcommand == "update":
+            if len(args) < 2:
+                return {"success": False, "error": "Usage: collection update <name> [--description 'desc']"}
+            name = args[1]
+            description = params.get("description")
+            return await update_collection(name, description=description)
+
+        elif subcommand == "add-to":
+            if len(args) < 3:
+                return {"success": False, "error": "Usage: collection add-to <name> <cat1> [cat2...]"}
+            name = args[1]
+            categories = args[2:]
+            return await add_to_collection(name, categories)
+
+        elif subcommand == "remove-from":
+            if len(args) < 3:
+                return {"success": False, "error": "Usage: collection remove-from <name> <cat1> [cat2...]"}
+            name = args[1]
+            categories = args[2:]
+            return await remove_from_collection(name, categories)
+
+        elif subcommand == "remove":
+            if len(args) < 2:
+                return {"success": False, "error": "Usage: collection remove <name>"}
+            name = args[1]
+            return await remove_collection(name)
+
+        elif subcommand == "list":
+            verbose = _parse_verbose_flag(params, args)
+            return await list_collections(verbose)
+
+        else:
+            return {"success": False, "error": f"Unknown collection subcommand: {subcommand}"}
+
+    async def _try_content_shortcut(self, name: str, args: List[str]) -> Dict[str, Any]:
+        """Try to execute command as collection or category shortcut (collections have precedence)."""
+        if not is_valid_name(name):
+            return {
+                "success": False,
+                "error": f"Invalid name: '{name}'. Only letters, numbers, dash, and underscore are allowed.",
             }
 
         try:
-            result = await get_category_content(category, None)
+            # Try collection first (collections have precedence over categories)
+            from ..tools.collection_tools import get_collection_content
+
+            result = await get_collection_content(name, None)
             if result.get("success"):
                 return {"success": True, "content": result["content"]}
-            else:
-                return {"success": False, "error": result.get("error", f"Category not found: {category}")}
+
+            # Try category if collection failed
+            result = await get_category_content(name, None)
+            if result.get("success"):
+                return {"success": True, "content": result["content"]}
+
+            return {"success": False, "error": f"Category or collection '{name}' not found"}
         except Exception as e:
-            return {"success": False, "error": f"Error accessing category {category}: {str(e)}"}
+            return {"success": False, "error": f"Error accessing {name}: {str(e)}"}
 
     async def _execute_help_command(self) -> Dict[str, Any]:
-        """Execute help command to show available commands and categories.
-
-        Returns:
-            Dict with success status and help content
-        """
+        """Execute help command to show available commands and categories."""
         try:
-            # Get available categories
-            categories_result = await list_categories(None)
+            categories_result = await list_categories(False)
+            collections_result = await list_collections(False)
 
             help_content = {
                 "commands": {
                     "/guide": "Show all guides",
                     "/guide <category>": "Show specific category content",
-                    "/guide help": "Show this help",
-                    "/category new <name> [params]": "Create new category",
-                    "/category edit <name> [params]": "Edit existing category",
-                    "/category del <name>": "Delete category",
+                    "/category add <name> <dir> <pattern1> [pattern2...]": "Create new category",
+                    "/category update <name> [--description 'desc'] [--dir 'path'] [--patterns 'p1,p2']": "Update category",
+                    "/category add-to <name> <pattern1> [pattern2...]": "Add patterns to category",
+                    "/category remove-from <name> <pattern1> [pattern2...]": "Remove patterns from category",
+                    "/category remove <name>": "Delete category",
+                    "/category list [-v|--verbose]": "List categories",
+                    "/collection add <name> <cat1> [cat2...]": "Create new collection",
+                    "/collection update <name> [--description 'desc']": "Update collection",
+                    "/collection add-to <name> <cat1> [cat2...]": "Add categories to collection",
+                    "/collection remove-from <name> <cat1> [cat2...]": "Remove categories from collection",
+                    "/collection remove <name>": "Delete collection",
+                    "/collection list [-v|--verbose]": "List collections",
                 },
-                "categories": {
-                    "builtin": [cat["name"] for cat in categories_result.get("builtin_categories", [])],
-                    "custom": [cat["name"] for cat in categories_result.get("custom_categories", [])],
-                },
-                "examples": [
-                    "/guide",
-                    "/guide lang",
-                    "/guide context",
-                    "/category new typescript dir=lang/ts patterns=*.ts,*.tsx",
-                    "/category edit typescript patterns=*.ts,*.tsx,*.d.ts",
-                    "/category del typescript",
-                ],
+                "categories": list(categories_result.get("categories", {}).keys()),
+                "collections": list(collections_result.get("collections", {}).keys()),
             }
             return {"success": True, "help": help_content}
         except Exception as e:

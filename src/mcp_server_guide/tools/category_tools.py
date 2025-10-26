@@ -114,9 +114,7 @@ async def add_category(
     name: str,
     dir: str,
     patterns: List[str],
-    description: str = "",
-    project: Optional[str] = None,
-    auto_load: bool = False,
+    description: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Add a new custom category."""
     # Validate category name
@@ -126,8 +124,8 @@ async def add_category(
     if name in BUILTIN_CATEGORIES:
         return {"success": False, "error": f"Cannot override built-in category '{name}'"}
 
-    # Provide default description if empty
-    if not description.strip():
+    # Provide default description if description is None or empty
+    if not description or not description.strip():
         description = f"Custom category: {name}"
 
     # Create and validate category using Pydantic model
@@ -137,16 +135,14 @@ async def add_category(
             dir=dir,
             patterns=patterns,
             description=description,
-            auto_load=auto_load,
         )
     except ValueError as e:
         return {"success": False, "error": f"Invalid category configuration: {e}"}
 
     session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
 
     # Get current config
+    project = session.get_project_name()
     config = await session.get_or_create_project_config(project)
     categories = config.categories
 
@@ -166,17 +162,15 @@ async def add_category(
         "success": True,
         "message": f"Category '{name}' added successfully",
         "category": {**category.model_dump(), "name": name},
-        "project": project,
     }
 
 
 async def update_category(
     name: str,
-    dir: str,
-    patterns: List[str],
-    description: str = "",
-    project: Optional[str] = None,
-    auto_load: Optional[bool] = None,
+    *,
+    description: Optional[str] = None,
+    dir: Optional[str] = None,
+    patterns: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Update an existing category."""
     # Validate category name
@@ -184,40 +178,43 @@ async def update_category(
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
 
     session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
 
     # Get current config
+    project = session.get_project_name()
     config = await session.get_or_create_project_config(project)
     categories = config.categories
 
     if name not in categories:
         return {"success": False, "error": f"Category '{name}' does not exist"}
 
-    # Preserve existing auto_load setting if not explicitly provided
+    if name in BUILTIN_CATEGORIES:
+        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
+
     existing_category = categories[name]
-    if auto_load is None:
-        # Category is always a Pydantic model
-        auto_load = existing_category.auto_load if existing_category.auto_load is not None else False
 
-    # Provide default description if empty
-    if not description.strip():
-        # Category is always a Pydantic model
-        existing_description = existing_category.description
+    # Handle description with proper defaults
+    if description is None:
+        # None means do not update, keep existing
+        final_description = existing_category.description
+    elif description == "":
+        # Empty string means explicitly clear the description
+        final_description = ""
+    else:
+        # Any other value is used as the new description
+        final_description = description
 
-        if existing_description.strip():
-            description = existing_description
-        else:
-            description = f"Custom category: {name}"
+    # If after all this, the description is still empty or None, use the default
+    if final_description is None or final_description == "":
+        final_description = f"Custom category: {name}"
 
-    # Create and validate category using Pydantic model
     try:
-        category = Category(
-            url=None,
-            dir=dir,
-            patterns=patterns,
-            description=description,
-            auto_load=auto_load,
+        # Update only specified fields, preserving unknown fields using model_copy
+        category = existing_category.model_copy(
+            update={
+                "dir": dir if dir is not None else existing_category.dir,
+                "patterns": patterns if patterns is not None else existing_category.patterns,
+                "description": final_description,
+            }
         )
     except ValueError as e:
         return {"success": False, "error": f"Invalid category configuration: {e}"}
@@ -238,11 +235,10 @@ async def update_category(
         "success": True,
         "message": f"Category '{name}' updated successfully",
         "category": category.model_dump(),
-        "project": project,
     }
 
 
-async def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+async def remove_category(name: str) -> Dict[str, Any]:
     """Remove a custom category."""
     # Validate category name
     if not _validate_category_name(name):
@@ -281,28 +277,161 @@ async def remove_category(name: str, project: Optional[str] = None) -> Dict[str,
         "success": True,
         "message": f"Category '{name}' removed successfully",
         "removed_category": removed_category,
-        "project": project,
     }
 
 
-async def list_categories(project: Optional[str] = None) -> Dict[str, Any]:
+async def list_categories(verbose: bool = False) -> Dict[str, Any]:
     """List all categories (built-in and custom)."""
     session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
 
+    project = session.get_project_name()
     config = await session.get_or_create_project_config(project)
     categories = config.categories
 
-    # Convert Category objects to dicts for API response
-    categories_dict = {name: cat.model_dump() for name, cat in categories.items()}
+    categories_data = {}
+    for name, category in categories.items():
+        category_info = {"description": category.description, "builtin": name in BUILTIN_CATEGORIES}
 
-    return {
-        "success": True,
-        "project": project,
-        "categories": categories_dict,
-        "total_categories": len(categories),
-    }
+        if verbose:
+            category_info.update({"dir": category.dir, "patterns": category.patterns, "url": category.url})
+
+        categories_data[name] = category_info
+
+    return {"success": True, "categories": categories_data}
+
+
+async def add_to_category(name: str, patterns: List[str]) -> Dict[str, Any]:
+    """Add patterns to existing category."""
+    if not _validate_category_name(name):
+        return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
+    if name in BUILTIN_CATEGORIES:
+        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
+
+    session = SessionManager()
+    project = session.get_project_name()
+    config = await session.get_or_create_project_config(project)
+
+    if name not in config.categories:
+        return {"success": False, "error": f"Category '{name}' does not exist"}
+
+    existing_category = config.categories[name]
+
+    # Add new patterns to existing ones, deduplicating while preserving order.
+    # By default, deduplication is case-sensitive to align with file system behavior.
+    # On case-insensitive file systems, this may cause duplicate matches.
+    case_insensitive_deduplication = False  # Could be made configurable in future
+
+    all_patterns = (existing_category.patterns or []) + patterns
+    seen = set()
+    updated_patterns = []
+    for pat in all_patterns:
+        key = pat.lower() if case_insensitive_deduplication else pat
+        if key not in seen:
+            seen.add(key)
+            updated_patterns.append(pat)
+
+    try:
+        # Create updated category
+        updated_category = Category(
+            url=existing_category.url,
+            dir=existing_category.dir,
+            patterns=updated_patterns,
+            description=existing_category.description,
+        )
+
+        # Update the category
+        config.categories[name] = updated_category
+
+        # Invalidate cache for this category before updating session
+        await CategoryDocumentCache.invalidate_category(name)
+
+        # Update session
+        session.session_state.set_project_config("categories", config.categories)
+
+        # Auto-save
+        await _auto_save_session(session)
+
+        return {
+            "success": True,
+            "message": f"Patterns added to category '{name}' successfully",
+            "category": updated_category.model_dump(),
+        }
+
+    except ValueError as e:
+        return {"success": False, "error": f"Invalid category configuration: {e}"}
+
+
+async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]:
+    """Remove patterns from category."""
+    if not _validate_category_name(name):
+        return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
+    if name in BUILTIN_CATEGORIES:
+        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
+
+    session = SessionManager()
+    project = session.get_project_name()
+    config = await session.get_or_create_project_config(project)
+
+    if name not in config.categories:
+        return {"success": False, "error": f"Category '{name}' does not exist"}
+
+    existing_category = config.categories[name]
+    current_patterns = existing_category.patterns or []
+
+    # Aggregate patterns not found in category (case-sensitive matching)
+    # Note: Pattern removal is case-sensitive to align with file system behavior
+    # This means '*.py' and '*.PY' are treated as different patterns
+    not_found_patterns = [pattern for pattern in patterns if pattern not in current_patterns]
+
+    # Remove only patterns that exist in current_patterns (case-sensitive matching)
+    patterns_to_remove = [pattern for pattern in patterns if pattern in current_patterns]
+    updated_patterns = [p for p in current_patterns if p not in patterns_to_remove]
+
+    # Check if category would be empty
+    if not updated_patterns and not existing_category.url:
+        return {
+            "success": False,
+            "error": f"Cannot remove all patterns from file-based category '{name}'. Use remove_category to delete it.",
+            "not_found_patterns": not_found_patterns if not_found_patterns else None,
+        }
+
+    try:
+        # Create updated category
+        updated_category = Category(
+            url=existing_category.url,
+            dir=existing_category.dir,
+            patterns=updated_patterns if updated_patterns else None,
+            description=existing_category.description,
+        )
+
+        # Update the category
+        config.categories[name] = updated_category
+
+        # Invalidate cache for this category before updating session
+        await CategoryDocumentCache.invalidate_category(name)
+
+        # Update session
+        session.session_state.set_project_config("categories", config.categories)
+
+        # Auto-save
+        await _auto_save_session(session)
+
+        result = {
+            "success": True,
+            "message": f"Patterns removed from category '{name}' successfully",
+            "category": updated_category.model_dump(),
+        }
+
+        # If some patterns were not found, report them but do not fail the operation
+        if not_found_patterns:
+            result["not_found_patterns"] = not_found_patterns
+
+        return result
+
+    except ValueError as e:
+        return {"success": False, "error": f"Invalid category configuration: {e}"}
 
 
 async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:

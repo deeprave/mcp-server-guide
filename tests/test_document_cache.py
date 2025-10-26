@@ -1,8 +1,9 @@
 """Tests for document cache functionality."""
 
 import pytest
-from src.mcp_server_guide.document_cache import CategoryDocumentCache, DocumentCacheEntry
-from src.mcp_server_guide.tools.category_tools import update_category
+from unittest.mock import patch
+from mcp_server_guide.document_cache import CategoryDocumentCache, DocumentCacheEntry
+from mcp_server_guide.tools.category_tools import update_category
 
 
 class TestDocumentCache:
@@ -154,7 +155,7 @@ class TestDocumentCacheIntegration:
     @pytest.mark.asyncio
     async def test_cache_integration_with_content_tools(self, isolated_config_file):
         """Test that content tools use the cache correctly."""
-        from src.mcp_server_guide.tools.content_tools import get_content
+        from mcp_server_guide.tools.content_tools import get_content
 
         # This test verifies that get_content uses the cache
         # The actual caching behavior is tested in the content tools tests
@@ -164,8 +165,8 @@ class TestDocumentCacheIntegration:
     @pytest.mark.asyncio
     async def test_cache_invalidation_on_category_update(self, isolated_config_file):
         """Test that cache is invalidated when categories are updated."""
-        from src.mcp_server_guide.session_manager import SessionManager
-        from src.mcp_server_guide.project_config import ProjectConfig, Category
+        from mcp_server_guide.session_manager import SessionManager
+        from mcp_server_guide.project_config import ProjectConfig, Category
 
         # Setup session with a category
         session_manager = SessionManager()
@@ -173,7 +174,7 @@ class TestDocumentCacheIntegration:
 
         config = ProjectConfig(
             categories={
-                "test_category": Category(dir="test_dir", patterns=["*.md"], auto_load=False),
+                "test_category": Category(dir="test_dir", patterns=["*.md"]),
             }
         )
         session_manager.session_state.project_config = config
@@ -183,7 +184,17 @@ class TestDocumentCacheIntegration:
         assert await CategoryDocumentCache.get("test_category", "test_doc") is not None
 
         # Update category (this should invalidate cache)
-        await update_category("test_category", "new_dir", ["*.txt"])
+
+        # Mock the session manager to use our instance and ensure get_or_create_project_config returns our config
+        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+            mock_session_class.return_value = session_manager
+
+            # Mock the get_or_create_project_config method to return our config
+            async def mock_get_config(project):
+                return config
+
+            session_manager.get_or_create_project_config = mock_get_config
+            await update_category("test_category", dir="new_dir", patterns=["*.txt"])
 
         # Cache should be invalidated
         cache_entry = await CategoryDocumentCache.get("test_category", "test_doc")

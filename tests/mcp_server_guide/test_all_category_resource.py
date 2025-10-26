@@ -34,7 +34,7 @@ async def test_read_all_categories_resource_formats_content_as_markdown():
                 dir="lang/",
                 patterns=["*.md"],
                 description="Language guidelines",
-                auto_load=False,  # Should not be included
+                # Should not be included
             ),
         }
     )

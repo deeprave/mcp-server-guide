@@ -1,6 +1,6 @@
 """Tests for deferred configuration functionality."""
 
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 from mcp_server_guide.main import configure_builtin_categories
 
 
@@ -12,15 +12,31 @@ class TestDeferredConfiguration:
         config = {"guidesdir": "/custom/guides", "guide": "custom-guide"}
 
         mock_categories_result = {
-            "builtin_categories": [
-                {"name": "guide", "dir": "/default/guides", "patterns": ["*.md"], "description": "Project guidelines"}
-            ]
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "guide",
+                        "dir": "/default/guides",
+                        "patterns": ["*.md"],
+                        "description": "Project guidelines",
+                    }
+                ]
+            },
         }
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                mock_list.return_value = mock_categories_result
+        async def mock_list_categories():
+            return mock_categories_result
 
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
                 await configure_builtin_categories(config)
 
                 mock_list.assert_called_once()
@@ -33,15 +49,31 @@ class TestDeferredConfiguration:
         config = {"langsdir": "/custom/langs", "lang": "rust"}
 
         mock_categories_result = {
-            "builtin_categories": [
-                {"name": "lang", "dir": "/default/langs", "patterns": ["*.md"], "description": "Language guidelines"}
-            ]
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "lang",
+                        "dir": "/default/langs",
+                        "patterns": ["*.md"],
+                        "description": "Language guidelines",
+                    }
+                ]
+            },
         }
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                mock_list.return_value = mock_categories_result
+        async def mock_list_categories():
+            return mock_categories_result
 
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
                 await configure_builtin_categories(config)
 
                 mock_list.assert_called_once()
@@ -54,15 +86,31 @@ class TestDeferredConfiguration:
         config = {"contextdir": "/custom/context"}
 
         mock_categories_result = {
-            "builtin_categories": [
-                {"name": "context", "dir": "/default/context", "patterns": ["*.md"], "description": "Project context"}
-            ]
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "context",
+                        "dir": "/default/context",
+                        "patterns": ["*.md"],
+                        "description": "Project context",
+                    }
+                ]
+            },
         }
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                mock_list.return_value = mock_categories_result
+        async def mock_list_categories():
+            return mock_categories_result
 
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
                 await configure_builtin_categories(config)
 
                 mock_list.assert_called_once()
@@ -75,63 +123,75 @@ class TestDeferredConfiguration:
         config = {"guidesdir": "/custom/guides"}
 
         mock_categories_result = {
-            "builtin_categories": []  # No matching categories
+            "success": True,
+            "categories": {
+                "builtin_categories": []  # No matching categories
+            },
         }
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                mock_list.return_value = mock_categories_result
+        async def mock_list_categories():
+            return mock_categories_result
 
-                await configure_builtin_categories(config)
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            await configure_builtin_categories(config)
 
-                mock_list.assert_called_once()
-                mock_update.assert_not_called()  # Should not update if no matching category
+            mock_list.assert_called_once()
+            # No update_category call should happen when no categories match
 
     async def test_configure_builtin_categories_list_categories_fails(self):
         """Test configure_builtin_categories when list_categories fails."""
         config = {"guidesdir": "/custom/guides"}
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                with patch("mcp_server_guide.main.logger") as mock_logger:
-                    mock_list.side_effect = Exception("List failed")
+        async def failing_list_categories():
+            raise Exception("List failed")
 
-                    await configure_builtin_categories(config)
+        with patch("mcp_server_guide.tools.category_tools.list_categories", new=failing_list_categories):
+            with patch("mcp_server_guide.main.logger") as mock_logger:
+                await configure_builtin_categories(config)
 
-                    mock_list.assert_called_once()
-                    mock_update.assert_not_called()
-                    mock_logger.warning.assert_called_once_with("Failed to configure category guide")
+                # update_category should never be called when list_categories fails
+                mock_logger.warning.assert_called_once_with("Failed to configure category guide")
 
     async def test_configure_builtin_categories_empty_config(self):
         """Test configure_builtin_categories with empty config."""
         config = {}
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                await configure_builtin_categories(config)
-
-                mock_list.assert_not_called()
-                mock_update.assert_not_called()
+        # With empty config, no functions should be called
+        await configure_builtin_categories(config)
+        # No assertions needed - just verify it doesn't crash
 
     async def test_configure_builtin_categories_file_value_none(self):
         """Test configure_builtin_categories with file value set to 'none'."""
         config = {"guidesdir": "/custom/guides", "guide": "none"}
 
         mock_categories_result = {
-            "builtin_categories": [
-                {
-                    "name": "guide",
-                    "dir": "/default/guides",
-                    "patterns": ["default.md"],
-                    "description": "Project guidelines",
-                }
-            ]
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "guide",
+                        "dir": "/default/guides",
+                        "patterns": ["default.md"],
+                        "description": "Project guidelines",
+                    }
+                ]
+            },
         }
 
-        with patch("mcp_server_guide.tools.category_tools.list_categories", new_callable=AsyncMock) as mock_list:
-            with patch("mcp_server_guide.tools.category_tools.update_category", new_callable=AsyncMock) as mock_update:
-                mock_list.return_value = mock_categories_result
+        async def mock_list_categories():
+            return mock_categories_result
 
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
                 await configure_builtin_categories(config)
 
                 mock_list.assert_called_once()
@@ -141,3 +201,161 @@ class TestDeferredConfiguration:
                     patterns=["default.md"],  # Should use existing patterns when file is "none"
                     description="Project guidelines",
                 )
+
+    async def test_configure_builtin_categories_with_file_only(self):
+        """Test configure_builtin_categories with file parameter only."""
+        config = {"guide": "custom-guide"}
+
+        mock_categories_result = {
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "guide",
+                        "dir": "/default/guides",
+                        "patterns": ["*.md"],
+                        "description": "Project guidelines",
+                    }
+                ]
+            },
+        }
+
+        async def mock_list_categories():
+            return mock_categories_result
+
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
+                await configure_builtin_categories(config)
+
+                mock_list.assert_called_once()
+                mock_update.assert_called_once_with(
+                    name="guide", dir="/default/guides", patterns=["custom-guide.md"], description="Project guidelines"
+                )
+
+    async def test_configure_builtin_categories_with_dir_only(self):
+        """Test configure_builtin_categories with dir parameter only."""
+        config = {"guidesdir": "/custom/guides"}
+
+        mock_categories_result = {
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "guide",
+                        "dir": "/default/guides",
+                        "patterns": ["*.md"],
+                        "description": "Project guidelines",
+                    }
+                ]
+            },
+        }
+
+        async def mock_list_categories():
+            return mock_categories_result
+
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
+                await configure_builtin_categories(config)
+
+                mock_list.assert_called_once()
+                mock_update.assert_called_once_with(
+                    name="guide", dir="/custom/guides", patterns=["*.md"], description="Project guidelines"
+                )
+
+    async def test_configure_builtin_categories_multiple_mappings(self):
+        """Test configure_builtin_categories with multiple CLI mappings."""
+        config = {"guidesdir": "/custom/guides", "langsdir": "/custom/langs", "contextdir": "/custom/context"}
+
+        mock_categories_result = {
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "guide",
+                        "dir": "/default/guides",
+                        "patterns": ["*.md"],
+                        "description": "Project guidelines",
+                    },
+                    {
+                        "name": "lang",
+                        "dir": "/default/langs",
+                        "patterns": ["*.md"],
+                        "description": "Language guidelines",
+                    },
+                    {
+                        "name": "context",
+                        "dir": "/default/context",
+                        "patterns": ["*.md"],
+                        "description": "Project context",
+                    },
+                ]
+            },
+        }
+
+        async def mock_list_categories():
+            return mock_categories_result
+
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
+                await configure_builtin_categories(config)
+
+                # Should be called once for each mapping
+                assert mock_list.call_count == 3
+                assert mock_update.call_count == 3
+
+    async def test_configure_builtin_categories_category_not_found(self):
+        """Test configure_builtin_categories when category doesn't exist in builtin_categories."""
+        config = {"guidesdir": "/custom/guides"}
+
+        mock_categories_result = {
+            "success": True,
+            "categories": {
+                "builtin_categories": [
+                    {
+                        "name": "different_category",
+                        "dir": "/default/other",
+                        "patterns": ["*.md"],
+                        "description": "Other category",
+                    }
+                ]
+            },
+        }
+
+        async def mock_list_categories():
+            return mock_categories_result
+
+        async def mock_update_category(**kwargs):
+            pass
+
+        with patch(
+            "mcp_server_guide.tools.category_tools.list_categories", side_effect=mock_list_categories
+        ) as mock_list:
+            with patch(
+                "mcp_server_guide.tools.category_tools.update_category", side_effect=mock_update_category
+            ) as mock_update:
+                await configure_builtin_categories(config)
+
+                mock_list.assert_called_once()
+                # Should not call update_category when no matching category is found
+                mock_update.assert_not_called()

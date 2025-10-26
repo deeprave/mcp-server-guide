@@ -1,4 +1,4 @@
-"""Final coverage boost tests to reach 90% target."""
+"""Integration tests for server instruction functionality."""
 
 from mcp_server_guide.session import resolve_server_path
 

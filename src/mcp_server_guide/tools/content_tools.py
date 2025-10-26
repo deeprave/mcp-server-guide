@@ -1,50 +1,70 @@
 """Content retrieval tools."""
 
 from typing import Dict, Any, List, Optional
+from ..constants import BUILTIN_CATEGORIES
 from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from .category_tools import get_category_content
+from .collection_tools import get_collection_document
 
 
-async def get_content(category: str, document: str, project: Optional[str] = None) -> Optional[str]:
-    """Get content for a specific document in a category with caching."""
-    # Check cache first
-    cache_entry = await CategoryDocumentCache.get(category, document)
+async def get_content(category_or_collection: str, document: str, project: Optional[str] = None) -> Optional[str]:
+    """Get content for a specific document in a category or collection with caching."""
+    # Check cache first for category
+    cache_entry = await CategoryDocumentCache.get(category_or_collection, document)
     if cache_entry is not None:
         if not cache_entry.exists:
             return None
-        # For cached entries that exist, we still need to fetch the actual content
-        # since we only cache metadata, not the full content
 
-    # Fetch from category system
+    category_error: Optional[Exception] = None
+
+    # Try category first
     try:
-        result = await get_category_content(category, project)
+        result = await get_category_content(category_or_collection, project)
         if result.get("success") and result.get("content"):
-            content = str(result["content"])  # Ensure content is str
+            content = str(result["content"])
             matched_files = result.get("matched_files", [])
-
-            # Extract specific document from combined content
             document_content = _extract_document_from_content(content, document)
 
             if document_content is not None:
-                # Cache the result as found
-                await CategoryDocumentCache.set(category, document, True, matched_files)
+                await CategoryDocumentCache.set(category_or_collection, document, True, matched_files)
                 return document_content
             else:
-                # Document not found in content
-                await CategoryDocumentCache.set(category, document, False, None)
+                await CategoryDocumentCache.set(category_or_collection, document, False, None)
                 return None
-        else:
-            # Cache the "not found" result
-            await CategoryDocumentCache.set(category, document, False, None)
-            return None
-    except (FileNotFoundError, PermissionError, OSError) as e:
-        # Cache the "not found" result on file system errors
+    except Exception as e:
+        # Log exception for debugging
         import logging
 
-        logging.getLogger(__name__).warning(f"Failed to get content for {category}/{document}: {e}")
-        await CategoryDocumentCache.set(category, document, False, None)
-        return None
+        logger = logging.getLogger(__name__)
+        logger.error(f"Category content retrieval failed: {e}", exc_info=True)
+        category_error = e
+
+    # Try collection if category failed
+    try:
+        result = await get_collection_document(category_or_collection, document, project)
+        if result.get("success") and result.get("content"):
+            return str(result["content"])
+        else:
+            # Cache failed collection document lookup
+            await CategoryDocumentCache.set(category_or_collection, document, False, None)
+    except Exception as ce:
+        # Log exception for debugging
+        import logging
+
+        logger = logging.getLogger(__name__)
+        if category_error:
+            logger.critical(
+                f"Both category and collection content retrieval raised exceptions for '{category_or_collection}': "
+                f"category error: {category_error}, collection error: {ce}",
+                exc_info=True,
+            )
+        else:
+            logger.error(f"Collection content retrieval failed: {ce}", exc_info=True)
+        # Cache exception as failed lookup
+        await CategoryDocumentCache.set(category_or_collection, document, False, None)
+
+    return None
 
 
 def _extract_document_from_content(content: str, document: str) -> Optional[str]:
@@ -123,21 +143,9 @@ async def get_project_context(project: Optional[str] = None) -> str:
 
 
 async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
-    """Get all guide content using unified category system."""
+    """Get all guide content from built-in categories."""
     result = {}
-    session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
-
-    # Get project config to find categories with auto_load: true
-    config = await session.get_or_create_project_config(project)
-    categories = config.categories
-
-    # Filter categories with auto_load: true
-    auto_load_categories = [name for name, category_config in categories.items() if category_config.auto_load or False]
-
-    # Load content for each auto_load category
-    for category_name in auto_load_categories:
+    for category_name in BUILTIN_CATEGORIES:
         try:
             category_result = await get_category_content(category_name, project)
             if category_result.get("success"):
@@ -208,4 +216,5 @@ __all__ = [
     "show_guide",
     "show_language_guide",
     "show_project_summary",
+    "get_category_content",
 ]

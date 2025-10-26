@@ -40,6 +40,13 @@ class CategoryDocumentCache:
             cls._cache.pop(category, None)
 
     @classmethod
+    async def invalidate(cls, category: str, document: str) -> None:
+        """Invalidate specific document cache entry."""
+        async with cls._lock:
+            if category in cls._cache:
+                cls._cache[category].pop(document, None)
+
+    @classmethod
     async def clear_all(cls) -> None:
         """Clear all cache entries."""
         async with cls._lock:

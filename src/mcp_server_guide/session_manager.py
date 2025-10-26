@@ -222,28 +222,25 @@ class SessionManager:
 
     @staticmethod
     def builtin_categories() -> Dict[str, Any]:
-        """Create built-in categories with default values and auto_load = true."""
+        """Create built-in categories with default values."""
         return {
             "guide": Category(
                 url=None,
                 dir="guide/",
                 patterns=["guidelines"],
                 description="Development guidelines",
-                auto_load=True,
             ),
             "lang": Category(
                 url=None,
                 dir="lang/",
                 patterns=["none"],
                 description="Language-specific guidelines",
-                auto_load=True,
             ),
             "context": Category(
                 url=None,
                 dir="context/",
                 patterns=["project-context"],
                 description="Project-specific guidelines",
-                auto_load=True,
             ),
         }
 

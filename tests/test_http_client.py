@@ -1,4 +1,4 @@
-"""Tests to improve HTTP client coverage."""
+"""Tests for HTTP client error handling."""
 
 import pytest
 import requests

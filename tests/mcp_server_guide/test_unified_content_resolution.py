@@ -88,9 +88,9 @@ async def test_get_all_guides_uses_unified_system():
         mock_session.get_project_name.return_value = "test-project"
         config_data = ProjectConfig(
             categories={
-                "guide": Category(dir="guide/", patterns=["*.md"], description="Guide", auto_load=True),
-                "lang": Category(dir="lang/", patterns=["*.md"], description="Language", auto_load=True),
-                "context": Category(dir="context/", patterns=["*.md"], description="Context", auto_load=True),
+                "guide": Category(dir="guide/", patterns=["*.md"], description="Guide"),
+                "lang": Category(dir="lang/", patterns=["*.md"], description="Language"),
+                "context": Category(dir="context/", patterns=["*.md"], description="Context"),
             }
         )
         mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)

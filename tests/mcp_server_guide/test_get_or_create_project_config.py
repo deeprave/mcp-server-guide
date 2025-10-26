@@ -34,7 +34,6 @@ async def test_get_or_create_project_config_empty_config():
 
         assert result["success"] is True
         assert result["categories"] == {}
-        assert result["total_categories"] == 0
 
 
 @pytest.mark.asyncio
@@ -53,7 +52,6 @@ async def test_get_or_create_project_config_no_categories_key():
 
         assert result["success"] is True
         assert result["categories"] == {}
-        assert result["total_categories"] == 0
 
 
 @pytest.mark.asyncio

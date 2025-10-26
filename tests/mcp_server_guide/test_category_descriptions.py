@@ -52,12 +52,12 @@ async def test_update_category_with_description(mock_session):
 
     # Setup existing category
     config_data = ProjectConfig(
-        categories={"testing": Category(dir="test/", patterns=["*.md"], description="Old description", auto_load=False)}
+        categories={"testing": Category(dir="test/", patterns=["*.md"], description="Old description")}
     )
     mock_session.session_state.get_project_config = Mock(return_value=config_data)
     mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
-    result = await update_category("testing", "test/", ["*.md"], description="New description")
+    result = await update_category("testing", description="New description")
 
     assert result["success"] is True
     assert result["category"]["description"] == "New description"
@@ -70,10 +70,8 @@ async def test_list_categories_includes_descriptions(mock_session):
     # Setup categories with descriptions
     config_data = ProjectConfig(
         categories={
-            "guide": Category(
-                dir="guide/", patterns=["guidelines"], description="Development guidelines", auto_load=False
-            ),
-            "testing": Category(dir="test/", patterns=["*.md"], description="Test documentation", auto_load=False),
+            "guide": Category(dir="guide/", patterns=["guidelines"], description="Development guidelines"),
+            "testing": Category(dir="test/", patterns=["*.md"], description="Test documentation"),
         }
     )
     mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
@@ -91,9 +89,7 @@ async def test_list_categories_handles_missing_descriptions(mock_session):
     from mcp_server_guide.project_config import ProjectConfig, Category
 
     # Setup category without description (empty string is the default)
-    config_data = ProjectConfig(
-        categories={"testing": Category(dir="test/", patterns=["*.md"], description="", auto_load=False)}
-    )
+    config_data = ProjectConfig(categories={"testing": Category(dir="test/", patterns=["*.md"], description="")})
     mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
 
     result = await list_categories()

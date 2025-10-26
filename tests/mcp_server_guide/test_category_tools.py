@@ -26,9 +26,9 @@ def mock_session():
         # Create ProjectConfig with Category objects
         test_config = ProjectConfig(
             categories={
-                "guide": Category(dir="guide/", patterns=["guidelines.md"], description="", auto_load=False),
-                "lang": Category(dir="lang/", patterns=["python.md"], description="", auto_load=False),
-                "context": Category(dir="context/", patterns=["context.md"], description="", auto_load=False),
+                "guide": Category(dir="guide/", patterns=["guidelines.md"], description=""),
+                "lang": Category(dir="lang/", patterns=["python.md"], description=""),
+                "context": Category(dir="context/", patterns=["context.md"], description=""),
             }
         )
 
@@ -79,17 +79,35 @@ async def test_list_categories_basic(mock_session):
     """Test basic category listing."""
     result = await list_categories()
 
-    assert result["project"] == "test-project"
-    assert len(result["categories"]) == 3
-    assert result["total_categories"] == 3
+    assert result["success"] is True
+    assert "categories" in result
+    assert len(result["categories"]) >= 3  # At least the built-in categories
 
 
 async def test_update_category_nonexistent(mock_session):
     """Test updating non-existent category."""
-    result = await update_category("nonexistent", "test/", ["*.md"])
+    result = await update_category("nonexistent", description="test description")
 
     assert result["success"] is False
     assert "does not exist" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_update_builtin_category_error(mock_session):
+    """Test updating built-in category returns error."""
+    result = await update_category("guide", description="test description")
+
+    assert result["success"] is False
+    assert "Cannot modify built-in category" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_remove_builtin_category_error(mock_session):
+    """Test removing built-in category returns error."""
+    result = await remove_category("guide")
+
+    assert result["success"] is False
+    assert "Cannot remove built-in category" in result["error"]
 
 
 async def test_get_category_content_no_files(mock_session):
@@ -103,9 +121,7 @@ async def test_get_category_content_no_files(mock_session):
     # Add categories to config
     from mcp_server_guide.project_config import ProjectConfig, Category
 
-    test_config = ProjectConfig(
-        categories={"testing": Category(dir="test/", patterns=["*.md"], description="", auto_load=False)}
-    )
+    test_config = ProjectConfig(categories={"testing": Category(dir="test/", patterns=["*.md"], description="")})
     mock_session.get_or_create_project_config = AsyncMock(return_value=test_config)
 
     result = await get_category_content("testing")

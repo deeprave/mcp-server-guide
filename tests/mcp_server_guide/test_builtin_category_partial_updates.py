@@ -45,7 +45,7 @@ def mock_session():
 
 @pytest.mark.asyncio
 async def test_update_builtin_category_dir_field(mock_session):
-    """Test updating dir field on builtin category should succeed."""
+    """Test updating dir field on builtin category should fail (builtin protection)."""
     result = await update_category(
         name="guide",
         dir="new-guide/",
@@ -53,16 +53,14 @@ async def test_update_builtin_category_dir_field(mock_session):
         description="Project guidelines",
     )
 
-    # This should pass once we implement the feature
-    assert result["success"] is True
-    assert result["category"]["dir"] == "new-guide/"
-    assert result["category"]["patterns"] == ["guidelines.md"]
-    assert result["category"]["description"] == "Project guidelines"
+    # This should fail because builtin categories are protected
+    assert result["success"] is False
+    assert "Cannot modify built-in category" in result["error"]
 
 
 @pytest.mark.asyncio
 async def test_update_builtin_category_patterns_field(mock_session):
-    """Test updating patterns field on builtin category should succeed."""
+    """Test updating patterns field on builtin category should fail (builtin protection)."""
     result = await update_category(
         name="lang",
         dir="lang/",
@@ -70,30 +68,22 @@ async def test_update_builtin_category_patterns_field(mock_session):
         description="Language guides",
     )
 
-    # This should pass once we implement the feature
-    assert result["success"] is True
-    assert result["category"]["dir"] == "lang/"
-    assert result["category"]["patterns"] == ["*.py", "*.md"]
-    assert result["category"]["description"] == "Language guides"
+    # This should fail because builtin categories are protected
+    assert result["success"] is False
+    assert "Cannot modify built-in category" in result["error"]
 
 
 @pytest.mark.asyncio
-async def test_update_builtin_category_auto_load_field(mock_session):
-    """Test updating auto_load field on builtin category should succeed."""
+async def test_update_builtin_category_description_field(mock_session):
+    """Test updating description field on builtin category should fail (builtin protection)."""
     result = await update_category(
         name="context",
-        dir="context/",
-        patterns=["context.md"],
         description="Context files",
-        auto_load=True,
     )
 
-    # This should pass once we implement the feature
-    assert result["success"] is True
-    assert result["category"]["dir"] == "context/"
-    assert result["category"]["patterns"] == ["context.md"]
-    assert result["category"]["description"] == "Context files"
-    assert result["category"]["auto_load"] is True
+    # This should fail because builtin categories are protected
+    assert result["success"] is False
+    assert "Cannot modify built-in category" in result["error"]
 
 
 @pytest.mark.asyncio
@@ -109,14 +99,12 @@ async def test_builtin_category_deletion_still_forbidden(mock_session):
 
 @pytest.mark.asyncio
 async def test_update_builtin_category_invalid_field_rejected(mock_session):
-    """Test that updating with invalid configuration is accepted (validation removed)."""
-    # Note: Validation is now handled by Pydantic models, so empty patterns are allowed at this level
+    """Test that updating builtin category is rejected."""
     result = await update_category(
         name="guide",
-        dir="guide/",
-        patterns=[],  # Empty patterns now allowed (validation removed)
         description="Project guidelines",
     )
 
-    # This should succeed since validation is removed
-    assert result["success"] is True
+    # This should fail because builtin categories are protected
+    assert result["success"] is False
+    assert "Cannot modify built-in category" in result["error"]

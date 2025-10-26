@@ -16,7 +16,7 @@ async def test_category_name_validation_rejects_invalid_names():
         assert "Invalid category name" in result.get("error", "")
 
         # Test update_category
-        result = await update_category(invalid_name, "test", ["*.md"])
+        result = await update_category(invalid_name, description="test")
         assert not result.get("success", True), f"update_category should reject '{invalid_name}'"
         assert "Invalid category name" in result.get("error", "")
 

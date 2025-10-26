@@ -24,7 +24,6 @@ class Category(BaseModel):
     dir: Optional[str] = Field(None, description="Directory path relative to project root")
     patterns: Optional[List[str]] = Field(None, description="File patterns to match")
     description: str = Field(default="", description="Human-readable description of the category")
-    auto_load: Optional[bool] = Field(None, description="Whether to include in 'all' grouping")
 
     def model_post_init(self, __context: Any) -> None:
         """Validate that category has either url OR dir/patterns, but not both."""
@@ -92,6 +91,47 @@ class Category(BaseModel):
         return v.strip() if v else ""
 
 
+class Collection(BaseModel):
+    """Collection of categories for logical grouping."""
+
+    categories: List[str] = Field(description="List of category names in this collection")
+    description: str = Field(default="", description="Human-readable description of the collection")
+
+    @field_validator("categories")
+    @classmethod
+    def validate_categories(cls, v: List[str]) -> List[str]:
+        if not isinstance(v, list):
+            raise ValueError("Categories must be a list")
+        if not v:
+            raise ValueError("Collection must contain at least one category")
+
+        # Validate category name format
+        from .utils.validation import is_valid_name
+
+        for category_name in v:
+            if not isinstance(category_name, str):
+                raise ValueError("Category names must be strings")
+            if not is_valid_name(category_name):
+                raise ValueError(
+                    f'Category name "{category_name}" must contain only letters, numbers, dash, and underscore'
+                )
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_categories = []
+        for cat in v:
+            if cat not in seen:
+                seen.add(cat)
+                unique_categories.append(cat)
+
+        return unique_categories
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str) -> str:
+        return v.strip() if v else ""
+
+
 class ProjectConfig(BaseModel):
     """Project configuration containing only categories."""
 
@@ -101,6 +141,14 @@ class ProjectConfig(BaseModel):
     )
 
     categories: Dict[str, Category] = Field(default_factory=dict, description="Category definitions")
+    collections: Dict[str, Collection] = Field(
+        default_factory=dict,
+        description=(
+            "Collection definitions. "
+            "Collection names must start with a letter, may contain only alphanumeric characters, underscores, and hyphens, "
+            "and cannot exceed 30 characters."
+        ),
+    )
 
     @field_validator("categories")
     @classmethod
@@ -118,6 +166,41 @@ class ProjectConfig(BaseModel):
                 raise ValueError(f'Category name "{name}" cannot exceed 30 characters')
 
         return v
+
+    @field_validator("collections")
+    @classmethod
+    def validate_collections(cls, v: Dict[str, Collection]) -> Dict[str, Collection]:
+        if not isinstance(v, dict):
+            raise ValueError("Collections must be a dictionary")
+
+        # Validate collection names
+        for name in v.keys():
+            if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", name):
+                raise ValueError(
+                    f'Collection name "{name}" is invalid: must start with a letter and contain only alphanumeric characters, underscores, and hyphens (max 30 characters).'
+                )
+            if len(name) > 30:
+                raise ValueError(
+                    f'Collection name "{name}" is too long: cannot exceed 30 characters. '
+                    "Collection names must start with a letter and may only contain alphanumeric characters, underscores, and hyphens."
+                )
+
+        return v
+
+    def model_post_init(self, __context: Any) -> None:
+        """Validate project configuration after initialization."""
+        # Validate that collection category references exist
+        category_names = set(self.categories.keys())
+        for collection_name, collection in self.collections.items():
+            missing_categories = [cat for cat in collection.categories if cat not in category_names]
+            if missing_categories:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Collection '{collection_name}' references missing categories: {missing_categories}. "
+                    "These categories will be ignored until they are created."
+                )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary, excluding None values and empty lists."""
