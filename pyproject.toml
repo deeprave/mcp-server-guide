@@ -18,6 +18,8 @@ dependencies = [
 
 [project.scripts]
 mcp-server-guide = "mcp_server_guide.main:cli_main"
+# check for vulnerabilities
+osvcheck = "osvcheck:main"
 
 [build-system]
 requires = ["hatchling"]

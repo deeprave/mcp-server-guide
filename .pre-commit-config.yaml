@@ -38,10 +38,17 @@ repos:
     hooks:
       - id: mypy-check
         name: mypy
-        entry: uv run mypy src/mcp_server_guide
+        entry: uv run mypy src/
         language: system
         types: [python]
         pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: osv-check
+        name: osvcheck
+        entry: uv run src/osvcheck.py
+        language: system
 
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.24.1

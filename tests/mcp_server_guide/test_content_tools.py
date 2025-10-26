@@ -4,11 +4,9 @@ from mcp_server_guide.tools.content_tools import (
     get_guide,
     get_language_guide,
     get_project_context,
-    get_all_guides,
     search_content,
     show_guide,
     show_language_guide,
-    show_project_summary,
 )
 
 
@@ -24,9 +22,6 @@ async def test_content_tools_basic():
     result = await get_project_context()
     assert isinstance(result, str)
 
-    result = await get_all_guides()
-    assert isinstance(result, dict)
-
     result = await search_content("test")
     assert isinstance(result, list)
 
@@ -34,9 +29,6 @@ async def test_content_tools_basic():
     assert isinstance(result, dict)
 
     result = await show_language_guide()
-    assert isinstance(result, dict)
-
-    result = await show_project_summary()
     assert isinstance(result, dict)
 
 
@@ -63,9 +55,6 @@ async def test_content_tools_comprehensive():
     result = await get_project_context("test_project")
     assert isinstance(result, str)
 
-    result = await get_all_guides("test_project")
-    assert isinstance(result, dict)
-
     result = await search_content("test", "test_project")
     assert isinstance(result, list)
 
@@ -75,8 +64,6 @@ async def test_content_tools_comprehensive():
 
     result = await show_language_guide("test_project")
     assert isinstance(result, dict)
-
-    result = await show_project_summary("test_project")
     assert isinstance(result, dict)
 
 
@@ -96,17 +83,13 @@ async def test_get_project_context_branches():
 async def test_get_all_guides_error_handling():
     """Test get_all_guides error handling branches."""
     # Call with different projects to potentially hit error branches
-    result1 = await get_all_guides("test_project")
-    assert isinstance(result1, dict)
+    # With the new system, test basic functionality
+    result = await get_project_context("test_project")
+    assert isinstance(result, str)
 
-    result2 = await get_all_guides("nonexistent_project")
-    assert isinstance(result2, dict)
-
-    result3 = await get_all_guides()
-    assert isinstance(result3, dict)
-
-    # With the new auto_load system, results may be empty if no categories have auto_load: true
-    # This is expected behavior - the function should return empty dict if no auto_load categories exist
+    # Test search functionality
+    result = await search_content("test", "test_project")
+    assert isinstance(result, list)
 
 
 async def test_content_tools_edge_cases():
@@ -115,9 +98,6 @@ async def test_content_tools_edge_cases():
     result = await get_project_context("")
     assert isinstance(result, str)
 
-    result = await get_all_guides("")
-    assert isinstance(result, dict)
-
     result = await search_content("", "")
     assert isinstance(result, list)
 
@@ -125,13 +105,5 @@ async def test_content_tools_edge_cases():
     result = await get_project_context(None)
     assert isinstance(result, str)
 
-    result = await get_all_guides(None)
-    assert isinstance(result, dict)
-
-
-async def test_get_all_guides_individual_errors():
-    """Test get_all_guides with individual category errors."""
-    # This test is no longer relevant since get_all_guides now uses auto_load system
-    # and only loads categories with auto_load: true. Error handling is tested in
-    # test_get_all_guides_auto_load.py
-    pass
+    result = await search_content("test", None)
+    assert isinstance(result, list)

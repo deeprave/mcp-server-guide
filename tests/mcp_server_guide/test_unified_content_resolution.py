@@ -2,11 +2,11 @@
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
+from mcp_server_guide.project_config import ProjectConfig, Category
 from mcp_server_guide.tools.content_tools import (
     get_guide,
     get_language_guide,
     get_project_context,
-    get_all_guides,
 )
 
 
@@ -75,11 +75,6 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
         # Should use current project
         mock_category_content.assert_called_once_with("guide", None)
 
-
-async def test_get_all_guides_uses_unified_system():
-    """Test that await get_all_guides() uses unified category system with auto_load."""
-    from mcp_server_guide.project_config import ProjectConfig, Category
-
     with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session_class:
         # Set up mock session with auto_load categories
         mock_session = Mock()
@@ -107,15 +102,12 @@ async def test_get_all_guides_uses_unified_system():
 
             mock_category_content.side_effect = mock_category_response
 
-            result = await get_all_guides("test-project")
+            # Test that get_guide uses the unified system
+            result = await get_guide("test-project")
 
-            # Should call get_category_content for each auto_load category
-            assert mock_category_content.call_count == 3
+            # Should call get_category_content for guide category
+            mock_category_content.assert_called_with("guide", "test-project")
 
-            # Should return dict with all content
-            assert "guide" in result
-            assert "lang" in result
-            assert "context" in result
-            assert result["guide"] == "# Guidelines content"
-            assert result["lang"] == "# Language content"
-            assert result["context"] == "# Context content"
+            # Should return string content from guide category
+            assert isinstance(result, str)
+            assert result == "# Guidelines content"

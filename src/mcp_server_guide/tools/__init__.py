@@ -8,11 +8,9 @@ from .content_tools import (
     get_guide,
     get_language_guide,
     get_project_context,
-    get_all_guides,
     search_content,
     show_guide,
     show_language_guide,
-    show_project_summary,
 )
 from .file_tools import get_file_content
 from .category_tools import (
@@ -22,7 +20,7 @@ from .category_tools import (
     list_categories,
     get_category_content,
 )
-from .prompt_tools import list_prompts
+from .prompt_tools import list_prompts, list_resources
 
 __all__ = [
     # Project Management
@@ -36,11 +34,9 @@ __all__ = [
     "get_guide",
     "get_language_guide",
     "get_project_context",
-    "get_all_guides",
     "search_content",
     "show_guide",
     "show_language_guide",
-    "show_project_summary",
     # File Operations
     "get_file_content",
     # Category Management
@@ -51,4 +47,5 @@ __all__ = [
     "get_category_content",
     # Prompt Discovery
     "list_prompts",
+    "list_resources",
 ]

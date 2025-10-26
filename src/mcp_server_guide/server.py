@@ -22,24 +22,6 @@ error_handler = ErrorHandler(logger)
 async def _register_category_resources(server: FastMCP, config: "ProjectConfig") -> None:
     """Register dynamic resources for categories and collections."""
     from .tools.category_tools import get_category_content
-    from .tools.content_tools import get_all_guides
-
-    # Register aggregate resource for built-in guides
-    @server.resource(
-        "guide://category/all",
-        name="all",
-        description="All guide content from built-in categories",
-        mime_type="text/markdown",
-    )
-    async def read_all_categories() -> str:
-        """All built-in guide categories combined."""
-        result = await get_all_guides(None)
-        if not result:
-            return ""
-        content_parts = [f"# {category_name}\n\n{content}" for category_name, content in result.items()]
-        return "\n\n".join(content_parts)
-
-    logger.info("Registered resource: guide://category/all")
 
     def make_category_reader(cat_name: str, cat_config: Category) -> object:
         desc = cat_config.description
@@ -291,12 +273,6 @@ async def get_project_context(project: Optional[str] = None) -> str:
 
 
 @guide.tool()
-async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
-    """Get all guide files for comprehensive AI context."""
-    return await tools.get_all_guides(project)
-
-
-@guide.tool()
 async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across project content."""
     return await tools.search_content(query, project)
@@ -312,12 +288,6 @@ async def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
 async def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     """Display language guide to user."""
     return await tools.show_language_guide(project)
-
-
-@guide.tool()
-async def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
-    """Display project overview to user."""
-    return await tools.show_project_summary(project)
 
 
 @guide.tool()
@@ -418,19 +388,86 @@ async def list_prompts() -> Dict[str, Any]:
     return await tools.list_prompts()
 
 
+async def _format_guide_help() -> str:
+    """Format comprehensive help content for the guide prompt."""
+    from .naming import MCP_GUIDE_VERSION
+
+    help_sections = []
+
+    # About section
+    help_sections.append(f"""# MCP Server Guide Help
+
+**Version:** {MCP_GUIDE_VERSION}
+**Description:** Developer guidelines and project rules MCP server
+
+This server provides access to project documentation, categories, collections, and development guidelines through MCP prompts, tools, and resources.""")
+
+    # Available Prompts
+    try:
+        prompts_result = await tools.list_prompts()
+        if prompts_result.get("success"):
+            prompts = prompts_result.get("prompts", [])
+            help_sections.append("## Available Prompts")
+            for prompt in prompts:
+                args_info = ""
+                if prompt.get("arguments"):
+                    args = [f"`{arg['name']}`{'*' if arg['required'] else ''}" for arg in prompt["arguments"]]
+                    args_info = f" ({', '.join(args)})"
+                help_sections.append(f"- **@{prompt['name']}**{args_info}: {prompt.get('description', '')}")
+    except Exception as e:
+        help_sections.append(f"## Available Prompts\n*Error loading prompts: {e}*")
+
+    # Categories and Collections
+    try:
+        categories_result = await tools.list_categories(verbose=True)
+        if categories_result.get("success"):
+            categories = categories_result.get("categories", {})
+            help_sections.append("## Categories and Collections")
+            for cat_name, cat_info in categories.items():
+                collections = cat_info.get("collections", [])
+                collections_text = f" (in collections: {', '.join(collections)})" if collections else ""
+                help_sections.append(f"- **{cat_name}**{collections_text}: {cat_info.get('description', '')}")
+    except Exception as e:
+        help_sections.append(f"## Categories and Collections\n*Error loading categories: {e}*")
+
+    # Available Resources
+    try:
+        from .tools.prompt_tools import list_resources
+
+        resources_result = await list_resources()
+        if resources_result.get("success"):
+            resources = resources_result.get("resources", [])
+            help_sections.append("## Available Resources")
+            for resource in resources:
+                mime_info = f" ({resource['mime_type']})" if resource.get("mime_type") else ""
+                help_sections.append(f"- **{resource['uri']}**{mime_info}: {resource.get('description', '')}")
+    except Exception as e:
+        help_sections.append(f"## Available Resources\n*Error loading resources: {e}*")
+
+    # Usage Examples
+    help_sections.append("""## Usage Examples
+
+- `@guide` or `@guide --help` - Show this help
+- `@guide <category>` - Get content from a specific category
+- `@guide <collection>` - Get content from a collection
+- Use MCP tools for management operations
+- Access resources via their URIs""")
+
+    return "\n\n".join(help_sections)
+
+
 # MCP Prompt Handlers
 @mcp.prompt("guide")
 async def guide_prompt(category: Optional[str] = None) -> str:
     """Get built-in guides or specific category/collection."""
     normalized_category = category.strip().lower() if category else None
 
-    if not normalized_category:
-        guides = await tools.get_all_guides(None)
-        if guides:
-            content_parts = [f"## {category_name}\n\n{content}" for category_name, content in guides.items()]
-            return "\n\n".join(content_parts)
-        else:
-            return "No guides available."
+    # Show help for no arguments or help flags (Claude compatibility)
+    if not normalized_category or normalized_category in ["-", "-h", "--help"]:
+        from .prompts import execute_prompt_with_guide
+
+        help_content = await _format_guide_help()
+        return await execute_prompt_with_guide("guide", help_content, None, None)
     else:
         # Try category first
         result = await tools.get_category_content(normalized_category, None)

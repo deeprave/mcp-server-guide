@@ -1,7 +1,6 @@
 """Content retrieval tools."""
 
 from typing import Dict, Any, List, Optional
-from ..constants import BUILTIN_CATEGORIES
 from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from .category_tools import get_category_content
@@ -142,22 +141,6 @@ async def get_project_context(project: Optional[str] = None) -> str:
     return result.get("content", "") if result.get("success") else ""
 
 
-async def get_all_guides(project: Optional[str] = None) -> Dict[str, str]:
-    """Get all guide content from built-in categories."""
-    result = {}
-    for category_name in BUILTIN_CATEGORIES:
-        try:
-            category_result = await get_category_content(category_name, project)
-            if category_result.get("success"):
-                result[category_name] = category_result.get("content", "")
-            else:
-                result[category_name] = f"Error: {category_result.get('error', 'Unknown error')}"
-        except Exception as e:
-            result[category_name] = f"Error: {str(e)}"
-
-    return result
-
-
 async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across all categories for content matching query."""
     session = SessionManager()
@@ -200,21 +183,13 @@ async def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
     }
 
 
-async def show_project_summary(project: Optional[str] = None) -> Dict[str, Any]:
-    """Display project overview to user."""
-    all_content = await get_all_guides(project)
-    return {"success": True, "content": all_content, "message": f"Project summary for {project or 'current'}"}
-
-
 __all__ = [
     "get_content",
     "get_guide",
     "get_language_guide",
     "get_project_context",
-    "get_all_guides",
     "search_content",
     "show_guide",
     "show_language_guide",
-    "show_project_summary",
     "get_category_content",
 ]

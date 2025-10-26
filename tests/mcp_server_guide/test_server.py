@@ -75,12 +75,12 @@ async def test_server_content_functions():
     result = await server.get_project_context("test_project")
     assert isinstance(result, str)
 
-    # Test get_all_guides
-    result = await server.get_all_guides()
-    assert isinstance(result, dict)
+    # Test search_content
+    result = await server.search_content("test")
+    assert isinstance(result, list)
 
-    result = await server.get_all_guides("test_project")
-    assert isinstance(result, dict)
+    result = await server.search_content("test", "test_project")
+    assert isinstance(result, list)
 
     # Test search_content
     result = await server.search_content("test")
@@ -106,11 +106,8 @@ async def test_server_display_functions():
     result = await server.show_language_guide("test_project")
     assert isinstance(result, dict)
 
-    # Test show_project_summary
-    result = await server.show_project_summary()
-    assert isinstance(result, dict)
-
-    result = await server.show_project_summary("test_project")
+    # Test list_prompts
+    result = await server.list_prompts()
     assert isinstance(result, dict)
 
 
