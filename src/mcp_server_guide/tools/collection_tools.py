@@ -1,12 +1,124 @@
 """Collection management tools for organizing categories."""
 
-from typing import Dict, Any, List, Optional
+import re
+from typing import Dict, Any, List, Optional, Literal
 from ..project_config import Collection
 from ..session_manager import SessionManager
 from ..logging_config import get_logger
 from .category_tools import get_category_content
 
 logger = get_logger()
+
+# Collection name validation regex
+# Collection names must start with a letter, can contain letters, numbers, underscores, or dashes,
+# but must not end with a dash or underscore (single letters are allowed).
+COLLECTION_NAME_REGEX = r"^[a-zA-Z](?:[\w-]*[a-zA-Z0-9])?$"
+
+
+def is_valid_collection_name(name: str) -> bool:
+    """Validate collection name using the standard regex."""
+    return re.match(COLLECTION_NAME_REGEX, name) is not None
+
+
+def _create_collection(
+    categories: List[str],
+    description: str,
+    source_type: Literal["spec_kit", "user"],
+    spec_kit_version: Optional[str] = None,
+    existing_collection: Optional[Collection] = None,
+) -> Collection:
+    """Helper function to create a Collection with consistent metadata."""
+    from datetime import datetime, timezone
+
+    return Collection(
+        categories=categories,
+        description=description,
+        source_type=source_type,
+        spec_kit_version=spec_kit_version or None,
+        created_date=existing_collection.created_date if existing_collection else datetime.now(timezone.utc),
+        modified_date=datetime.now(timezone.utc),
+    )
+
+
+async def create_spec_kit_collection(
+    name: str, categories: List[str], description: str = "", spec_kit_version: str = ""
+) -> Dict[str, Any]:
+    """Create a collection with spec_kit source_type and version."""
+    session = SessionManager()
+
+    # Validate collection name
+    if not name or not name.strip():
+        return {"success": False, "error": "Collection name cannot be empty"}
+
+    if len(name) > 30 or not is_valid_collection_name(name):
+        return {
+            "success": False,
+            "error": (
+                f"Invalid collection name '{name}'. "
+                "Collection names must be at most 30 characters, start with a letter, "
+                "and contain only letters, numbers, dash (-), and underscore (_)."
+            ),
+        }
+
+    # Get current config
+    project = session.get_project_name()
+    config = await session.get_or_create_project_config(project)
+
+    # Check if collection already exists
+    if name in config.collections:
+        return {"success": False, "error": f"Collection '{name}' already exists"}
+
+    # Validate categories
+    if not categories:
+        return {"success": False, "error": "Collection must have at least one category"}
+
+    original_categories = list(categories)
+    categories = [cat.strip() for cat in categories if cat is not None and cat.strip()]
+    if len(categories) != len(original_categories):
+        removed = [cat for cat in original_categories if cat is None or not cat.strip()]
+        return {
+            "success": False,
+            "error": f"Collection categories contained empty or whitespace-only values: {removed}. Please provide only valid categories."
+        }
+    if not categories:
+        return {"success": False, "error": "Collection must have at least one valid category"}
+
+    # Check for duplicate category names (case-insensitive)
+    normalized_for_check = [cat.lower() for cat in categories]
+    if len(normalized_for_check) != len(set(normalized_for_check)):
+        return {
+            "success": False,
+            "error": "Duplicate category names (case-insensitive) are not allowed in a collection",
+        }
+
+    # Validate all categories exist (case-sensitive lookup)
+    for category_name in categories:
+        if category_name not in config.categories:
+            return {"success": False, "error": f"Category '{category_name}' does not exist"}
+
+    try:
+        # Create spec-kit collection with metadata
+        collection = _create_collection(
+            categories=categories,
+            description=description,
+            source_type="spec_kit",
+            spec_kit_version=spec_kit_version,
+        )
+
+        # Add to config
+        config.collections[name] = collection
+
+        # Save config
+        await session.save_session()
+
+        return {
+            "success": True,
+            "message": f"Spec-kit collection '{name}' created successfully",
+            "collection": collection.model_dump(),
+        }
+
+    except ValueError as e:
+        return {"success": False, "error": f"Invalid collection configuration: {e}"}
 
 
 async def add_collection(name: str, categories: List[str], description: Optional[str] = None) -> Dict[str, Any]:
@@ -17,15 +129,14 @@ async def add_collection(name: str, categories: List[str], description: Optional
     if not name or not name.strip():
         return {"success": False, "error": "Collection name cannot be empty"}
 
-    if len(name) > 30:
-        return {"success": False, "error": "Collection name cannot exceed 30 characters"}
-
-    import re
-
-    if not re.match(r"^[\w-]+$", name):
+    if len(name) > 30 or not is_valid_collection_name(name):
         return {
             "success": False,
-            "error": f"Invalid collection name '{name}'. Name must contain only letters, numbers, dash, and underscore.",
+            "error": (
+                f"Invalid collection name '{name}'. "
+                "Collection names must be at most 30 characters, start with a letter, "
+                "and contain only letters, numbers, dash (-), and underscore (_)."
+            ),
         }
 
     # Get current config
@@ -41,7 +152,14 @@ async def add_collection(name: str, categories: List[str], description: Optional
         return {"success": False, "error": "Collection must have at least one category"}
 
     # Filter out None values from categories list and trim whitespace
+    original_categories = list(categories)
     categories = [cat.strip() for cat in categories if cat is not None and cat.strip()]
+    if len(categories) != len(original_categories):
+        removed = [cat for cat in original_categories if cat is None or not cat.strip()]
+        return {
+            "success": False,
+            "error": f"Collection categories contained empty or whitespace-only values: {removed}. Please provide only valid categories."
+        }
     if not categories:
         return {"success": False, "error": "Collection must have at least one valid category"}
 
@@ -53,15 +171,19 @@ async def add_collection(name: str, categories: List[str], description: Optional
             "error": "Duplicate category names (case-insensitive) are not allowed in a collection",
         }
 
-    # Validate all categories exist (case-insensitive lookup)
-    config_categories_lower = {name.lower(): name for name in config.categories.keys()}
+    # Validate all categories exist (case-sensitive lookup)
     for category_name in categories:
-        if category_name.lower() not in config_categories_lower:
+        if category_name not in config.categories:
             return {"success": False, "error": f"Category '{category_name}' does not exist"}
 
     try:
-        # Create collection
-        collection = Collection(categories=categories, description=description or "")
+        # Create collection with metadata
+
+        collection = _create_collection(
+            categories=categories,
+            description=description or "",
+            source_type="user",  # Default for user-created collections
+        )
 
         # Add to config
         config.collections[name] = collection
@@ -96,7 +218,12 @@ async def update_collection(name: str, *, description: Optional[str] = None) -> 
 
         # Update description if provided
         if description is not None:
+            from datetime import datetime, timezone
+
+            # Update only the changed fields to preserve any future fields
             collection.description = description
+            collection.modified_date = datetime.now(timezone.utc)
+            config.collections[name] = collection
 
         # Save config
         await session.save_session()
@@ -127,10 +254,9 @@ async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
     if not categories:
         return {"success": False, "error": "Cannot add empty categories list to collection"}
 
-    # Validate all categories exist (case-insensitive lookup)
-    config_categories_lower = {name.lower(): name for name in config.categories.keys()}
+    # Validate all categories exist (case-sensitive lookup)
     for category_name in categories:
-        if category_name.lower() not in config_categories_lower:
+        if category_name not in config.categories:
             return {"success": False, "error": f"Category '{category_name}' does not exist"}
 
     collection = config.collections[name]
@@ -157,9 +283,14 @@ async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
         }
 
     try:
-        # Update collection with added categories
+        # Update collection with added categories and new modified_date
+        from datetime import datetime
+
         updated_categories = list(collection.categories) + added
-        config.collections[name] = Collection(categories=updated_categories, description=collection.description)
+        config.collections[name] = collection.model_copy(update={
+            "categories": updated_categories,
+            "modified_date": datetime.now(),
+        })
 
         # Save config
         await session.save_session()
@@ -267,7 +398,12 @@ async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, 
             }
 
         # Re-instantiate the Collection object to ensure validation is applied
-        config.collections[name] = Collection(categories=updated_categories, description=collection.description)
+        from datetime import datetime
+
+        config.collections[name] = collection.model_copy(update={
+            "categories": updated_categories,
+            "modified_date": datetime.now(),
+        })
 
         # Save config
         await session.save_session()
@@ -329,7 +465,17 @@ async def list_collections(verbose: bool = False) -> Dict[str, Any]:
     collections_data = {}
 
     for name, collection in config.collections.items():
-        collection_info: Dict[str, Any] = {"categories": collection.categories, "description": collection.description}
+        collection_info: Dict[str, Any] = {
+            "categories": collection.categories,
+            "description": collection.description,
+            "source_type": collection.source_type,
+            "created_date": collection.created_date.isoformat(),
+            "modified_date": collection.modified_date.isoformat(),
+        }
+
+        # Add spec_kit_version if present
+        if collection.spec_kit_version:
+            collection_info["spec_kit_version"] = collection.spec_kit_version
 
         if verbose:
             # Add category details

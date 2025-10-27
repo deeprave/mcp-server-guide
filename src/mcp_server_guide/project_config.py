@@ -1,14 +1,21 @@
 """Persistent project configuration (Issue 004)."""
 
+import logging
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import Dict, Any, Optional, List, Literal
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from datetime import datetime, timezone
 import re
 
 from .naming import mcp_name
 from .file_lock import lock_update
 from .path_resolver import LazyPath
+
+logger = logging.getLogger(__name__)
+
+# Configure YAML to handle datetime objects automatically
+yaml.add_representer(datetime, lambda dumper, data: dumper.represent_scalar("tag:yaml.org,2002:str", data.isoformat()))
 
 
 class Category(BaseModel):
@@ -97,6 +104,29 @@ class Collection(BaseModel):
     categories: List[str] = Field(description="List of category names in this collection")
     description: str = Field(default="", description="Human-readable description of the collection")
 
+    # Metadata fields
+    source_type: Literal["spec_kit", "user"] = Field(default="user", description="Source that created this collection")
+    spec_kit_version: Optional[str] = Field(
+        default=None, description="Spec-kit version (only for spec_kit source_type)"
+    )
+    created_date: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), description="Collection creation timestamp"
+    )
+    modified_date: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), description="Collection last modified timestamp"
+    )
+
+    @model_validator(mode="after")
+    def validate_spec_kit_version(self) -> "Collection":
+        """Validate spec_kit_version is only set for spec_kit source_type."""
+        if self.spec_kit_version is not None and self.source_type != "spec_kit":
+            raise ValueError("spec_kit_version can only be set when source_type is 'spec_kit'")
+        if self.spec_kit_version is not None and not self.spec_kit_version.strip():
+            raise ValueError("spec_kit_version cannot be empty")
+        if self.spec_kit_version:
+            self.spec_kit_version = self.spec_kit_version.strip()
+        return self
+
     @field_validator("categories")
     @classmethod
     def validate_categories(cls, v: List[str]) -> List[str]:
@@ -133,7 +163,7 @@ class Collection(BaseModel):
 
 
 class ProjectConfig(BaseModel):
-    """Project configuration containing only categories."""
+    """Project configuration containing categories and collections."""
 
     model_config = ConfigDict(
         extra="forbid",  # Don't allow extra fields
@@ -150,14 +180,23 @@ class ProjectConfig(BaseModel):
         ),
     )
 
+    def model_dump(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Override model_dump to ensure collections are included."""
+        data = super().model_dump(*args, **kwargs)
+        # Always include collections
+        if "collections" not in data:
+            data["collections"] = {}
+        return data
+
     @field_validator("categories")
     @classmethod
-    def validate_categories(cls, v: Dict[str, Category]) -> Dict[str, Category]:
+    def validate_categories(cls, v: Dict[str, Any]) -> Dict[str, Category]:
         if not isinstance(v, dict):
             raise ValueError("Categories must be a dictionary")
 
-        # Validate category names
-        for name in v.keys():
+        # Validate category names and ensure all values are Category objects
+        category_objects = {}
+        for name, cat_data in v.items():
             if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", name):
                 raise ValueError(
                     f'Category name "{name}" must start with a letter and contain only alphanumeric characters, underscores, and hyphens'
@@ -165,16 +204,31 @@ class ProjectConfig(BaseModel):
             if len(name) > 30:
                 raise ValueError(f'Category name "{name}" cannot exceed 30 characters')
 
-        return v
+            if isinstance(cat_data, dict):
+                logger.debug(f"Converting dict to Category object for '{name}'")
+                try:
+                    category_objects[name] = Category(**cat_data)
+                except Exception as e:
+                    raise ValueError(f"Invalid category data for '{name}': {e}") from e
+            elif isinstance(cat_data, Category):
+                category_objects[name] = cat_data
+            else:
+                raise TypeError(f"Category '{name}' must be a dictionary or Category object, got {type(cat_data).__name__}")
+
+        return category_objects
 
     @field_validator("collections")
     @classmethod
-    def validate_collections(cls, v: Dict[str, Collection]) -> Dict[str, Collection]:
+    def validate_collections(cls, v: Dict[str, Any]) -> Dict[str, Collection]:
         if not isinstance(v, dict):
-            raise ValueError("Collections must be a dictionary")
+            truncated = str(v)
+            if len(truncated) > 100:
+                truncated = truncated[:100] + "..."
+            raise ValueError(f"Collections must be a dictionary (got {type(v).__name__}: {truncated})")
 
-        # Validate collection names
-        for name in v.keys():
+        # Validate collection names and ensure all values are Collection objects
+        collection_objects = {}
+        for name, value in v.items():
             if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", name):
                 raise ValueError(
                     f'Collection name "{name}" is invalid: must start with a letter and contain only alphanumeric characters, underscores, and hyphens (max 30 characters).'
@@ -185,27 +239,39 @@ class ProjectConfig(BaseModel):
                     "Collection names must start with a letter and may only contain alphanumeric characters, underscores, and hyphens."
                 )
 
-        return v
+            # Convert dict to Collection object or validate existing Collection
+            if isinstance(value, dict):
+                logger.debug(f"Converting dict to Collection object for '{name}'")
+                try:
+                    collection_objects[name] = Collection(**value)
+                except Exception as e:
+                    raise ValueError(f"Invalid collection data for '{name}': {e}") from e
+            elif isinstance(value, Collection):
+                collection_objects[name] = value
+            else:
+                raise TypeError(f"Collection '{name}' must be a dictionary or Collection object, got {type(value).__name__}")
+
+        return collection_objects
 
     def model_post_init(self, __context: Any) -> None:
         """Validate project configuration after initialization."""
-        # Validate that collection category references exist
+        # Validate that collection category references exist (case-sensitive)
         category_names = set(self.categories.keys())
-        for collection_name, collection in self.collections.items():
-            missing_categories = [cat for cat in collection.categories if cat not in category_names]
-            if missing_categories:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.warning(
-                    f"Collection '{collection_name}' references missing categories: {missing_categories}. "
-                    "These categories will be ignored until they are created."
-                )
+        if self.collections:
+            for collection_name, collection in self.collections.items():
+                if missing_categories := [cat for cat in collection.categories if cat not in category_names]:
+                    logger.warning(
+                        f"Collection '{collection_name}' references missing categories: {missing_categories}. "
+                        "These categories will be ignored until they are created."
+                    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary, excluding None values and empty lists."""
         data = self.model_dump(exclude_none=True)
-        return {k: v for k, v in data.items() if v is not None and v != [] and v != {}}
+        # Always include collections even if empty
+        if "collections" not in data:
+            data["collections"] = {}
+        return {k: v for k, v in data.items() if v is not None and (k == "collections" or v not in [[], {}])}
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ProjectConfig":
@@ -223,6 +289,20 @@ class ConfigFile(BaseModel):
 
     docroot: Optional[str] = Field(".", description="Global project root directory")
     projects: Dict[str, ProjectConfig] = Field(default_factory=dict, description="Project configurations")
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Override model_dump to ensure collections are included."""
+        data = super().model_dump(*args, **kwargs)
+        # Always include collections in each project
+        for project in data.get("projects", {}).values():
+            if "collections" not in project:
+                project["collections"] = {}
+            # Ensure collections are properly serialized
+            for collection_name, collection in project.get("collections", {}).items():
+                if isinstance(collection, Collection):
+                    project["collections"][collection_name] = collection.model_dump(*args, **kwargs)
+                # If it's already a dict, leave it as is
+        return data
 
     @field_validator("docroot")
     @classmethod
@@ -243,12 +323,12 @@ class ConfigFile(BaseModel):
             raise ValueError("Projects must be a dictionary")
 
         # Validate project names (the keys)
-        for name in v.keys():
+        for name in v:
             if not name or not name.strip():
                 raise ValueError("Project name cannot be empty")
-            if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", name):
+            if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", name):
                 raise ValueError(
-                    f'Project name "{name}" must start with alphanumeric and contain only alphanumeric characters, underscores, and hyphens'
+                    f'Project name "{name}" must start with a letter and contain only alphanumeric characters, underscores, and hyphens'
                 )
             if len(name) > 50:
                 raise ValueError(f'Project name "{name}" cannot exceed 50 characters')
@@ -322,9 +402,16 @@ def _save_config_locked(config_file: Path, project_name: str, config: ProjectCon
     # Save updated config in YAML format
     try:
         with open(config_file, "w") as f:
-            yaml.dump(
-                existing_config.model_dump(exclude_none=True), f, default_flow_style=False, sort_keys=False, indent=2
-            )
+            # Dump with collections always included
+            data = existing_config.model_dump(exclude_none=True)
+            for project in data["projects"].values():
+                if "collections" not in project:
+                    project["collections"] = {}
+                # Ensure collections are properly serialized
+                for collection_name, collection in project.get("collections", {}).items():
+                    if isinstance(collection, Collection):
+                        project["collections"][collection_name] = collection.model_dump(exclude_none=True)
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
     except (OSError, IOError) as e:
         raise IOError(f"Cannot write to config file {config_file}: {e}") from e
     except yaml.YAMLError as e:
@@ -424,9 +511,45 @@ class ProjectConfigManager:
         """Save project configuration to file with explicit project name."""
         config_file = Path(self.get_config_filename())
         config_file.parent.mkdir(parents=True, exist_ok=True)
-        docroot_str = lock_update(config_file, _save_config_locked, project_name, config)
-        # Update cached docroot
-        self._docroot = LazyPath(docroot_str) if docroot_str else None
+
+        # Load existing config to preserve other projects
+        existing_config = ConfigFile(docroot=".", projects={})
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    data = yaml.safe_load(f)
+                    if data and isinstance(data, dict):
+                        existing_config = ConfigFile(**data)
+            except Exception as e:
+                logger.warning(f"Failed to load existing config: {e}")
+
+        # Update the specific project
+        existing_config.projects[project_name] = config
+
+        # Save the updated config
+        try:
+            with open(config_file, "w") as f:
+                # Convert to dict and ensure collections are included
+                data = {}
+                data["docroot"] = existing_config.docroot
+                data["projects"] = {}
+
+                # Serialize each project using centralized model_dump
+                for project_name, project_config in existing_config.projects.items():
+                    data["projects"][project_name] = project_config.model_dump(exclude_none=True)
+
+                # Debug output (limit to a single concise statement)
+                logger.debug(
+                    f"Project config saved for project '{project_name}' with {len(config.collections) if config.collections else 0} collections."
+                )
+                logger.debug(f"Saving config: {data}")
+                yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save config: {e}")
+            raise
+
+        # Cache the docroot after successful save
+        self._docroot = LazyPath(existing_config.docroot or ".")
 
     def load_config(self, project_name: str) -> Optional[ProjectConfig]:
         """Load project configuration from file.

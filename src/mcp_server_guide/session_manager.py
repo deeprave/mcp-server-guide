@@ -6,10 +6,9 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 from .path_resolver import LazyPath
-from .project_config import ProjectConfigManager, ProjectConfig
+from .project_config import ProjectConfigManager, ProjectConfig, Category, Collection
 from .session import SessionState
 from .logging_config import get_logger
-from .project_config import Category
 
 
 logger = get_logger()
@@ -152,6 +151,7 @@ class SessionManager:
             # Merge session state changes into existing config
             session_config = self._session_state.get_project_config()
 
+            # Convert categories to objects
             category_objects = {
                 cat_name: (
                     cat_data
@@ -162,6 +162,30 @@ class SessionManager:
             }
             # Replace categories completely instead of updating to handle removals
             existing_config.categories = category_objects
+
+            # Convert collections to objects
+            collection_objects = {}
+            for coll_name, coll_data in session_config.collections.items():
+                if isinstance(coll_data, Collection):
+                    collection_objects[coll_name] = coll_data
+                elif isinstance(coll_data, dict):
+                    logger.debug(f"Converting dict to Collection object for '{coll_name}' in session")
+                    try:
+                        collection_objects[coll_name] = Collection(**coll_data)
+                    except Exception as e:
+                        logger.error("Failed to instantiate Collection for '%s': %s. Data: %r", coll_name, e, coll_data)
+                        raise ValueError(f"Invalid collection data for '{coll_name}': {e}") from e
+                else:
+                    logger.error(
+                        "Invalid collection data type for '%s': expected dict or Collection, got %s",
+                        coll_name,
+                        type(coll_data),
+                    )
+                    raise ValueError(
+                        f"Invalid collection data type for '{coll_name}': expected dict or Collection, got {type(coll_data)}"
+                    )
+            # Replace collections completely to handle removals
+            existing_config.collections = collection_objects
             project_config = existing_config
         else:
             # No existing config, use session state directly
