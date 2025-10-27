@@ -20,6 +20,13 @@ from .category_tools import (
     list_categories,
     get_category_content,
 )
+from .collection_tools import (
+    add_collection,
+    update_collection,
+    list_collections,
+    remove_collection,
+    get_collection_content,
+)
 from .prompt_tools import list_prompts, list_resources
 
 __all__ = [
@@ -45,6 +52,12 @@ __all__ = [
     "update_category",
     "list_categories",
     "get_category_content",
+    # Collection Management
+    "add_collection",
+    "update_collection",
+    "list_collections",
+    "remove_collection",
+    "get_collection_content",
     # Prompt Discovery
     "list_prompts",
     "list_resources",

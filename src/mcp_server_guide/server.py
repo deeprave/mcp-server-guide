@@ -9,8 +9,8 @@ from .session_manager import SessionManager
 from .file_source import FileSource, FileAccessor
 from .logging_config import get_logger
 from .error_handler import ErrorHandler
-from . import tools
 from .prompts import register_prompts
+from .tool_registry import register_tools
 
 if TYPE_CHECKING:
     from .project_config import ProjectConfig
@@ -214,180 +214,15 @@ class ExtMcpToolDecorator:
 # Create guide decorator instance
 guide = ExtMcpToolDecorator(mcp, prefix=get_tool_prefix())
 
-
-# Register MCP Tools
-# Note: set_directory removed as part of Issue 044 - PWD-based project detection
-
-
-@guide.tool()
-async def get_current_project() -> Dict[str, Any]:
-    """Get the active project name."""
-    logger.debug("Getting current project")
-    project = await tools.get_current_project()
-    if project is None:
-        return {"success": False, "error": "No project set. Use 'set directory /path/to/project' first."}
-    return {"success": True, "project": project}
+# Register all tools with the server
+try:
+    register_tools(mcp, guide, log_tool_usage)
+except Exception as e:
+    logger.error("Failed to register tools with the server: %s", e, exc_info=True)
+    raise
 
 
-@guide.tool()
-async def switch_project(name: str) -> Dict[str, Any]:
-    """Switch to a different project."""
-    logger.info(f"Switching to project: {name}")
-    return await tools.switch_project(name)
-
-
-@guide.tool()
-async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
-    """Get project configuration."""
-    return await tools.get_project_config(project)
-
-
-@guide.tool()
-async def set_project_config_values(config_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Set multiple project configuration values at once."""
-    return await tools.set_project_config_values(config_dict)
-
-
-@guide.tool()
-async def set_project_config(key: str, value: Any) -> Dict[str, Any]:
-    """Update project settings."""
-    return await tools.set_project_config(key, value)
-
-
-@guide.tool()
-async def get_guide(project: Optional[str] = None) -> str:
-    """Get project guidelines for AI injection."""
-    return await tools.get_guide(project)
-
-
-@guide.tool()
-async def get_language_guide(project: Optional[str] = None) -> str:
-    """Get language-specific guidelines for AI injection."""
-    return await tools.get_language_guide(project)
-
-
-@guide.tool()
-async def get_project_context(project: Optional[str] = None) -> str:
-    """Get project context document for AI injection."""
-    return await tools.get_project_context(project)
-
-
-@guide.tool()
-async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Search across project content."""
-    return await tools.search_content(query, project)
-
-
-@guide.tool()
-async def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
-    """Display guide to user."""
-    return await tools.show_guide(project)
-
-
-@guide.tool()
-async def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
-    """Display language guide to user."""
-    return await tools.show_language_guide(project)
-
-
-@guide.tool()
-async def get_file_content(path: str, project: Optional[str] = None) -> str:
-    """Get raw file content."""
-    return await tools.get_file_content(path, project)
-
-
-# Category Management Tools
-@guide.tool()
-async def add_category(
-    name: str,
-    dir: str,
-    patterns: List[str],
-    project: Optional[str] = None,
-    description: str = "",
-) -> Dict[str, Any]:
-    """Add a new custom category."""
-    return await tools.add_category(name, dir, patterns, description)
-
-
-@guide.tool()
-async def remove_category(name: str, project: Optional[str] = None) -> Dict[str, Any]:
-    """Remove a custom category."""
-    return await tools.remove_category(name)
-
-
-@guide.tool()
-async def update_category(
-    name: str,
-    dir: str,
-    patterns: List[str],
-    project: Optional[str] = None,
-    description: str = "",
-) -> Dict[str, Any]:
-    """Update an existing category."""
-    return await tools.update_category(name, description=description, dir=dir, patterns=patterns)
-
-
-@guide.tool()
-async def add_collection(
-    name: str,
-    categories: List[str],
-    description: str = "",
-) -> Dict[str, Any]:
-    """Add a new collection."""
-    from .tools.collection_tools import add_collection as add_coll
-
-    return await add_coll(name, categories, description)
-
-
-@guide.tool()
-async def update_collection(
-    name: str,
-    description: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Update an existing collection."""
-    from .tools.collection_tools import update_collection as update_coll
-
-    return await update_coll(name, description=description)
-
-
-@guide.tool()
-async def list_collections(verbose: bool = False) -> Dict[str, Any]:
-    """List all collections."""
-    from .tools.collection_tools import list_collections as list_colls
-
-    return await list_colls(verbose)
-
-
-@guide.tool()
-async def remove_collection(name: str) -> Dict[str, Any]:
-    """Remove a collection."""
-    from .tools.collection_tools import remove_collection as remove_coll
-
-    return await remove_coll(name)
-
-
-@guide.tool()
-async def list_categories(verbose: bool = False) -> Dict[str, Any]:
-    """List all categories (built-in and custom).
-
-    Args:
-        verbose (bool): If True, include verbose output. Defaults to False.
-    """
-    return await tools.list_categories(verbose=verbose)
-
-
-@guide.tool()
-async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
-    """Get content from a category using glob patterns."""
-    return await tools.get_category_content(name, project)
-
-
-@guide.tool()
-async def list_prompts() -> Dict[str, Any]:
-    """List all available prompts registered with the MCP server."""
-    return await tools.list_prompts()
-
-
+# Register MCP Tools directly from tools module
 async def _format_guide_help() -> str:
     """Format comprehensive help content for the guide prompt."""
     from .naming import MCP_GUIDE_VERSION
@@ -404,7 +239,9 @@ This server provides access to project documentation, categories, collections, a
 
     # Available Prompts
     try:
-        prompts_result = await tools.list_prompts()
+        from .tools import list_prompts
+
+        prompts_result = await list_prompts()
         if prompts_result.get("success"):
             prompts = prompts_result.get("prompts", [])
             help_sections.append("## Available Prompts")
@@ -419,7 +256,9 @@ This server provides access to project documentation, categories, collections, a
 
     # Categories and Collections
     try:
-        categories_result = await tools.list_categories(verbose=True)
+        from .tools import list_categories
+
+        categories_result = await list_categories(verbose=True)
         if categories_result.get("success"):
             categories = categories_result.get("categories", {})
             help_sections.append("## Categories and Collections")
@@ -432,7 +271,7 @@ This server provides access to project documentation, categories, collections, a
 
     # Available Resources
     try:
-        from .tools.prompt_tools import list_resources
+        from .tools import list_resources
 
         resources_result = await list_resources()
         if resources_result.get("success"):
@@ -470,13 +309,15 @@ async def guide_prompt(category: Optional[str] = None) -> str:
         return await execute_prompt_with_guide("guide", help_content, None, None)
     else:
         # Try category first
-        result = await tools.get_category_content(normalized_category, None)
+        from .tools import get_category_content
+
+        result = await get_category_content(normalized_category, None)
         if result.get("success"):
             content = result.get("content", "")
             return content if isinstance(content, str) else str(content)
 
         # Try collection if category failed
-        from .tools.collection_tools import get_collection_content
+        from .tools import get_collection_content
 
         result = await get_collection_content(normalized_category, None)
         if result.get("success"):
@@ -493,7 +334,9 @@ async def category_prompt(action: str, name: str, dir: Optional[str] = None, pat
 
     if action == "new":
         # Check for duplicate category name
-        categories_result = await tools.list_categories(verbose=False)
+        from .tools import list_categories
+
+        categories_result = await list_categories(verbose=False)
         all_categories = categories_result["categories"]
         if name in all_categories:
             return f"Error: Category with name '{name}' already exists."
@@ -501,7 +344,9 @@ async def category_prompt(action: str, name: str, dir: Optional[str] = None, pat
         # Parse patterns from comma-separated string
         pattern_list = patterns.split(",") if patterns else ["*.md"]
 
-        result = await tools.add_category(name=name, dir=dir or name, patterns=pattern_list, description="")
+        from .tools import add_category
+
+        result = await add_category(name=name, dir=dir or name, patterns=pattern_list, description="")
 
         if result.get("success"):
             return f"Successfully created category '{name}'"
@@ -510,7 +355,9 @@ async def category_prompt(action: str, name: str, dir: Optional[str] = None, pat
 
     elif action == "edit":
         # Get current category to preserve existing values
-        categories_result = await tools.list_categories(verbose=False)
+        from .tools import list_categories
+
+        categories_result = await list_categories(verbose=False)
         existing_categories = categories_result["categories"]
 
         if name not in existing_categories:
@@ -521,7 +368,7 @@ async def category_prompt(action: str, name: str, dir: Optional[str] = None, pat
         # Use provided values or fall back to current values
         new_dir = dir or current_category["dir"]
 
-        def parse_patterns(patterns_str: str) -> list:
+        def parse_patterns(patterns_str: str) -> List[str]:
             import re
 
             # This regex splits on commas not inside quotes
@@ -538,7 +385,9 @@ async def category_prompt(action: str, name: str, dir: Optional[str] = None, pat
 
         new_patterns = parse_patterns(patterns) if patterns else current_category["patterns"]
 
-        result = await tools.update_category(
+        from .tools import update_category
+
+        result = await update_category(
             name=name,
             description=current_category.get("description", ""),
             dir=new_dir,
@@ -551,7 +400,9 @@ async def category_prompt(action: str, name: str, dir: Optional[str] = None, pat
             return f"Error updating category: {result.get('error', 'Unknown error')}"
 
     elif action == "del":
-        result = await tools.remove_category(name)
+        from .tools import remove_category
+
+        result = await remove_category(name)
 
         if result.get("success"):
             return f"Successfully deleted category '{name}'"
@@ -600,7 +451,7 @@ def create_server(
         category = category_mapping.get(config_key)
         if category:
             # Use category system to get content
-            from .tools.category_tools import get_category_content
+            from .tools import get_category_content
 
             result = await get_category_content(category, project_context)
             if result.get("success"):
@@ -623,7 +474,7 @@ def create_server(
     # Add content reading methods
     async def read_guide(project_context: str) -> str:
         """Read guide content using hybrid file access."""
-        from .tools.category_tools import get_category_content
+        from .tools import get_category_content
         from .file_source import FileSource, FileSourceType
 
         # Try to get content from guide category
@@ -645,7 +496,7 @@ def create_server(
 
     async def read_language(project_context: str) -> str:
         """Read language content using hybrid file access."""
-        from .tools.category_tools import get_category_content
+        from .tools import get_category_content
         from .file_source import FileSource, FileSourceType
 
         # Try to get content from lang category

@@ -71,7 +71,7 @@ class InputValidator:
                         ) from e
 
 
-def validate_input(**field_rules: Union[ValidationRule, List[ValidationRule]]) -> Callable:
+def validate_input(**field_rules: Union[ValidationRule, List[ValidationRule]]) -> Callable[..., Any]:
     """Decorator to validate function inputs.
 
     Args:
@@ -81,7 +81,7 @@ def validate_input(**field_rules: Union[ValidationRule, List[ValidationRule]]) -
         Decorator function
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             validator = InputValidator()

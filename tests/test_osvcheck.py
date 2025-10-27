@@ -115,7 +115,9 @@ class TestMain:
     @patch("osvcheck.get_all_installed_packages")
     @patch("osvcheck.get_direct_dependencies")
     @patch("urllib.request.urlopen")
-    def test_main_no_vulnerabilities(self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys):
+    def test_main_no_vulnerabilities(
+        self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys
+    ):
         """Test main function with no vulnerabilities found."""
         # Setup cache mocks
         mock_load_cache.return_value = {}
@@ -144,7 +146,9 @@ class TestMain:
     @patch("osvcheck.get_all_installed_packages")
     @patch("osvcheck.get_direct_dependencies")
     @patch("urllib.request.urlopen")
-    def test_main_with_direct_vulnerabilities(self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys):
+    def test_main_with_direct_vulnerabilities(
+        self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys
+    ):
         """Test main function with direct dependency vulnerabilities."""
         # Setup cache mocks
         mock_load_cache.return_value = {}
@@ -176,7 +180,9 @@ class TestMain:
     @patch("osvcheck.get_all_installed_packages")
     @patch("osvcheck.get_direct_dependencies")
     @patch("urllib.request.urlopen")
-    def test_main_with_indirect_vulnerabilities(self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys):
+    def test_main_with_indirect_vulnerabilities(
+        self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys
+    ):
         """Test main function with indirect dependency vulnerabilities."""
         # Setup cache mocks
         mock_load_cache.return_value = {}
@@ -219,7 +225,9 @@ class TestMain:
     @patch("osvcheck.get_all_installed_packages")
     @patch("osvcheck.get_direct_dependencies")
     @patch("urllib.request.urlopen")
-    def test_main_api_error_handling(self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys):
+    def test_main_api_error_handling(
+        self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys
+    ):
         """Test main function handles API errors gracefully."""
         # Setup cache mocks
         mock_load_cache.return_value = {}
@@ -243,7 +251,9 @@ class TestMain:
     @patch("osvcheck.get_all_installed_packages")
     @patch("osvcheck.get_direct_dependencies")
     @patch("urllib.request.urlopen")
-    def test_main_many_indirect_vulnerabilities(self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys):
+    def test_main_many_indirect_vulnerabilities(
+        self, mock_urlopen, mock_get_deps, mock_get_packages, mock_load_cache, mock_save_cache, capsys
+    ):
         """Test main function with many indirect vulnerabilities (truncation)."""
         # Setup cache mocks
         mock_load_cache.return_value = {}

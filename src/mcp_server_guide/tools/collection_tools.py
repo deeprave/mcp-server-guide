@@ -78,10 +78,8 @@ async def create_spec_kit_collection(
         removed = [cat for cat in original_categories if cat is None or not cat.strip()]
         return {
             "success": False,
-            "error": f"Collection categories contained empty or whitespace-only values: {removed}. Please provide only valid categories."
+            "error": f"Collection categories contained empty or whitespace-only values: {removed}. Please provide only valid categories.",
         }
-    if not categories:
-        return {"success": False, "error": "Collection must have at least one valid category"}
 
     # Check for duplicate category names (case-insensitive)
     normalized_for_check = [cat.lower() for cat in categories]
@@ -158,10 +156,8 @@ async def add_collection(name: str, categories: List[str], description: Optional
         removed = [cat for cat in original_categories if cat is None or not cat.strip()]
         return {
             "success": False,
-            "error": f"Collection categories contained empty or whitespace-only values: {removed}. Please provide only valid categories."
+            "error": f"Collection categories contained empty or whitespace-only values: {removed}. Please provide only valid categories.",
         }
-    if not categories:
-        return {"success": False, "error": "Collection must have at least one valid category"}
 
     # Check for duplicate category names (case-insensitive) while preserving original case
     normalized_for_check = [cat.lower() for cat in categories]
@@ -287,10 +283,12 @@ async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
         from datetime import datetime
 
         updated_categories = list(collection.categories) + added
-        config.collections[name] = collection.model_copy(update={
-            "categories": updated_categories,
-            "modified_date": datetime.now(),
-        })
+        config.collections[name] = collection.model_copy(
+            update={
+                "categories": updated_categories,
+                "modified_date": datetime.now(),
+            }
+        )
 
         # Save config
         await session.save_session()
@@ -400,10 +398,12 @@ async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, 
         # Re-instantiate the Collection object to ensure validation is applied
         from datetime import datetime
 
-        config.collections[name] = collection.model_copy(update={
-            "categories": updated_categories,
-            "modified_date": datetime.now(),
-        })
+        config.collections[name] = collection.model_copy(
+            update={
+                "categories": updated_categories,
+                "modified_date": datetime.now(),
+            }
+        )
 
         # Save config
         await session.save_session()

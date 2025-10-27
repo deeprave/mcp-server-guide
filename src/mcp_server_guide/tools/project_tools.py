@@ -26,6 +26,8 @@ async def switch_project(name: str) -> Dict[str, Any]:
         return {"success": True, "project": name, "message": f"Switched to project: {name}"}
     except ValueError as e:
         return {"success": False, "error": str(e)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 __all__ = [

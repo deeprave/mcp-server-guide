@@ -213,7 +213,9 @@ class ProjectConfig(BaseModel):
             elif isinstance(cat_data, Category):
                 category_objects[name] = cat_data
             else:
-                raise TypeError(f"Category '{name}' must be a dictionary or Category object, got {type(cat_data).__name__}")
+                raise TypeError(
+                    f"Category '{name}' must be a dictionary or Category object, got {type(cat_data).__name__}"
+                )
 
         return category_objects
 
@@ -249,7 +251,9 @@ class ProjectConfig(BaseModel):
             elif isinstance(value, Collection):
                 collection_objects[name] = value
             else:
-                raise TypeError(f"Collection '{name}' must be a dictionary or Collection object, got {type(value).__name__}")
+                raise TypeError(
+                    f"Collection '{name}' must be a dictionary or Collection object, got {type(value).__name__}"
+                )
 
         return collection_objects
 

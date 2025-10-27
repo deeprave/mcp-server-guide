@@ -107,7 +107,7 @@ class TestServerResourceCreation:
     @pytest.mark.asyncio
     async def test_category_reader_success(self):
         """Test category reader success path."""
-        with patch("mcp_server_guide.server.get_category_content") as mock_get_cat:
+        with patch("mcp_server_guide.tools.category_tools.get_category_content") as mock_get_cat:
             mock_get_cat.return_value = {"success": True, "content": "Category content"}
 
             # This tests the internal category reader function
@@ -126,9 +126,41 @@ class TestServerResourceCreation:
                 create_server_with_config(config)
 
     @pytest.mark.asyncio
+    async def test_category_reader_invalid_category_name(self):
+        """Test category reader with invalid category name."""
+        with patch("mcp_server_guide.tools.category_tools.get_category_content") as mock_get_cat:
+            mock_get_cat.return_value = {"success": False, "error": "Category not found"}
+
+            config = {"categories": {"valid": {"dir": "valid/", "patterns": ["*.md"], "description": "Valid category"}}}
+
+            with patch("mcp_server_guide.server.SessionManager") as mock_session_mgr:
+                mock_session = Mock()
+                mock_session_mgr.return_value = mock_session
+                project_config = ProjectConfig(categories={"valid": Category(dir="valid/", patterns=["*.md"], description="Valid category")})
+                mock_session.get_or_create_project_config = AsyncMock(return_value=project_config)
+
+                create_server_with_config(config)
+
+    @pytest.mark.asyncio
+    async def test_category_reader_exception_handling(self):
+        """Test category reader exception handling."""
+        with patch("mcp_server_guide.tools.category_tools.get_category_content") as mock_get_cat:
+            mock_get_cat.side_effect = Exception("Unexpected error")
+
+            config = {"categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}}
+
+            with patch("mcp_server_guide.server.SessionManager") as mock_session_mgr:
+                mock_session = Mock()
+                mock_session_mgr.return_value = mock_session
+                project_config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")})
+                mock_session.get_or_create_project_config = AsyncMock(return_value=project_config)
+
+                create_server_with_config(config)
+
+    @pytest.mark.asyncio
     async def test_category_reader_failure(self):
         """Test category reader failure path."""
-        with patch("mcp_server_guide.server.get_category_content") as mock_get_cat:
+        with patch("mcp_server_guide.tools.category_tools.get_category_content") as mock_get_cat:
             mock_get_cat.return_value = {"success": False, "error": "Category not found"}
 
             config = {"categories": {"test": {"dir": "test/", "patterns": ["*.md"], "description": "Test category"}}}

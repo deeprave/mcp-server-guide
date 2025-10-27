@@ -50,7 +50,7 @@ class ErrorHandler:
         """
         return SuccessResponse(data=data, message=message)
 
-    def wrap_operation(self, operation_name: str) -> Callable:
+    def wrap_operation(self, operation_name: str) -> Callable[..., Any]:
         """Decorator to wrap operations with error handling.
 
         Args:
@@ -60,7 +60,7 @@ class ErrorHandler:
             Decorator function
         """
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             def wrapper(*args: Any, **kwargs: Any) -> Union[ErrorResponse, SuccessResponse]:
                 try:
                     result = func(*args, **kwargs)
@@ -81,7 +81,7 @@ class ErrorHandler:
 default_error_handler = ErrorHandler()
 
 
-def handle_errors(operation_name: str) -> Callable:
+def handle_errors(operation_name: str) -> Callable[..., Any]:
     """Convenience decorator for error handling.
 
     Args:
