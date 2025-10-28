@@ -69,6 +69,12 @@ async def _register_category_resources(server: FastMCP, config: "ProjectConfig")
         make_collection_reader(collection_name, collection_config)
         logger.info(f"Registered resource: guide://collection/{collection_name}")
 
+    # Register help resource
+    @server.resource("guide://help", name="help", description="MCP Server Guide Help", mime_type="text/markdown")
+    async def read_help() -> str:
+        """Get comprehensive help content for the guide system."""
+        return await _format_guide_help()
+
 
 @asynccontextmanager
 async def server_lifespan(server: FastMCP) -> Any:
@@ -244,15 +250,18 @@ This server provides access to project documentation, categories, collections, a
         prompts_result = await list_prompts()
         if prompts_result.get("success"):
             prompts = prompts_result.get("prompts", [])
+            help_sections.append("")
             help_sections.append("## Available Prompts")
             for prompt in prompts:
                 args_info = ""
                 if prompt.get("arguments"):
                     args = [f"`{arg['name']}`{'*' if arg['required'] else ''}" for arg in prompt["arguments"]]
                     args_info = f" ({', '.join(args)})"
-                help_sections.append(f"- **@{prompt['name']}**{args_info}: {prompt.get('description', '')}")
+                help_sections.append(f" - **{prompt['name']}**{args_info}: {prompt.get('description', '')}")
     except Exception as e:
-        help_sections.append(f"## Available Prompts\n*Error loading prompts: {e}*")
+        help_sections.append("")
+        help_sections.append(f"## Available Prompts")
+        help_sections.append(f" *Error loading prompts: {e}*")
 
     # Categories and Collections
     try:
@@ -261,13 +270,16 @@ This server provides access to project documentation, categories, collections, a
         categories_result = await list_categories(verbose=True)
         if categories_result.get("success"):
             categories = categories_result.get("categories", {})
+            help_sections.append("")
             help_sections.append("## Categories and Collections")
             for cat_name, cat_info in categories.items():
                 collections = cat_info.get("collections", [])
                 collections_text = f" (in collections: {', '.join(collections)})" if collections else ""
-                help_sections.append(f"- **{cat_name}**{collections_text}: {cat_info.get('description', '')}")
+                help_sections.append(f" - **{cat_name}**{collections_text}: {cat_info.get('description', '')}")
     except Exception as e:
-        help_sections.append(f"## Categories and Collections\n*Error loading categories: {e}*")
+        help_sections.append("")
+        help_sections.append("## Categories and Collections")
+        help_sections.append(f" *Error loading categories: {e}*")
 
     # Available Resources
     try:
@@ -276,23 +288,26 @@ This server provides access to project documentation, categories, collections, a
         resources_result = await list_resources()
         if resources_result.get("success"):
             resources = resources_result.get("resources", [])
+            help_sections.append("")
             help_sections.append("## Available Resources")
             for resource in resources:
                 mime_info = f" ({resource['mime_type']})" if resource.get("mime_type") else ""
-                help_sections.append(f"- **{resource['uri']}**{mime_info}: {resource.get('description', '')}")
+                help_sections.append(f" - **{resource['uri']}**{mime_info}: {resource.get('description', '')}")
     except Exception as e:
-        help_sections.append(f"## Available Resources\n*Error loading resources: {e}*")
+        help_sections.append("")
+        help_sections.append("## Available Resources")
+        help_sections.append(f" *Error loading resources: {e}*")
 
     # Usage Examples
-    help_sections.append("""## Usage Examples
+    help_sections.append("")
+    help_sections.append("## Usage Examples")
+    help_sections.append(" - `guide` or `guide --help` - Show this help")
+    help_sections.append(" - `guide <category>` - Get content from a specific category")
+    help_sections.append(" - `guide <collection>` - Get content from a collection")
+    help_sections.append(" - Use MCP tools for management operations")
+    help_sections.append(" - Access resources via their URIs")
 
-- `@guide` or `@guide --help` - Show this help
-- `@guide <category>` - Get content from a specific category
-- `@guide <collection>` - Get content from a collection
-- Use MCP tools for management operations
-- Access resources via their URIs""")
-
-    return "\n\n".join(help_sections)
+    return "\n".join(help_sections)
 
 
 # MCP Prompt Handlers
@@ -303,10 +318,7 @@ async def guide_prompt(category: Optional[str] = None) -> str:
 
     # Show help for no arguments or help flags (Claude compatibility)
     if not normalized_category or normalized_category in ["-", "-h", "--help"]:
-        from .prompts import execute_prompt_with_guide
-
-        help_content = await _format_guide_help()
-        return await execute_prompt_with_guide("guide", help_content, None, None)
+        return "Use the Guide MCP resource `guide://help` to display the complete Guide MCP Server help as a markdown document."
     else:
         # Try category first
         from .tools import get_category_content

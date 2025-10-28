@@ -19,13 +19,13 @@ async def execute_prompt_with_guide(
     primary_content = guide_content or base_response
     # Add user arg if provided
     if pre_text:
-        primary_content = f"{pre_text}\n\n{primary_content}"
+        primary_content = f"{pre_text}\n{primary_content}"
     if user_arg:
-        primary_content = f"{primary_content}\n\n🎯 Focus: {user_arg}"
+        primary_content = f"{primary_content}\n🎯 Focus: {user_arg}"
 
     # Add additional content if provided and not empty/whitespace
     if content and content.strip():
-        primary_content = f"{primary_content}\n\n📄 **Additional Content:**\n{content.strip()}"
+        primary_content = f"{primary_content}\n📄 **Additional Content:**\n{content.strip()}"
 
     return primary_content
 

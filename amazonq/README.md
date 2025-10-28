@@ -5,7 +5,7 @@ Files in this directory are for integration with the AmazonQ client.
 ## Prerequisites
 
 - Amazon Q CLI installed and configured
-- Access to terminal/command line
+- Access to the terminal/command line
 
 ## Quick Installation
 
@@ -50,18 +50,27 @@ Files in this directory are for integration with the AmazonQ client.
 - If scripts fail to execute, ensure they have proper permissions: `ls -la ~/.aws/amazonq/scripts/`
 - If directories don't exist, create them manually: `mkdir -p ~/.aws/amazonq/cli-clients ~/.aws/amazonq/scripts`
 
-## DAIC Mode
+## DISCUSSION Mode
 
-This is a "close enough" implementation of **DAIC** (Discussion-Alignment-Implementation-Check) for Amazon Q, born from the concept introduced in [cc-sessions](https://github.com/GWUDCAP/cc-sessions). Claude Code's hooks make enforcement of DAIC mode much simpler and more deterministic, but Q lacks the same level of functionality.
+This is a "close enough" implementation of **DAIC** (Discussion-Alignment-Implementation-Check) for Amazon Q, born from the concept introduced in [cc-sessions](https://github.com/GWUDCAP/cc-sessions). Claude Code's hooks make enforcement of DISCUSSION mode much simpler and more deterministic, but Q lacks the same level of sophistication to fully support this functionality.
 
-Instead, an agent needs to be used with some accompanying scripts to fully support DAIC enforcement. However the same idea should work with most agentic clients, although the implementation details may differ.
+The DAIC concept is blended the GitHub spec-kit has also been done (work is being done currently for a more complete integration), introducing an additional subphase of DISCUSSION mode, called "PLANNING" (`plan` prompt). This is a phase where the agent is asked to create a plan (saved as markdown) for the implementation work about to be done.
 
-With this MCP, the enabled DAIC mode is the default state. An agent should be prevented from doing any implementation work until the file ".consent" appears at the project root.
+Similarly, a CHECK phase is also being introduced as a subphase of IMPLEMENTATION mode, where the agent is asked to check the implementation work against the plan using the usual check tools for the current project (type checks, linting, unit and integration tests, etc.).
 
-The q_PreToolUse.sh script includes a couple of exceptions that are intended to allow the agent write access to specific folders for creating and updating implementation plans or specifications.
+In Amazon Q, an agent needs to be used with some accompanying scripts to fully support DISCUSSION phase enforcement. However the same idea should work with most agentic clients, although the implementation details will differ.
 
-The prompts `@daic on` and `@daic off` provide a means to manually switch modes, and `@daic` without arguments returns the current state.
+With this MCP, DISCUSSION mode is the default state. An agent should be prevented from doing any implementation work until the file ".consent" appears at the project root.
+Sub-phases of DISCUSSION mode are indicated (but not strictly enforced) by the presence of a non-empty .issue file.
+The .issue file is used to keep track of the current issue being planned or implemented, and the agent should be instructed to write the path to the plan or specification document during the planning phase.
+
+The q_PreToolUse.sh script includes some exceptions that are intended to allow the agent write access to specific folders for creating and updating implementation plans or specifications.
+It will also allow a subset of shell commands to be executed that do not cause changes to the project outside of the folder dedicated to plans and specifications.
+
+The prompts `@discuss` and `@implement` provide a means to manually switch modes, and `@status` asks the agent to provide the current status.
+
+Handling of the .consent and .issue file is done by instructing the agent as the MCP is unable nor required to have filesystem access.
 
 ## Agents
 
-Using this MCP requires an agent so that it can be configured with custom commands. The "consent.json" file in this directory is an example configuration for Amazon Q CLI agents that enables DAIC functionality through hook scripts.
+Using this MCP requires an agent so that it can be configured with custom commands. The "consent.json" file in this directory is a fully working example configuration for Amazon Q CLI agents that enables enforcement of DISCUSSION functionality through hook scripts.

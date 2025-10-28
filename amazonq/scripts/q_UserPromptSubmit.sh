@@ -1,15 +1,28 @@
 #!/bin/zsh
+echo "🚨 You are in consent mode"
 if [[ ! -f ".consent" ]]; then
-  cat << 'EOF'
-🚨 CONSENT TO CHANGE NOT GRANTED
-You are in DISCUSSION or PLANNING mode and may not make any changes
-REMINDER: Before ANY implementing changes you must have explicit user consent. **NO EXCEPTIONS**
-EOF
+  if [[ -s .issue ]]; then
+    echo "📋 You are in **PLANNING** phase:"
+    echo " - Discuss the feature with the user"
+    echo " - Gather requirements from the current project, use web searches if required"
+  else
+    echo "💬 You are in **DISCUSSION** phase:"
+    echo " - Create detailed plan or feature specification with checklists"
+    echo " - Follow TDD using the smallest possible steps for creating features"
+    echo " - Request and WAIT for approval - **NO EXCEPTIONS**"
+    echo " - Current issues: $(cat .issue)"
+  fi
 else
-  cat << 'EOF'
-✅ CONSENT TO MAKE CHANGES GRANTED
-You are in IMPLEMENTATION or CHECK mode.
-Once you have completed implementation and checks you MUST remove the .consent and return to DISCUSSION mode.
-EOF
+  if grep -q 'check' .consent; then
+    echo "✅ You are in **CHECK** phase:"
+    echo " - Carry out checks and ensure that acceptance criteria have been met"
+    echo " - Once completed YOU MUST ASK FOR USER CONFIRMATION before transition back to DISCUSSION phase"
+  else
+    echo "👔 You are in **IMPLEMENTATION** phase"
+    echo " - Proceed with implementation and architectural changes as planned"
+    echo " - Once implementation has been fully completed according to the plan:"
+    echo "   - write 'check' to .consent file to transition to CHECK phase"
+    echo "   - commence testing, lint, formatting and other checks as the project requires"
+  fi
 fi
 exit 0
