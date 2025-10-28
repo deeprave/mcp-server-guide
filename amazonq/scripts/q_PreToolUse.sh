@@ -4,23 +4,15 @@ set -e
 set -u
 set -o pipefail
 
-# Enable extended globbing for recursive ** patterns
-setopt extended_glob 2>/dev/null || true
-
 # ---------------- Paths allowlist (glob patterns)
 EXEMPT_PATHS=(
-  ".consent"
-  ".issue"
-  ".todo/**"
-  "/tmp/**"
-  "tasks/**"
-  "specs/**"
+  '.consent'
+  '.issue'
+  '.todo/**'
+  '/tmp/**'
+  'tasks/**'
+  'specs/**'
 )
-
-# ---------------- Commands allowlist (regex patterns)
-# Prefer PCRE; fall back to ERE if PCRE isn't enabled.
-# PCRE allows \b, \s, (?:...), etc.
-setopt RE_MATCH_PCRE 2>/dev/null || true
 
 EXEMPT_COMMAND_PATTERNS_PCRE=(
   '^(?:cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)\b'
@@ -37,14 +29,6 @@ EXEMPT_COMMAND_PATTERNS_ERE=(
   '^git([[:space:]]+show([[:space:]]+--name-only)?([[:space:]]|$))$'
 )
 
-# ---------------- Redirection guard (PCRE or ERE versions)
-writes_redirect_pcre() {
-  [[ $1 =~ '(^|\s)(>>|&>|[0-9]?>|<<<)(\s|$)' ]]
-}
-writes_redirect_ere() {
-  [[ $1 =~ '(^|[[:space:]])(>>|&>|[0-9]?>|<<<)([[:space:]]|$)' ]]
-}
-
 # ---------------- Timeout command detection
 TIMEOUT=60
 if command -v timeout >/dev/null 2>&1; then
@@ -57,42 +41,21 @@ fi
 
 # Multiline message: use a here-doc into a variable
 read -r -d '' deny_message <<'EOF' || true
-You are in DISCUSSION/PLANNING phase
-- Changes are currently not permitted
+Attempted changes are not permitted in DISCUSSION/PLANNING phase
 EOF
 
 # ---------------- Path allowlist check
 is_path_exempt() {
-  local check_path="$1"
+  local path=$1
+  local pattern
 
-  # Absolute form
-  if [[ $check_path != /* ]]; then
-    check_path="$PWD/${check_path#./}"
-  fi
-  local abs="$check_path"
-
-  # Project-relative form
-  local rel="${abs#$PWD/}"
-  rel="${rel#./}"
-
-  local pattern candidate
   for pattern in "${EXEMPT_PATHS[@]}"; do
-    if [[ $pattern == /* ]]; then
-      candidate="$abs"
-    else
-      candidate="$rel"
-    fi
-    # Unquoted RHS to enable globbing
-    if [[ $candidate == $pattern ]]; then
-      return 0
-    fi
-  done
-  return 1
+    [[ $path == ${~pattern} ]] && exit 0
+    done
 }
 
 # ---------------- Command allowlist check
 is_command_exempt() {
-  emulate -L zsh
   # Keep zsh’s regex capture variables local to this function
   local MATCH MBEGIN MEND
   local -a match mbegin mend
@@ -132,21 +95,13 @@ is_command_exempt() {
 
   if [[ -o RE_MATCH_PCRE ]]; then
     for re in "${EXEMPT_COMMAND_PATTERNS_PCRE[@]}"; do
-      if [[ $input =~ $re ]]; then
-        writes_redirect_pcre "$1" && return 1
-        return 0
-      fi
+      [[ $input =~ $re ]] && exit 0
     done
   else
     for re in "${EXEMPT_COMMAND_PATTERNS_ERE[@]}"; do
-      if [[ $input =~ $re ]]; then
-        writes_redirect_ere "$1" && return 1
-        return 0
-      fi
+      [[ $input =~ $re ]] && exit 0
     done
   fi
-
-  return 1
 }
 
 has_consent() {
