@@ -9,6 +9,8 @@ from ..project_config import Category
 from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from ..logging_config import get_logger
+from ..constants import METADATA_SUFFIX
+from ..services.document_discovery import get_category_documents_by_path
 
 
 logger = get_logger()
@@ -73,6 +75,10 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
                     if resolved_path in seen_files:
                         continue
 
+                    # Exclude metadata files from pattern matching
+                    if resolved_path.name.endswith(METADATA_SUFFIX):
+                        continue
+
                     # Check depth limit
                     try:
                         relative_path = resolved_path.relative_to(search_dir.resolve())
@@ -100,14 +106,40 @@ def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
 
                     match_path = Path(match_str)
                     if match_path.is_file() and match_path not in seen_files:
-                        matched_files.append(match_path)
-                        seen_files.add(match_path)
+                        # Exclude metadata files from pattern matching
+                        if not match_path.name.endswith(METADATA_SUFFIX):
+                            matched_files.append(match_path)
+                            seen_files.add(match_path)
 
             except Exception as e:
                 logger.warning(f"Glob pattern '{md_pattern}' failed: {e}")
                 continue
 
     return matched_files
+
+
+def _get_combined_category_files(category_dir: Path, patterns: List[str]) -> List[Path]:
+    """Get combined list of pattern files and managed documents with deduplication.
+
+    Managed documents take precedence over pattern files when there are name conflicts.
+    """
+    # Get pattern files (excluding metadata files)
+    pattern_files = _safe_glob_search(category_dir, patterns)
+
+    # Get managed documents
+    managed_docs = get_category_documents_by_path(category_dir)
+
+    # Create a set of managed document names for deduplication
+    managed_names = {doc.path.name for doc in managed_docs}
+
+    # Filter out pattern files that conflict with managed documents
+    deduplicated_pattern_files = [f for f in pattern_files if f.name not in managed_names]
+
+    # Convert managed documents to Path objects
+    managed_paths = [doc.path for doc in managed_docs]
+
+    # Combine and return
+    return deduplicated_pattern_files + managed_paths
 
 
 async def add_category(

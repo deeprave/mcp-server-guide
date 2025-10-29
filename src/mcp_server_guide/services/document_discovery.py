@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from ..project_config import Category
 from ..models.document_info import DocumentInfo
 from ..logging_config import get_logger
@@ -12,8 +12,42 @@ from .document_helpers import (
     get_metadata_path,
     DOCUMENT_EXTENSIONS,
 )
+from ..constants import DOCUMENT_SUBDIR
 
 logger = get_logger()
+
+
+def get_category_documents_by_path(category_dir: Path) -> List[DocumentInfo]:
+    """Discover all managed documents in category directory's DOCUMENT_SUBDIR."""
+    docs_dir = category_dir / DOCUMENT_SUBDIR
+
+    if not docs_dir.exists():
+        return []
+
+    documents = []
+
+    for file_path in docs_dir.rglob("*"):
+        if file_path.is_file() and is_document_file(file_path):
+            metadata_path = get_metadata_path(file_path)
+
+            # Try to read metadata, use empty dict if not available
+            metadata = {}
+            if metadata_path.exists():
+                try:
+                    with open(metadata_path) as f:
+                        metadata = json.load(f)
+                except (json.JSONDecodeError, OSError):
+                    logger.warning(f"Failed to read metadata for {file_path}")
+
+            # Create DocumentInfo with correct fields
+            doc_info = DocumentInfo(
+                path=file_path,
+                metadata_path=metadata_path,
+                metadata=metadata,
+            )
+            documents.append(doc_info)
+
+    return documents
 
 
 def get_category_documents(category: Category) -> Dict[str, DocumentInfo]:

@@ -43,9 +43,12 @@ async def test_safe_glob_symlink_resolution_error():
 
         # Mock Path.resolve to raise an error for symlink handling
         with patch("pathlib.Path.resolve") as mock_resolve:
+            # The resolve calls happen in this order:
+            # 1. match_path.resolve() for symlink resolution (line 69)
+            # 2. search_dir.resolve() in relative_to check (line 84)
             mock_resolve.side_effect = [
-                base_path.resolve(),  # First call for search_dir
-                OSError("Symlink error"),  # Second call for match_path
+                OSError("Symlink error"),  # First call for match_path.resolve()
+                base_path.resolve(),  # Second call for search_dir.resolve() in relative_to
             ]
 
             with patch("mcp_server_guide.tools.category_tools.logger") as mock_logger:
