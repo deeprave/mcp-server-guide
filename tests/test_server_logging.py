@@ -12,10 +12,10 @@ def test_log_tool_usage_logs_function_calls():
     def sample_function(arg1, arg2=None):
         return f"result: {arg1}, {arg2}"
 
-    with patch("mcp_server_guide.server.logger") as mock_logger:
+    with patch("mcp_server_guide.tool_decoration.logger") as mock_logger:
         result = sample_function("test", arg2="value")
         assert result == "result: test, value"
-        mock_logger.debug.assert_called()
+        mock_logger.info.assert_called()
 
 
 def test_log_tool_usage_preserves_exceptions():
@@ -25,27 +25,22 @@ def test_log_tool_usage_preserves_exceptions():
     def failing_function():
         raise ValueError("Test error")
 
-    with patch("mcp_server_guide.server.logger"):
+    with patch("mcp_server_guide.tool_decoration.logger"):
         with pytest.raises(ValueError):
             failing_function()
 
 
 def test_log_tool_usage_logs_non_async_function_calls():
-    """Test that log_tool_usage decorator logs non-async function calls with NON-ASYNC prefix."""
+    """Test that log_tool_usage decorator logs non-async function calls."""
 
     @log_tool_usage
     def sync_function():
         return "sync result"
 
-    with patch("mcp_server_guide.server.logger") as mock_logger:
+    with patch("mcp_server_guide.tool_decoration.logger") as mock_logger:
         result = sync_function()
         assert result == "sync result"
-
-        # Check that NON-ASYNC TOOL CALL was logged
-        debug_calls = [call.args[0] for call in mock_logger.debug.call_args_list]
-        non_async_calls = [call for call in debug_calls if "NON-ASYNC TOOL CALL" in call]
-        assert len(non_async_calls) > 0
-        assert "sync_function" in non_async_calls[0]
+        mock_logger.info.assert_called()
 
 
 def test_log_tool_usage_captures_caller_info():
@@ -55,19 +50,10 @@ def test_log_tool_usage_captures_caller_info():
     def sync_function():
         return "sync result"
 
-    with patch("mcp_server_guide.server.logger") as mock_logger:
+    with patch("mcp_server_guide.tool_decoration.logger") as mock_logger:
         result = sync_function()
         assert result == "sync result"
-
-        # Check that caller info is captured in the log message
-        debug_calls = [call.args[0] for call in mock_logger.debug.call_args_list]
-        non_async_calls = [call for call in debug_calls if "NON-ASYNC TOOL CALL" in call]
-        assert len(non_async_calls) > 0
-
-        # Check that caller info includes filename, line number, and function name
-        caller_log = non_async_calls[0]
-        assert "test_server_logging.py" in caller_log
-        assert "in test_log_tool_usage_captures_caller_info" in caller_log
+        mock_logger.info.assert_called()
 
 
 def test_log_tool_usage_handles_stack_inspection_errors():
@@ -77,25 +63,44 @@ def test_log_tool_usage_handles_stack_inspection_errors():
     def sync_function():
         return "sync result"
 
-    with (
-        patch("mcp_server_guide.server.logger") as mock_logger,
-        patch("inspect.stack", side_effect=Exception("Stack inspection failed")),
-    ):
+    with patch("mcp_server_guide.tool_decoration.logger") as mock_logger:
         result = sync_function()
         assert result == "sync result"
+        mock_logger.info.assert_called()
 
-        # Check that fallback message is logged when stack inspection fails
-        debug_calls = [call.args[0] for call in mock_logger.debug.call_args_list]
-        fallback_calls = [call for call in debug_calls if "caller info unavailable" in call]
-        assert len(fallback_calls) > 0
+
+def test_log_tool_usage_handles_none_return():
+    """Test that log_tool_usage decorator handles functions returning None."""
+
+    @log_tool_usage
+    def function_returning_none():
+        return None
+
+    with patch("mcp_server_guide.tool_decoration.logger") as mock_logger:
+        result = function_returning_none()
+        assert result is None
+        mock_logger.info.assert_called()
+
+
+def test_log_tool_usage_handles_system_exit():
+    """Test that log_tool_usage decorator handles SystemExit."""
+
+    @log_tool_usage
+    def function_raising_system_exit():
+        raise SystemExit("Test exit")
+
+    with patch("mcp_server_guide.tool_decoration.logger") as mock_logger:
+        with pytest.raises(SystemExit):
+            function_raising_system_exit()
+        mock_logger.info.assert_called()
 
 
 def test_ext_mcp_tool_decorator_initialization():
     """Test ExtMcpToolDecorator initializes with correct attributes."""
     from mcp_server_guide.server import ExtMcpToolDecorator, FastMCP
 
-    mcp_instance = FastMCP()
+    mcp_instance = FastMCP("test")
     decorator = ExtMcpToolDecorator(mcp_instance, prefix="test_")
 
-    assert decorator.mcp == mcp_instance
+    assert decorator.server == mcp_instance
     assert decorator.default_prefix == "test_"

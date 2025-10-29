@@ -279,6 +279,9 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
         logger.info("Starting MCP server in stdio mode")
         # Start MCP server in stdio mode
         try:
+            if mcp is None:
+                logger.error("MCP server not initialized, cannot start")
+                return "Server initialization failed"
             mcp.run()
             logger.info("MCP server shutdown normally (exit code 0)")
         except (BrokenPipeError, KeyboardInterrupt):

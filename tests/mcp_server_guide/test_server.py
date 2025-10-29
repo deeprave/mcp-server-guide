@@ -139,7 +139,7 @@ async def test_server_tool_integration():
         "guide_switch_project",
         "guide_get_guide",
         "guide_add_category",
-        "guide_list_categories"
+        "guide_list_categories",
     ]
 
     for expected_tool in expected_tools:
@@ -147,14 +147,14 @@ async def test_server_tool_integration():
 
 
 def test_tool_registration_error_handling():
-    """Test error handling during tool registration."""
+    """Test error handling during server creation."""
     # Verify that error handling code exists in server.py
     import inspect
     from mcp_server_guide import server
 
     source = inspect.getsource(server)
     assert "try:" in source
-    assert "register_tools" in source
+    assert "create_server" in source
     assert "except Exception" in source
     assert "logger.error" in source
 

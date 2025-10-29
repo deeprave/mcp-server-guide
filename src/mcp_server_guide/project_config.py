@@ -406,15 +406,8 @@ def _save_config_locked(config_file: Path, project_name: str, config: ProjectCon
     # Save updated config in YAML format
     try:
         with open(config_file, "w") as f:
-            # Dump with collections always included
+            # Let model_dump handle all serialization properly
             data = existing_config.model_dump(exclude_none=True)
-            for project in data["projects"].values():
-                if "collections" not in project:
-                    project["collections"] = {}
-                # Ensure collections are properly serialized
-                for collection_name, collection in project.get("collections", {}).items():
-                    if isinstance(collection, Collection):
-                        project["collections"][collection_name] = collection.model_dump(exclude_none=True)
             yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
     except (OSError, IOError) as e:
         raise IOError(f"Cannot write to config file {config_file}: {e}") from e
@@ -512,48 +505,20 @@ class ProjectConfigManager:
         return self._config_filename
 
     def save_config(self, project_name: str, config: ProjectConfig) -> None:
-        """Save project configuration to file with explicit project name."""
+        """Save project configuration with proper file locking."""
         config_file = Path(self.get_config_filename())
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # Load existing config to preserve other projects
-        existing_config = ConfigFile(docroot=".", projects={})
-        if config_file.exists():
-            try:
-                with open(config_file) as f:
-                    data = yaml.safe_load(f)
-                    if data and isinstance(data, dict):
-                        existing_config = ConfigFile(**data)
-            except Exception as e:
-                logger.warning(f"Failed to load existing config: {e}")
+        # Use lock_update for proper file locking
+        docroot = lock_update(config_file, _save_config_locked, project_name, config)
 
-        # Update the specific project
-        existing_config.projects[project_name] = config
+        # Cache the docroot after successful save (preserve new functionality)
+        self._docroot = LazyPath(docroot or ".")
 
-        # Save the updated config
-        try:
-            with open(config_file, "w") as f:
-                # Convert to dict and ensure collections are included
-                data = {}
-                data["docroot"] = existing_config.docroot
-                data["projects"] = {}
-
-                # Serialize each project using centralized model_dump
-                for project_name, project_config in existing_config.projects.items():
-                    data["projects"][project_name] = project_config.model_dump(exclude_none=True)
-
-                # Debug output (limit to a single concise statement)
-                logger.debug(
-                    f"Project config saved for project '{project_name}' with {len(config.collections) if config.collections else 0} collections."
-                )
-                logger.debug(f"Saving config: {data}")
-                yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
-        except Exception as e:
-            logger.error(f"Failed to save config: {e}")
-            raise
-
-        # Cache the docroot after successful save
-        self._docroot = LazyPath(existing_config.docroot or ".")
+        # Debug output (preserve debug logging)
+        logger.debug(
+            f"Project config saved for project '{project_name}' with {len(config.collections) if config.collections else 0} collections."
+        )
 
     def load_config(self, project_name: str) -> Optional[ProjectConfig]:
         """Load project configuration from file.

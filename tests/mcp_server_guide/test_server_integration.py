@@ -14,8 +14,9 @@ async def test_server_uses_hybrid_file_access():
         server = create_server(docroot=".", cache_dir=temp_dir)
 
         # Server should have file accessor with cache
-        assert hasattr(server, "file_accessor")
-        assert server.file_accessor.cache is not None
+        assert hasattr(server, "ext")
+        assert hasattr(server.ext, "file_accessor")
+        assert server.ext.file_accessor.cache is not None
 
 
 async def test_server_resolves_http_resources() -> None:
@@ -52,7 +53,7 @@ async def test_server_resolves_http_resources() -> None:
                 mock_client_class.return_value = mock_client
 
                 # Server should be able to read HTTP guide
-                content = await server.read_guide("test-project")
+                content = await server.ext.read_guide("test-project")
                 assert content == "# HTTP Guide\nRemote content"
 
                 # Should have used HTTP client
@@ -86,12 +87,12 @@ async def test_server_caches_http_resources():
                 mock_client_class.return_value = mock_client
 
                 # First read - should cache
-                content1 = await server.read_guide("test-project")
+                content1 = await server.ext.read_guide("test-project")
                 assert content1 == "# Cached Guide"
                 assert mock_client.get.call_count == 1
 
                 # Mock cache entry to need validation
-                with patch.object(server.file_accessor.cache, "get") as mock_cache_get:
+                with patch.object(server.ext.file_accessor.cache, "get") as mock_cache_get:
                     from mcp_server_guide.file_cache import CacheEntry
 
                     cached_entry = CacheEntry(
@@ -102,7 +103,7 @@ async def test_server_caches_http_resources():
                     mock_cache_get.return_value = cached_entry
 
                     # Second read - should use conditional request
-                    content2 = await server.read_guide("test-project")
+                    content2 = await server.ext.read_guide("test-project")
                     assert content2 == "# Cached Guide"
                     assert mock_client.get_conditional.call_count == 1
 
@@ -140,12 +141,12 @@ async def test_server_handles_mixed_sources():
                 mock_client_class.return_value = mock_client
 
                 # Should read local guide without HTTP
-                guide_content = await server.read_guide("mixed-project")
+                guide_content = await server.ext.read_guide("mixed-project")
                 assert isinstance(guide_content, str)  # Should read README.md
                 assert mock_client.get.call_count == 0  # No HTTP for local file
 
                 # Should read HTTP language with HTTP client
-                lang_content = await server.read_language("mixed-project")
+                lang_content = await server.ext.read_language("mixed-project")
                 assert lang_content == "# HTTP Language"
                 assert mock_client.get.call_count == 1  # HTTP for remote file
 
@@ -180,7 +181,7 @@ async def test_server_fallback_on_http_error():
                 mock_client_class.return_value = mock_client
 
                 # First read - populates cache
-                content1 = await server.read_guide("fallback-project")
+                content1 = await server.ext.read_guide("fallback-project")
                 assert content1 == "# Cached Guide"
 
                 # Second request fails
@@ -189,7 +190,7 @@ async def test_server_fallback_on_http_error():
                 # Force cache validation
                 with patch("time.time", return_value=1000000000):  # Far future
                     # Should fall back to cache
-                    content2 = await server.read_guide("fallback-project")
+                    content2 = await server.ext.read_guide("fallback-project")
                     assert content2 == "# Cached Guide"
 
 
@@ -215,15 +216,15 @@ async def test_server_integration_with_session_paths():
 
         with patch.object(server, "_session_manager", session):
             # Should create appropriate file sources
-            guide_source = await server._get_file_source("guide", "integration-project")
+            guide_source = await server.ext._get_file_source("guide", "integration-project")
             from mcp_server_guide.file_source import FileSourceType
 
             assert guide_source.type == FileSourceType.FILE
 
-            lang_source = await server._get_file_source("lang", "integration-project")
+            lang_source = await server.ext._get_file_source("lang", "integration-project")
             assert lang_source.type == FileSourceType.FILE
 
-            context_source = await server._get_file_source("context", "integration-project")
+            context_source = await server.ext._get_file_source("context", "integration-project")
             assert context_source.type == FileSourceType.HTTP
             assert context_source.base_path == "https://example.com/context.md"
 
@@ -254,13 +255,13 @@ async def test_server_respects_cache_settings():
                 mock_client_class.return_value = mock_client
 
                 # Test with caching enabled (default)
-                source = await server._get_file_source("guide", "cache-test")
+                source = await server.ext._get_file_source("guide", "cache-test")
                 assert source.cache_enabled is True
 
                 # Read should cache
-                content = await server.read_guide("cache-test")
+                content = await server.ext.read_guide("cache-test")
                 assert content == "# Guide Content"
 
                 # Cache file should exist
-                cache_files = list(server.file_accessor.cache.cache_dir.glob("*.json"))
+                cache_files = list(server.ext.file_accessor.cache.cache_dir.glob("*.json"))
                 assert len(cache_files) > 0

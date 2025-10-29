@@ -136,7 +136,9 @@ class TestServerResourceCreation:
             with patch("mcp_server_guide.server.SessionManager") as mock_session_mgr:
                 mock_session = Mock()
                 mock_session_mgr.return_value = mock_session
-                project_config = ProjectConfig(categories={"valid": Category(dir="valid/", patterns=["*.md"], description="Valid category")})
+                project_config = ProjectConfig(
+                    categories={"valid": Category(dir="valid/", patterns=["*.md"], description="Valid category")}
+                )
                 mock_session.get_or_create_project_config = AsyncMock(return_value=project_config)
 
                 create_server_with_config(config)
@@ -152,7 +154,9 @@ class TestServerResourceCreation:
             with patch("mcp_server_guide.server.SessionManager") as mock_session_mgr:
                 mock_session = Mock()
                 mock_session_mgr.return_value = mock_session
-                project_config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")})
+                project_config = ProjectConfig(
+                    categories={"test": Category(dir="test/", patterns=["*.md"], description="Test category")}
+                )
                 mock_session.get_or_create_project_config = AsyncMock(return_value=project_config)
 
                 create_server_with_config(config)

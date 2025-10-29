@@ -1,7 +1,17 @@
 """MCP prompt handlers for the developer guide system."""
 
 from typing import Optional
+
 from mcp.server.fastmcp import FastMCP
+
+from .help_system import format_guide_help
+from .tools.category_tools import (
+    add_category,
+    get_category_content,
+    list_categories,
+    remove_category,
+    update_category,
+)
 from .tools.content_tools import get_content
 
 
@@ -151,3 +161,61 @@ def register_prompts(mcp: FastMCP) -> None:
     @mcp.prompt("debug")
     async def _debug_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
         return f"arg: '{arg}'\ncontent: '{content}'\narg type: {type(arg)}\ncontent type: {type(content)}"
+
+    @mcp.prompt("guide")
+    async def _guide_prompt(category: Optional[str] = None) -> str:
+        """Get comprehensive guide content or specific category content."""
+
+        if category:
+            result = await get_category_content(category, None)
+            if result.get("success"):
+                return str(result.get("content", ""))
+            else:
+                return f"Error: {result.get('error', 'Unknown error')}"
+        else:
+            return await format_guide_help()
+
+    @mcp.prompt("category")
+    async def _category_prompt(
+        action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None
+    ) -> str:
+        """Manage categories with actions: add, update, remove, list, get."""
+
+        if action == "add":
+            if not dir or not patterns:
+                return "Error: 'dir' and 'patterns' are required for adding a category"
+
+            patterns_list = [p.strip() for p in patterns.split(",")]
+            result = await add_category(name, dir, patterns_list)
+
+        elif action == "update":
+            result = await update_category(name, dir=dir, patterns=patterns.split(",") if patterns else None)
+
+        elif action == "remove":
+            result = await remove_category(name)
+
+        elif action == "list":
+            result = await list_categories(verbose=True)
+
+        elif action == "get":
+            result = await get_category_content(name, None)
+
+        else:
+            return f"Error: Unknown action '{action}'. Valid actions: add, update, remove, list, get"
+
+        if result.get("success"):
+            if action == "list":
+                categories = result.get("categories", {})
+                if categories:
+                    lines = ["Categories:"]
+                    for cat_name, cat_info in categories.items():
+                        lines.append(f"- {cat_name}: {cat_info.get('description', 'No description')}")
+                    return "\n".join(lines)
+                else:
+                    return "No categories found"
+            elif action == "get":
+                return str(result.get("content", ""))
+            else:
+                return str(result.get("message", "Operation completed successfully"))
+        else:
+            return f"Error: {result.get('error', 'Unknown error')}"

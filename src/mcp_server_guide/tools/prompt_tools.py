@@ -14,6 +14,9 @@ async def list_prompts() -> Dict[str, Any]:
     """
     from ..server import mcp
 
+    if mcp is None:
+        return {"success": False, "error": "MCP server not initialized", "prompts": []}
+
     # Access the prompt manager from the global mcp instance
     prompts = mcp._prompt_manager.list_prompts()
 
@@ -52,6 +55,9 @@ async def list_resources() -> Dict[str, Any]:
     """
     try:
         from ..server import mcp
+
+        if mcp is None:
+            return {"success": False, "error": "MCP server not initialized", "resources": []}
 
         # Try to access resource manager safely
         resources_result: Any = None

@@ -24,37 +24,37 @@ def register_tools(mcp: FastMCP, guide_decorator: Any, log_tool_usage: Callable)
     """Register all MCP tools with the server."""
 
     # Project Management Tools
-    guide_decorator.tool()(log_tool_usage(get_current_project))
-    guide_decorator.tool()(log_tool_usage(switch_project))
+    guide_decorator.tool("get_current_project")(log_tool_usage(get_current_project))
+    guide_decorator.tool("switch_project")(log_tool_usage(switch_project))
 
     # Configuration Tools
-    guide_decorator.tool()(log_tool_usage(get_project_config))
-    guide_decorator.tool()(log_tool_usage(set_project_config_values))
-    guide_decorator.tool()(log_tool_usage(set_project_config))
+    guide_decorator.tool("get_project_config")(log_tool_usage(get_project_config))
+    guide_decorator.tool("set_project_config_values")(log_tool_usage(set_project_config_values))
+    guide_decorator.tool("set_project_config")(log_tool_usage(set_project_config))
 
     # Content Tools
-    guide_decorator.tool()(log_tool_usage(get_guide))
-    guide_decorator.tool()(log_tool_usage(get_language_guide))
-    guide_decorator.tool()(log_tool_usage(get_project_context))
-    guide_decorator.tool()(log_tool_usage(search_content))
-    guide_decorator.tool()(log_tool_usage(show_guide))
-    guide_decorator.tool()(log_tool_usage(show_language_guide))
+    guide_decorator.tool("get_guide")(log_tool_usage(get_guide))
+    guide_decorator.tool("get_language_guide")(log_tool_usage(get_language_guide))
+    guide_decorator.tool("get_project_context")(log_tool_usage(get_project_context))
+    guide_decorator.tool("search_content")(log_tool_usage(search_content))
+    guide_decorator.tool("show_guide")(log_tool_usage(show_guide))
+    guide_decorator.tool("show_language_guide")(log_tool_usage(show_language_guide))
 
     # File Tools
-    guide_decorator.tool()(log_tool_usage(get_file_content))
+    guide_decorator.tool("get_file_content")(log_tool_usage(get_file_content))
 
     # Category Management Tools
-    guide_decorator.tool()(log_tool_usage(add_category))
-    guide_decorator.tool()(log_tool_usage(remove_category))
-    guide_decorator.tool()(log_tool_usage(update_category))
-    guide_decorator.tool()(log_tool_usage(list_categories))
-    guide_decorator.tool()(log_tool_usage(get_category_content))
+    guide_decorator.tool("add_category")(log_tool_usage(add_category))
+    guide_decorator.tool("remove_category")(log_tool_usage(remove_category))
+    guide_decorator.tool("update_category")(log_tool_usage(update_category))
+    guide_decorator.tool("list_categories")(log_tool_usage(list_categories))
+    guide_decorator.tool("get_category_content")(log_tool_usage(get_category_content))
 
     # Collection Management Tools
-    guide_decorator.tool()(log_tool_usage(add_collection))
-    guide_decorator.tool()(log_tool_usage(update_collection))
-    guide_decorator.tool()(log_tool_usage(list_collections))
-    guide_decorator.tool()(log_tool_usage(remove_collection))
+    guide_decorator.tool("add_collection")(log_tool_usage(add_collection))
+    guide_decorator.tool("update_collection")(log_tool_usage(update_collection))
+    guide_decorator.tool("list_collections")(log_tool_usage(list_collections))
+    guide_decorator.tool("remove_collection")(log_tool_usage(remove_collection))
 
     # Prompt Tools
-    guide_decorator.tool()(log_tool_usage(list_prompts))
+    guide_decorator.tool("list_prompts")(log_tool_usage(list_prompts))

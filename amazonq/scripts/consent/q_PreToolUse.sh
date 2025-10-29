@@ -1,8 +1,18 @@
 #!/bin/zsh
-# Safer option setup in zsh (avoid bash-y combined flags)
 set -e
 set -u
 set -o pipefail
+
+setopt extended_glob
+
+hook_data=$(cat)
+
+if [[ -f .hook_log ]]; then
+  log_file="$HOME/.aws/amazonq/logs/hook.log"
+  mkdir -p "$(dirname "$log_file")"
+  json_data=$(jq -c '.' <<<"$hook_data" || true)
+  echo "$(date '+%Y-%m-%d %H:%M:%S')" "$json_data" >> "$log_file"
+fi
 
 # ---------------- Paths allowlist (glob patterns)
 EXEMPT_PATHS=(
@@ -24,6 +34,7 @@ EXEMPT_COMMAND_PATTERNS_PCRE=(
 # POSIX ERE fallback (no \b, so use ([[:space:]]|$))
 EXEMPT_COMMAND_PATTERNS_ERE=(
   '^(cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)([[:space:]]|$)'
+  '^rm[[:space:]]+(-f[[:space:]]+)?(\.consent|\.issue)$'
   '^git([[:space:]]+(status|log|rev-parse|ls-files)([[:space:]]|$))?$'
   '^git([[:space:]]+diff([[:space:]]+--name-only)?([[:space:]]|$))$'
   '^git([[:space:]]+show([[:space:]]+--name-only)?([[:space:]]|$))$'
@@ -50,8 +61,10 @@ is_path_exempt() {
   local pattern
 
   for pattern in "${EXEMPT_PATHS[@]}"; do
-    [[ $path == ${~pattern} ]] && exit 0
-    done
+    case $path in
+      $pattern) exit 0 ;;
+    esac
+  done
 }
 
 # ---------------- Command allowlist check
@@ -62,20 +75,12 @@ is_command_exempt() {
 
   local input="$1" head rest re
 
-# Trim leading spaces
+  # Trim leading spaces
   input=${input##[[:space:]]#}
 
-  # Strip one or more leading "cd <dir> &&" prefixes, handling quoted and unquoted directory names,
-  # and allowing for multiple chained cd commands.
-  # This regex matches:
-  #   - cd 'dir with spaces' &&
-  #   - cd "dir with spaces" &&
-  #   - cd dir_with_no_spaces &&
-  #   - with arbitrary whitespace
-  # It will not break on && inside quotes.
-  while [[ $input =~ ^cd[[:space:]]+((\"([^\"]*)\")|(\'([^\']*)\')|([^\'\"\&\;]+))[[:space:]]*&&[[:space:]]*(.*)$ ]]; do
+  while [[ $input =~ ^cd[[:space:]]+[^\&]*\&\&[[:space:]]*(.*)$ ]]; do
     # Extract the remaining command after the last &&
-    input="${match[6]}"
+    input="${match[1]}"
   done
 
   # Extract argv0 and strip any path
@@ -135,10 +140,6 @@ ask_consent() {
 }
 
 # ---------------- Main
-hook_data="$(cat)"
-# Debug echo (kept compact); remove if noisy
-jq -c '.' <<<"$hook_data" || true
-
 tool_name="$(jq -r '.tool_name // empty' <<<"$hook_data")"
 
 if [[ $tool_name == "fs_write" ]]; then

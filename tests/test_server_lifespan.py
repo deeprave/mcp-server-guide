@@ -11,7 +11,7 @@ class TestServerLifespan:
         """Test server_lifespan basic initialization."""
         mock_server = MagicMock()
 
-        with patch("mcp_server_guide.server.logger") as mock_logger:
+        with patch("mcp_server_guide.server_lifecycle.logger") as mock_logger:
             from mcp_server_guide.server import server_lifespan
 
             # Test the async context manager
@@ -29,7 +29,7 @@ class TestServerLifespan:
 
         with patch("mcp_server_guide.main._deferred_builtin_config") as mock_contextvar:
             mock_contextvar.get.return_value = {}
-            with patch("mcp_server_guide.server.logger") as mock_logger:
+            with patch("mcp_server_guide.server_lifecycle.logger") as mock_logger:
                 from mcp_server_guide.server import server_lifespan
 
                 # Test that exceptions during initialization are properly handled
