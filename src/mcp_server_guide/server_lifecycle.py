@@ -8,8 +8,6 @@ from .logging_config import get_logger
 from .error_handler import ErrorHandler
 from .resource_registry import register_resources
 from .prompts import register_prompts
-from .tool_registry import register_tools
-from .tool_decoration import log_tool_usage, ExtMcpToolDecorator
 
 logger = get_logger()
 error_handler = ErrorHandler(logger)
@@ -30,9 +28,39 @@ async def server_lifespan(server: FastMCP) -> Any:
     try:
         session_manager = SessionManager()
 
-        # Extract project name from PWD
-        pwd = os.environ.get("PWD", "")
-        project_name = os.path.basename(pwd) if pwd else None
+        # Apply server configuration parameters in correct order if this is a GuideMCP instance
+        try:
+            config_file = getattr(server, "config_file", None)
+            project = getattr(server, "project", None)
+            docroot = getattr(server, "docroot", None)
+
+            if config_file or project or docroot:
+                # 1. Set config file first (affects where project config is loaded from)
+                if config_file:
+                    session_manager._config_manager.set_config_filename(config_file)
+
+                # 2. Switch project second (loads project config from the config file)
+                if project and isinstance(project, str):
+                    await session_manager.switch_project(project)
+                    project_name = project
+                else:
+                    # Extract project name from PWD as fallback
+                    pwd = os.environ.get("PWD", "")
+                    project_name = os.path.basename(pwd) if pwd else "default"
+
+                # 3. Set docroot last (part of main config, not project config)
+                if docroot:
+                    from .path_resolver import LazyPath
+
+                    # Set docroot at config manager level since it's part of main config
+                    session_manager._config_manager._docroot = LazyPath(docroot)
+            else:
+                # Extract project name from PWD
+                pwd = os.environ.get("PWD", "")
+                project_name = os.path.basename(pwd) if pwd else "default"
+        except Exception as e:
+            logger.error(f"Failed to apply server parameters: {e}")
+            raise RuntimeError(f"Server parameter application failed: {e}") from e
 
         config = await session_manager.get_or_create_project_config(project_name or "default")
         logger.info(
@@ -43,12 +71,11 @@ async def server_lifespan(server: FastMCP) -> Any:
 
         register_prompts(server)
 
-        # Use the existing guide decorator from server extensions
-        if hasattr(server, "ext") and hasattr(server.ext, "guide"):
-            register_tools(server, server.ext.guide, log_tool_usage)
-        else:
-            # Fallback for servers without extensions (shouldn't happen in normal use)
-            register_tools(server, ExtMcpToolDecorator(server, prefix="guide_"), log_tool_usage)
+        # Register tools with new signature
+        from .tool_registry import register_tools
+        from .tool_decoration import log_tool_usage
+
+        register_tools(server, log_tool_usage)
 
         logger.info("MCP server initialized successfully")
         yield

@@ -10,7 +10,7 @@ from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from ..logging_config import get_logger
 from ..constants import METADATA_SUFFIX
-from ..services.document_discovery import get_category_documents_by_path
+from ..utils.document_discovery import get_category_documents_by_path
 
 
 logger = get_logger()

@@ -1,13 +1,13 @@
 """Document CRUD operations for managed documents."""
 
-import hashlib
 from pathlib import Path
 from typing import Dict, Any, Optional
-from ..constants import DOCUMENT_SUBDIR
+from ..constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
 from ..models.document_metadata import DocumentMetadata
-from ..services.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
-from ..services.document_helpers import get_metadata_path
+from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
+from ..utils.document_helpers import get_metadata_path
 from ..logging_config import get_logger
+from ..utils.document_utils import generate_content_hash, detect_mime_type
 
 logger = get_logger()
 
@@ -28,27 +28,6 @@ def _validate_document_name(name: str) -> bool:
 def _validate_content_size(content: str, max_size: int = 10 * 1024 * 1024) -> bool:
     """Validate content size (default 10MB limit)."""
     return len(content.encode("utf-8")) <= max_size
-
-
-def _detect_mime_type(filename: str) -> str:
-    """Detect MIME type from file extension."""
-    suffix = Path(filename).suffix.lower()
-    mime_types = {
-        ".md": "text/markdown",
-        ".txt": "text/plain",
-        ".yaml": "text/yaml",
-        ".yml": "text/yaml",
-        ".json": "application/json",
-        ".pdf": "application/pdf",
-        ".rst": "text/x-rst",
-        ".adoc": "text/asciidoc",
-    }
-    return mime_types.get(suffix, "text/plain")
-
-
-def _generate_content_hash(content: str) -> str:
-    """Generate SHA256 hash of content."""
-    return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
 
 def _generate_document_uri(category_dir: str, name: str) -> str:
@@ -74,13 +53,13 @@ async def create_mcp_document(
 
         # Create document file
         doc_path = docs_dir / name
-        doc_path.write_text(content, encoding='utf-8')
+        doc_path.write_text(content, encoding="utf-8")
 
         # Generate metadata
         if mime_type is None:
-            mime_type = _detect_mime_type(name)
+            mime_type = detect_mime_type(name)
 
-        content_hash = _generate_content_hash(content)
+        content_hash = generate_content_hash(content)
 
         metadata = DocumentMetadata(source_type=source_type, content_hash=content_hash, mime_type=mime_type)
 
@@ -132,14 +111,14 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
         if existing_metadata is None:
             # Create default metadata if missing
             existing_metadata = DocumentMetadata(
-                source_type="manual", content_hash="", mime_type=_detect_mime_type(name)
+                source_type="manual", content_hash="", mime_type=detect_mime_type(name)
             )
 
         # Update document content
-        doc_path.write_text(content, encoding='utf-8')
+        doc_path.write_text(content, encoding="utf-8")
 
         # Update metadata with new content hash
-        new_content_hash = _generate_content_hash(content)
+        new_content_hash = generate_content_hash(content)
         updated_metadata = DocumentMetadata(
             source_type=existing_metadata.source_type,
             content_hash=new_content_hash,
@@ -205,3 +184,62 @@ async def delete_mcp_document(category_dir: str, name: str) -> Dict[str, Any]:
     except Exception as e:
         logger.exception("Unexpected error in delete_mcp_document")
         return {"success": False, "error": f"Unexpected error: {str(e)}", "error_type": "unexpected"}
+
+
+async def list_mcp_documents(
+    category_dir: str,
+    source_type: Optional[str] = None,
+    mime_type: Optional[str] = None,
+) -> Dict[str, Any]:
+    """List server documents from category/__docs__/ with filtering."""
+    try:
+        # Trigger async cleanup for this category
+        from ..queue.category_queue import add_category
+
+        add_category(category_dir)
+
+        category_path = Path(category_dir)
+        docs_dir = category_path / DOCUMENT_SUBDIR
+
+        if not docs_dir.exists():
+            return {"success": True, "documents": []}
+
+        documents = []
+
+        for doc_path in docs_dir.iterdir():
+            if doc_path.is_file() and not doc_path.name.endswith(METADATA_SUFFIX):
+                # Get filesystem metadata
+                stat = doc_path.stat()
+
+                # Get stored metadata
+                stored_metadata_obj = read_sidecar_metadata(doc_path)
+                stored_metadata = stored_metadata_obj.model_dump() if stored_metadata_obj else {}
+
+                doc_info = {
+                    "name": doc_path.name,
+                    "path": str(doc_path),
+                    "size": stat.st_size,
+                    "created_at": stat.st_ctime,  # Note: On Unix, this is inode change time, not creation time
+                    "updated_at": stat.st_mtime,
+                    "source_type": stored_metadata.get("source_type", "unknown"),
+                    "mime_type": stored_metadata.get("mime_type", detect_mime_type(doc_path.name)),
+                    "content_hash": stored_metadata.get("content_hash", ""),
+                }
+
+                # Apply filters
+                if source_type and doc_info["source_type"] != source_type:
+                    continue
+                if mime_type and doc_info["mime_type"] != mime_type:
+                    continue
+
+                documents.append(doc_info)
+
+        return {"success": True, "documents": documents}
+
+    except Exception as e:
+        logger.exception(f"Error listing documents in '{category_dir}': {e}")
+        return {
+            "success": False,
+            "error": f"Error listing documents: {e}",
+            "error_type": "unexpected",
+        }

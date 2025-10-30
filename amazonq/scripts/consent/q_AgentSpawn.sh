@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 cat <<EOF
 🚨 You are in consent mode.
 

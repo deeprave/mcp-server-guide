@@ -6,7 +6,7 @@ from pathlib import Path
 
 def test_get_metadata_path():
     """Test get_metadata_path converts document path to metadata path."""
-    from mcp_server_guide.services.document_helpers import get_metadata_path
+    from mcp_server_guide.utils.document_helpers import get_metadata_path
 
     # Test different document types
     assert get_metadata_path(Path("test.md")) == Path("test.md_.json")
@@ -17,7 +17,7 @@ def test_get_metadata_path():
 
 def test_get_document_path():
     """Test get_document_path converts metadata path to document path."""
-    from mcp_server_guide.services.document_helpers import get_document_path
+    from mcp_server_guide.utils.document_helpers import get_document_path
 
     # Test different document types
     assert get_document_path(Path("test.md_.json")) == Path("test.md")
@@ -28,7 +28,7 @@ def test_get_document_path():
 
 def test_get_document_path_invalid():
     """Test get_document_path raises error for invalid metadata path."""
-    from mcp_server_guide.services.document_helpers import get_document_path
+    from mcp_server_guide.utils.document_helpers import get_document_path
 
     with pytest.raises(ValueError, match="Not a metadata file"):
         get_document_path(Path("invalid.json"))
@@ -36,7 +36,7 @@ def test_get_document_path_invalid():
 
 def test_get_document_path_path_traversal():
     """Test get_document_path raises error for path traversal in metadata path."""
-    from mcp_server_guide.services.document_helpers import get_document_path
+    from mcp_server_guide.utils.document_helpers import get_document_path
 
     # Attempt to traverse directories
     with pytest.raises(ValueError, match="Not a metadata file"):
@@ -47,7 +47,7 @@ def test_get_document_path_path_traversal():
 
 def test_get_docs_dir():
     """Test get_docs_dir returns __docs__ subdirectory path."""
-    from mcp_server_guide.services.document_helpers import get_docs_dir
+    from mcp_server_guide.utils.document_helpers import get_docs_dir
 
     category_dir = Path("/path/to/category")
     docs_dir = get_docs_dir(category_dir)
@@ -57,7 +57,7 @@ def test_get_docs_dir():
 
 def test_is_document_file():
     """Test is_document_file supports multiple document types and excludes metadata files."""
-    from mcp_server_guide.services.document_helpers import is_document_file
+    from mcp_server_guide.utils.document_helpers import is_document_file
 
     # Supported document types
     assert is_document_file(Path("document.md")) is True

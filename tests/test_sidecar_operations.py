@@ -8,7 +8,7 @@ from pathlib import Path
 
 def test_create_sidecar_metadata():
     """Test creating sidecar metadata file."""
-    from mcp_server_guide.services.sidecar_operations import create_sidecar_metadata
+    from mcp_server_guide.utils.sidecar_operations import create_sidecar_metadata
     from mcp_server_guide.models.document_metadata import DocumentMetadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -32,7 +32,7 @@ def test_create_sidecar_metadata():
 
 def test_read_sidecar_metadata():
     """Test reading sidecar metadata file."""
-    from mcp_server_guide.services.sidecar_operations import read_sidecar_metadata
+    from mcp_server_guide.utils.sidecar_operations import read_sidecar_metadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
         doc_path = Path(temp_dir) / "test.md"
@@ -60,7 +60,7 @@ def test_read_sidecar_metadata():
 
 def test_read_sidecar_metadata_missing_file():
     """Test reading sidecar metadata when file doesn't exist."""
-    from mcp_server_guide.services.sidecar_operations import read_sidecar_metadata
+    from mcp_server_guide.utils.sidecar_operations import read_sidecar_metadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
         doc_path = Path(temp_dir) / "nonexistent.md"
@@ -71,7 +71,7 @@ def test_read_sidecar_metadata_missing_file():
 
 def test_read_sidecar_metadata_corrupted_json():
     """Test reading sidecar metadata with corrupted JSON."""
-    from mcp_server_guide.services.sidecar_operations import read_sidecar_metadata
+    from mcp_server_guide.utils.sidecar_operations import read_sidecar_metadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
         doc_path = Path(temp_dir) / "test.md"
@@ -87,7 +87,7 @@ def test_read_sidecar_metadata_corrupted_json():
 
 def test_read_sidecar_metadata_permission_error():
     """Test reading sidecar metadata with permission errors."""
-    from mcp_server_guide.services.sidecar_operations import read_sidecar_metadata
+    from mcp_server_guide.utils.sidecar_operations import read_sidecar_metadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
         doc_path = Path(temp_dir) / "test.md"

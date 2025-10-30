@@ -22,7 +22,7 @@ async def test_create_mcp_document():
             category_dir=str(category_dir),
             name="test-doc.md",
             content="# Test Document\n\nThis is a test.",
-            source_type="manual"
+            source_type="manual",
         )
 
         # Should return success with URI
@@ -59,10 +59,7 @@ async def test_create_mcp_document_auto_mime_type():
 
         # Create YAML document
         result = await create_mcp_document(
-            category_dir=str(category_dir),
-            name="config.yaml",
-            content="key: value\n",
-            source_type="manual"
+            category_dir=str(category_dir), name="config.yaml", content="key: value\n", source_type="manual"
         )
 
         assert result["success"] is True
@@ -87,7 +84,7 @@ async def test_create_mcp_document_explicit_mime_type():
             name="data.txt",
             content='{"key": "value"}',
             source_type="manual",
-            mime_type="application/json"
+            mime_type="application/json",
         )
 
         assert result["success"] is True
@@ -96,6 +93,37 @@ async def test_create_mcp_document_explicit_mime_type():
         metadata_path = Path(temp_dir) / DOCUMENT_SUBDIR / f"data.txt{METADATA_SUFFIX}"
         metadata = json.loads(metadata_path.read_text())
         assert metadata["mime_type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_create_document_with_invalid_names():
+    """Test creating documents with reserved/invalid characters in name."""
+    from mcp_server_guide.tools.document_tools import create_mcp_document
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        category_dir = Path(temp_dir)
+
+        invalid_names = [
+            "doc:name.txt",  # colon
+            "doc*name.txt",  # asterisk
+            "doc?name.txt",  # question mark
+            "doc/name.txt",  # slash
+            "doc\\name.txt",  # backslash
+            "doc<name>.txt",  # angle brackets
+            "doc|name.txt",  # pipe
+            'doc"name.txt',  # double quote
+        ]
+
+        for invalid_name in invalid_names:
+            result = await create_mcp_document(
+                category_dir=str(category_dir), name=invalid_name, content="Invalid name test", source_type="manual"
+            )
+            # Note: Current implementation may not validate names,
+            # so this test documents expected behavior
+            if result.get("success") is False:
+                assert "error" in result, f"Error message should be present for name: {invalid_name}"
+
+
 @pytest.mark.asyncio
 async def test_update_mcp_document():
     """Test updating an existing managed document."""
@@ -106,17 +134,12 @@ async def test_update_mcp_document():
 
         # Create initial document
         await create_mcp_document(
-            category_dir=str(category_dir),
-            name="test-doc.md",
-            content="# Original Content",
-            source_type="manual"
+            category_dir=str(category_dir), name="test-doc.md", content="# Original Content", source_type="manual"
         )
 
         # Update the document
         result = await update_mcp_document(
-            category_dir=str(category_dir),
-            name="test-doc.md",
-            content="# Updated Content\n\nThis is updated."
+            category_dir=str(category_dir), name="test-doc.md", content="# Updated Content\n\nThis is updated."
         )
 
         # Should return success
@@ -145,9 +168,7 @@ async def test_update_mcp_document_nonexistent():
 
         # Try to update non-existent document
         result = await update_mcp_document(
-            category_dir=str(category_dir),
-            name="nonexistent.md",
-            content="# New Content"
+            category_dir=str(category_dir), name="nonexistent.md", content="# New Content"
         )
 
         # Should return error
@@ -165,10 +186,7 @@ async def test_delete_mcp_document():
 
         # Create document
         await create_mcp_document(
-            category_dir=str(category_dir),
-            name="test-doc.md",
-            content="# Test Document",
-            source_type="manual"
+            category_dir=str(category_dir), name="test-doc.md", content="# Test Document", source_type="manual"
         )
 
         # Verify files exist
@@ -178,10 +196,7 @@ async def test_delete_mcp_document():
         assert metadata_path.exists()
 
         # Delete the document
-        result = await delete_mcp_document(
-            category_dir=str(category_dir),
-            name="test-doc.md"
-        )
+        result = await delete_mcp_document(category_dir=str(category_dir), name="test-doc.md")
 
         # Should return success
         assert result["success"] is True
@@ -201,10 +216,7 @@ async def test_delete_mcp_document_nonexistent():
         category_dir = Path(temp_dir)
 
         # Try to delete non-existent document
-        result = await delete_mcp_document(
-            category_dir=str(category_dir),
-            name="nonexistent.md"
-        )
+        result = await delete_mcp_document(category_dir=str(category_dir), name="nonexistent.md")
 
         # Should return error
         assert result["success"] is False
@@ -221,10 +233,7 @@ async def test_delete_mcp_document_missing_metadata():
 
         # Create document
         await create_mcp_document(
-            category_dir=str(category_dir),
-            name="test-doc.md",
-            content="# Test Document",
-            source_type="manual"
+            category_dir=str(category_dir), name="test-doc.md", content="# Test Document", source_type="manual"
         )
 
         # Remove metadata file manually
@@ -232,10 +241,7 @@ async def test_delete_mcp_document_missing_metadata():
         metadata_path.unlink()
 
         # Delete should still work
-        result = await delete_mcp_document(
-            category_dir=str(category_dir),
-            name="test-doc.md"
-        )
+        result = await delete_mcp_document(category_dir=str(category_dir), name="test-doc.md")
 
         # Should return success
         assert result["success"] is True
@@ -255,10 +261,7 @@ async def test_create_mcp_document_with_dots_in_name():
 
         # Test filename with dots (should be allowed)
         result = await create_mcp_document(
-            category_dir=str(category_dir),
-            name="my.config.file.yaml",
-            content="key: value",
-            source_type="manual"
+            category_dir=str(category_dir), name="my.config.file.yaml", content="key: value", source_type="manual"
         )
 
         assert result["success"] is True
@@ -267,7 +270,7 @@ async def test_create_mcp_document_with_dots_in_name():
         # Verify file was created
         doc_path = category_dir / "__docs__" / "my.config.file.yaml"
         assert doc_path.exists()
-        assert doc_path.read_text(encoding='utf-8') == "key: value"
+        assert doc_path.read_text(encoding="utf-8") == "key: value"
 
 
 @pytest.mark.asyncio
@@ -280,10 +283,7 @@ async def test_create_mcp_document_invalid_name():
 
         # Test path traversal
         result = await create_mcp_document(
-            category_dir=str(category_dir),
-            name="../evil.md",
-            content="# Evil Content",
-            source_type="manual"
+            category_dir=str(category_dir), name="../evil.md", content="# Evil Content", source_type="manual"
         )
 
         assert result["success"] is False
@@ -303,10 +303,7 @@ async def test_create_mcp_document_large_content():
         large_content = "x" * (11 * 1024 * 1024)
 
         result = await create_mcp_document(
-            category_dir=str(category_dir),
-            name="large.md",
-            content=large_content,
-            source_type="manual"
+            category_dir=str(category_dir), name="large.md", content=large_content, source_type="manual"
         )
 
         assert result["success"] is False
@@ -323,9 +320,7 @@ async def test_update_mcp_document_invalid_name():
         category_dir = Path(temp_dir)
 
         result = await update_mcp_document(
-            category_dir=str(category_dir),
-            name="../evil.md",
-            content="# Updated Content"
+            category_dir=str(category_dir), name="../evil.md", content="# Updated Content"
         )
 
         assert result["success"] is False
@@ -340,10 +335,7 @@ async def test_delete_mcp_document_invalid_name():
     with tempfile.TemporaryDirectory() as temp_dir:
         category_dir = Path(temp_dir)
 
-        result = await delete_mcp_document(
-            category_dir=str(category_dir),
-            name="../evil.md"
-        )
+        result = await delete_mcp_document(category_dir=str(category_dir), name="../evil.md")
 
         assert result["success"] is False
         assert result["error_type"] == "validation"

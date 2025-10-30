@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 if [[ ! -f ".consent" ]]; then
   echo "🚨 YOU MUST NOT MAKE ANY CHANGES TO THIS PROJECT"
   if [[ -s .issue ]]; then

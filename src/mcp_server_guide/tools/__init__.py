@@ -28,6 +28,12 @@ from .collection_tools import (
     get_collection_content,
 )
 from .prompt_tools import list_prompts, list_resources
+from .document_tools import (
+    create_mcp_document,
+    update_mcp_document,
+    delete_mcp_document,
+    list_mcp_documents,
+)
 
 __all__ = [
     # Project Management
@@ -61,4 +67,9 @@ __all__ = [
     # Prompt Discovery
     "list_prompts",
     "list_resources",
+    # Document Management
+    "create_mcp_document",
+    "update_mcp_document",
+    "delete_mcp_document",
+    "list_mcp_documents",
 ]

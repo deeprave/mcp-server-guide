@@ -97,7 +97,8 @@ def test_log_tool_usage_handles_system_exit():
 
 def test_ext_mcp_tool_decorator_initialization():
     """Test ExtMcpToolDecorator initializes with correct attributes."""
-    from mcp_server_guide.server import ExtMcpToolDecorator, FastMCP
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
+    from mcp.server.fastmcp import FastMCP
 
     mcp_instance = FastMCP("test")
     decorator = ExtMcpToolDecorator(mcp_instance, prefix="test_")

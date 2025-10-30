@@ -46,8 +46,7 @@ def get_tool_prefix() -> str:
     """Get the tool prefix for MCP tools."""
     import os
 
-    prefix = os.getenv("MCP_TOOL_PREFIX", "guide")
-    return prefix
+    return os.getenv("MCP_TOOL_PREFIX", "guide")
 
 
 class ExtMcpToolDecorator:
@@ -72,11 +71,7 @@ class ExtMcpToolDecorator:
             active_prefix = prefix if prefix is not None else self.prefix
 
             # Add prefix if not empty
-            if active_prefix:
-                final_name = f"{active_prefix}{tool_name}"
-            else:
-                final_name = tool_name
-
+            final_name = f"{active_prefix}{tool_name}" if active_prefix else tool_name
             # Build final kwargs
             final_kwargs = {"name": final_name}
             final_kwargs.update(kwargs)

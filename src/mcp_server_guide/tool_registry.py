@@ -1,6 +1,11 @@
-"""All MCP tools consolidated in a single module."""
+"""All MCP tools consolidated in a single module.
 
-from typing import Any, Callable
+IMPORTANT: ALL TOOLS MUST BE REGISTERED HERE IN register_tools()
+DO NOT USE @guide.tool() DECORATORS IN TOOL DEFINITIONS
+Tools are plain functions - decoration happens only during registration
+"""
+
+from typing import Callable
 from mcp.server.fastmcp import FastMCP
 
 # Import all tool functions
@@ -15,13 +20,24 @@ from .tools.content_tools import (
     show_language_guide,
 )
 from .tools.file_tools import get_file_content
+from .tools.document_tools import create_mcp_document, update_mcp_document, delete_mcp_document, list_mcp_documents
 from .tools.category_tools import add_category, remove_category, update_category, list_categories, get_category_content
 from .tools.collection_tools import add_collection, update_collection, list_collections, remove_collection
 from .tools.prompt_tools import list_prompts
 
 
-def register_tools(mcp: FastMCP, guide_decorator: Any, log_tool_usage: Callable) -> None:
-    """Register all MCP tools with the server."""
+def register_tools(mcp: FastMCP, log_tool_usage: Callable) -> None:
+    """Register all MCP tools with the server.
+
+    IMPORTANT: This is the ONLY place where tools are registered.
+    All new tools must be added here - do not use decorators in tool files.
+    """
+
+    # Import here to avoid circular imports
+    from .tool_decoration import ExtMcpToolDecorator
+
+    # Create the guide decorator with the server
+    guide_decorator = ExtMcpToolDecorator(mcp, prefix="guide_")
 
     # Project Management Tools
     guide_decorator.tool("get_current_project")(log_tool_usage(get_current_project))
@@ -42,6 +58,12 @@ def register_tools(mcp: FastMCP, guide_decorator: Any, log_tool_usage: Callable)
 
     # File Tools
     guide_decorator.tool("get_file_content")(log_tool_usage(get_file_content))
+
+    # Document Management Tools
+    guide_decorator.tool("create_mcp_document")(log_tool_usage(create_mcp_document))
+    guide_decorator.tool("update_mcp_document")(log_tool_usage(update_mcp_document))
+    guide_decorator.tool("delete_mcp_document")(log_tool_usage(delete_mcp_document))
+    guide_decorator.tool("list_mcp_documents")(log_tool_usage(list_mcp_documents))
 
     # Category Management Tools
     guide_decorator.tool("add_category")(log_tool_usage(add_category))

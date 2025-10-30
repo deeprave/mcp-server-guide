@@ -6,7 +6,7 @@ from typing import Dict, List
 from ..project_config import Category
 from ..models.document_info import DocumentInfo
 from ..logging_config import get_logger
-from .document_helpers import (
+from ..utils.document_helpers import (
     get_docs_dir,
     is_document_file,
     get_metadata_path,

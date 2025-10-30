@@ -44,7 +44,9 @@ def test_managed_documents_take_precedence_over_pattern_files():
 
         # Create a managed document with the same name
         (docs_dir / "readme.md").write_text("# Managed Document Content")
-        (docs_dir / f"readme.md{METADATA_SUFFIX}").write_text('{"source_type": "manual", "content_hash": "sha256:abc", "mime_type": "text/markdown"}')
+        (docs_dir / f"readme.md{METADATA_SUFFIX}").write_text(
+            '{"source_type": "manual", "content_hash": "sha256:abc", "mime_type": "text/markdown"}'
+        )
 
         # Get pattern files
         pattern_files = _safe_glob_search(category_dir, ["*.md"])
@@ -59,6 +61,7 @@ def test_managed_documents_take_precedence_over_pattern_files():
         assert "readme.md" in pattern_names
         assert "readme.md" in managed_names
 
+
 def test_get_combined_category_content_deduplication():
     """Test that get_category_content properly deduplicates managed vs pattern files."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -71,14 +74,18 @@ def test_get_combined_category_content_deduplication():
 
         # Create a managed document with the same name (should take precedence)
         (docs_dir / "readme.md").write_text("# Managed Document Content")
-        (docs_dir / f"readme.md{METADATA_SUFFIX}").write_text('{"source_type": "manual", "content_hash": "sha256:abc", "mime_type": "text/markdown"}')
+        (docs_dir / f"readme.md{METADATA_SUFFIX}").write_text(
+            '{"source_type": "manual", "content_hash": "sha256:abc", "mime_type": "text/markdown"}'
+        )
 
         # Create a unique pattern file
         (category_dir / "unique_pattern.md").write_text("# Unique Pattern Content")
 
         # Create a unique managed document
         (docs_dir / "unique_managed.md").write_text("# Unique Managed Content")
-        (docs_dir / f"unique_managed.md{METADATA_SUFFIX}").write_text('{"source_type": "manual", "content_hash": "sha256:def", "mime_type": "text/markdown"}')
+        (docs_dir / f"unique_managed.md{METADATA_SUFFIX}").write_text(
+            '{"source_type": "manual", "content_hash": "sha256:def", "mime_type": "text/markdown"}'
+        )
 
         # This should be implemented in the GREEN phase
         from mcp_server_guide.tools.category_tools import _get_combined_category_files

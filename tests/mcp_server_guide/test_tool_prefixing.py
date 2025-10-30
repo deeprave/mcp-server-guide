@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 async def test_ext_mcp_tool_decorator_default_prefix():
     """Test ExtMcpToolDecorator with default prefix."""
-    from mcp_server_guide.server import ExtMcpToolDecorator
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     mock_mcp = Mock()
     mock_tool_decorator = Mock()
@@ -23,7 +23,7 @@ async def test_ext_mcp_tool_decorator_default_prefix():
 
 async def test_ext_mcp_tool_decorator_custom_name():
     """Test ExtMcpToolDecorator with custom name parameter."""
-    from mcp_server_guide.server import ExtMcpToolDecorator
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     mock_mcp = Mock()
     mock_tool_decorator = Mock()
@@ -41,7 +41,7 @@ async def test_ext_mcp_tool_decorator_custom_name():
 
 async def test_ext_mcp_tool_decorator_custom_prefix():
     """Test ExtMcpToolDecorator with custom prefix parameter."""
-    from mcp_server_guide.server import ExtMcpToolDecorator
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     mock_mcp = Mock()
     mock_tool_decorator = Mock()
@@ -59,7 +59,7 @@ async def test_ext_mcp_tool_decorator_custom_prefix():
 
 async def test_ext_mcp_tool_decorator_no_prefix():
     """Test ExtMcpToolDecorator with empty prefix."""
-    from mcp_server_guide.server import ExtMcpToolDecorator
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     mock_mcp = Mock()
     mock_tool_decorator = Mock()
@@ -77,7 +77,7 @@ async def test_ext_mcp_tool_decorator_no_prefix():
 
 async def test_ext_mcp_tool_decorator_kwargs_passthrough():
     """Test ExtMcpToolDecorator passes through additional kwargs."""
-    from mcp_server_guide.server import ExtMcpToolDecorator
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     mock_mcp = Mock()
     mock_tool_decorator = Mock()
@@ -96,8 +96,15 @@ async def test_ext_mcp_tool_decorator_kwargs_passthrough():
 
 
 async def test_guide_decorator_instance_exists():
-    """Test that guide decorator instance is created."""
-    from mcp_server_guide.server import guide
+    """Test that guide decorator can be created with proper prefix."""
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
+    from unittest.mock import Mock
+
+    # Create a mock server
+    mock_server = Mock()
+
+    # Create guide decorator like tool registry does
+    guide = ExtMcpToolDecorator(mock_server, prefix="guide_")
 
     # Should exist and be an ExtMcpToolDecorator
     assert hasattr(guide, "tool")

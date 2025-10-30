@@ -37,8 +37,8 @@ def get_docs_dir(category_dir: Path) -> Path:
     # Ensure the path is within the category directory (prevent path traversal)
     try:
         docs_path.resolve().relative_to(category_dir.resolve())
-    except ValueError:
-        raise ValueError(f"Invalid docs path: {docs_path} is outside category directory {category_dir}")
+    except ValueError as e:
+        raise ValueError(f"Invalid docs path: {docs_path} is outside category directory {category_dir}") from e
 
     return docs_path
 

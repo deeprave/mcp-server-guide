@@ -376,21 +376,12 @@ def _save_config_locked(config_file: Path, project_name: str, config: ProjectCon
                     existing_config = ConfigFile(**data)
         except yaml.YAMLError as e:
             # Handle YAML parsing errors with specific message
-            from .logging_config import get_logger
-
-            logger = get_logger()
             logger.warning(f"Invalid YAML in config file {config_file}: {e}. Creating new configuration.")
         except (OSError, IOError) as e:
             # Handle file I/O errors
-            from .logging_config import get_logger
-
-            logger = get_logger()
             logger.warning(f"Cannot read config file {config_file}: {e}. Creating new configuration.")
         except (ValueError, TypeError) as e:
             # Handle Pydantic validation errors
-            from .logging_config import get_logger
-
-            logger = get_logger()
             logger.warning(f"Invalid configuration structure in {config_file}: {e}. Creating new configuration.")
 
     # Validate the project config before saving
@@ -433,9 +424,6 @@ def _load_config_locked(config_file: Path, project_name: str) -> tuple[Optional[
 
         # Handle empty YAML files and ensure it's a dict
         if not data or not isinstance(data, dict):
-            from .logging_config import get_logger
-
-            logger = get_logger()
             logger.warning(f"Config file {config_file} is empty or contains invalid data")
             return None, None
 
@@ -453,30 +441,18 @@ def _load_config_locked(config_file: Path, project_name: str) -> tuple[Optional[
             try:
                 return ProjectConfig(**project_data), docroot
             except ValueError as e:
-                from .logging_config import get_logger
-
-                logger = get_logger()
                 logger.error(f"Invalid configuration for project '{project_name}': {e}")
                 return None, docroot
 
         return None, docroot
 
     except yaml.YAMLError as e:
-        from .logging_config import get_logger
-
-        logger = get_logger()
         logger.error(f"YAML parsing error in config file {config_file}: {e}")
         return None, None
     except (OSError, IOError) as e:
-        from .logging_config import get_logger
-
-        logger = get_logger()
         logger.error(f"Cannot read config file {config_file}: {e}")
         return None, None
     except Exception as e:
-        from .logging_config import get_logger
-
-        logger = get_logger()
         logger.error(f"Unexpected error loading config from {config_file}: {e}")
         return None, None
 

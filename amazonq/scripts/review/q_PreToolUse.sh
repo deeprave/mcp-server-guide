@@ -1,9 +1,7 @@
-#!/bin/zsh
+#!/bin/bash
 set -e
 set -u
 set -o pipefail
-
-setopt extended_glob
 
 hook_data=$(cat)
 
@@ -20,143 +18,140 @@ EXEMPT_PATHS=(
   '/tmp/**'
   'tasks/**'
   'specs/**'
-)
+  )
 
-EXEMPT_COMMAND_PATTERNS_PCRE=(
-  '^(?:cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)\b'
-  '^git(?:\s+(?:status|log|rev-parse|ls-files))?\s*.*$'
-  '^git(?:\s+diff\b.*)$'
-  '^git(?:\s+show\b.*)$'
-)
+  # ---------------- Command allowlist patterns (ERE for bash)
+  # Bash uses Extended Regular Expressions with [[ =~ ]]
+  EXEMPT_COMMAND_PATTERNS=(
+    '^(cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)([[:space:]]|$)'
+    '^git$'
+    '^git[[:space:]]+(status|log|rev-parse|ls-files)([[:space:]].*)?$'
+    '^git[[:space:]]+diff([[:space:]].*)?$'
+    '^git[[:space:]]+show([[:space:]].*)?$'
+  )
 
-# POSIX ERE fallback (no \b, so use ([[:space:]]|$))
-EXEMPT_COMMAND_PATTERNS_ERE=(
-  '^(cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)([[:space:]]|$)'
-  '^git([[:space:]]+(status|log|rev-parse|ls-files)([[:space:]]|$))?$'
-  '^git([[:space:]]+diff([[:space:]]+--name-only)?([[:space:]]|$))$'
-  '^git([[:space:]]+show([[:space:]]+--name-only)?([[:space:]]|$))$'
-)
-
-# ---------------- Timeout command detection
-TIMEOUT=60
-if command -v timeout >/dev/null 2>&1; then
-  TIMEOUT_CMD=(timeout $TIMEOUT)
-elif command -v gtimeout >/dev/null 2>&1; then
-  TIMEOUT_CMD=(gtimeout $TIMEOUT)
-else
-  TIMEOUT_CMD=()  # no timeout available
-fi
-
-# Multiline message: use a here-doc into a variable
-read -r -d '' deny_message <<'EOF' || true
-Attempted changes are not permitted in REVIEW mode.
-EOF
-
-# ---------------- Path allowlist check
-is_path_exempt() {
-  local path=$1
-  local pattern
-
-  for pattern in "${EXEMPT_PATHS[@]}"; do
-    case $path in
-      $pattern) exit 0 ;;
-    esac
-  done
-}
-
-# ---------------- Command allowlist check
-is_command_exempt() {
-  # Keep zsh’s regex capture variables local to this function
-  local MATCH MBEGIN MEND
-  local -a match mbegin mend
-
-  local input="$1" head rest re
-
-  # Trim leading spaces
-  input=${input##[[:space:]]#}
-
-  while [[ $input =~ ^cd[[:space:]]+[^\&]*\&\&[[:space:]]*(.*)$ ]]; do
-    # Extract the remaining command after the last &&
-    input="${match[1]}"
-  done
-
-  # Extract argv0 and strip any path
-  head=${input%%[[:space:]]*}
-  head=${head##*/}
-
-  # Remainder
-  rest=${input#"$head"}
-  rest=${rest##[[:space:]]#}  # drop any leading spaces in rest
-
-  # Rebuild "head + rest" so ^ anchors apply to the bare name
-  if [[ -n $rest ]]; then
-    input="$head $rest"
+  # ---------------- Timeout command detection
+  TIMEOUT=60
+  if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(timeout $TIMEOUT)
+  elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(gtimeout $TIMEOUT)
   else
-    input="$head"
+    TIMEOUT_CMD=()  # no timeout available
   fi
 
-  if [[ -o RE_MATCH_PCRE ]]; then
-    for re in "${EXEMPT_COMMAND_PATTERNS_PCRE[@]}"; do
-      [[ $input =~ $re ]] && exit 0
+  # Multiline message: use a here-doc into a variable
+  read -r -d '' deny_message <<'EOF' || true
+  Attempted changes are not permitted in REVIEW mode.
+  EOF
+
+  # ---------------- Path allowlist check
+  is_path_exempt() {
+    local path=$1
+    local pattern
+
+    for pattern in "${EXEMPT_PATHS[@]}"; do
+      # Use bash pattern matching
+      if [[ $path == $pattern ]]; then
+        return 0
+      fi
     done
-  else
-    for re in "${EXEMPT_COMMAND_PATTERNS_ERE[@]}"; do
-      [[ $input =~ $re ]] && exit 0
+    return 1
+  }
+
+  # ---------------- Command allowlist check
+  is_command_exempt() {
+    local input="$1"
+    local head rest re
+
+    # Trim leading spaces
+    input="${input#"${input%%[![:space:]]*}"}"
+
+    # Handle cd commands chained with &&
+    while [[ $input =~ ^cd[[:space:]]+[^'&']*'&&'[[:space:]]*(.*)$ ]]; do
+      # Extract the remaining command after the last &&
+      input="${BASH_REMATCH[1]}"
     done
-  fi
-}
 
-has_consent() {
-  printf '%s\n' "$deny_message" >&2
-  exit 2
-}
+    # Extract argv0 (command name) and strip any path
+    read -r head rest <<< "$input"
+    head="${head##*/}"  # Remove path if present
 
-ask_consent() {
-  local message="$1"
-  local response
-
-  if command -v osascript >/dev/null 2>&1; then
-    if (( ${#TIMEOUT_CMD[@]} )); then
-      response=$("${TIMEOUT_CMD[@]}" osascript -e "display dialog \"$message\" buttons {\"Deny\", \"Approve\"} default button \"Deny\"" 2>/dev/null || true)
+    # Rebuild command with bare command name
+    if [[ -n $rest ]]; then
+      input="$head $rest"
     else
-      response=$(osascript -e "display dialog \"$message\" buttons {\"Deny\", \"Approve\"} default button \"Deny\"" 2>/dev/null || true)
+      input="$head"
     fi
-    [[ $response == *Approve* ]] && exit 0
 
-  elif command -v zenity >/dev/null 2>&1; then
-    # zenity has its own --timeout
-    zenity --question --text="$message" --timeout=$TIMEOUT 2>/dev/null && exit 0
+    # Check against exempt patterns
+    for re in "${EXEMPT_COMMAND_PATTERNS[@]}"; do
+      if [[ $input =~ $re ]]; then
+        return 0
+      fi
+    done
+
+    return 1
+  }
+
+  has_consent() {
+    printf '%s\n' "$deny_message" >&2
+    exit 2
+  }
+
+  ask_consent() {
+    local message="$1"
+    local response
+
+    if command -v osascript >/dev/null 2>&1; then
+      # macOS dialog
+      if (( ${#TIMEOUT_CMD[@]} )); then
+        response=$("${TIMEOUT_CMD[@]}" osascript -e "display dialog \"$message\" buttons {\"Deny\", \"Approve\"} default button \"Deny\"" 2>/dev/null || true)
+      else
+        response=$(osascript -e "display dialog \"$message\" buttons {\"Deny\", \"Approve\"} default button \"Deny\"" 2>/dev/null || true)
+      fi
+      if [[ $response == *Approve* ]]; then
+        exit 0
+      fi
+
+    elif command -v zenity >/dev/null 2>&1; then
+      # Linux dialog (zenity has its own --timeout)
+      if zenity --question --text="$message" --timeout=$TIMEOUT 2>/dev/null; then
+        exit 0
+      fi
+    fi
+
+    printf '%s\n' "$deny_message" >&2
+    exit 2
+  }
+
+  # ---------------- Main
+  tool_name="$(jq -r '.tool_name // empty' <<<"$hook_data")"
+
+  if [[ $tool_name == "fs_write" ]]; then
+    path="$(jq -r '.tool_input.path // empty' <<<"$hook_data")"
+    if is_path_exempt "$path"; then
+      exit 0
+    fi
+    has_consent
+
+  elif [[ $tool_name == "execute_bash" ]]; then
+    command="$(jq -r '.tool_input.command // "No command found"' <<<"$hook_data")"
+    summary="$(jq -r '.tool_input.summary // empty' <<<"$hook_data")"
+
+    message="The agent is in REVIEW mode
+  Do you approve the following shell command?
+
+  Command: $command"
+    if [[ -n $summary && $summary != null ]]; then
+      message="$message
+  Summary: $summary"
+    fi
+
+    if is_command_exempt "$command"; then
+      exit 0
+    fi
+    ask_consent "$message"
   fi
 
-  printf '%s\n' "$deny_message" >&2
-  exit 2
-}
-
-# ---------------- Main
-tool_name="$(jq -r '.tool_name // empty' <<<"$hook_data")"
-
-if [[ $tool_name == "fs_write" ]]; then
-
-  path="$(jq -r '.tool_input.path // empty' <<<"$hook_data")"
-  is_path_exempt "$path" && exit 0
-  has_consent
-
-elif [[ $tool_name == "execute_bash" ]]; then
-
-  command="$(jq -r '.tool_input.command // "No command found"' <<<"$hook_data")"
-  summary="$(jq -r '.tool_input.summary // empty' <<<"$hook_data")"
-
-  message="The agent is in REVIEW mode
-Do you approve the following shell command?
-
-Command: $command"
-  if [[ -n $summary && $summary != null ]]; then
-    message="$message
-Summary: $summary"
-  fi
-
-  is_command_exempt "$command" && exit 0
-  ask_consent "$message"
-fi
-
-exit 0
+  exit 0
