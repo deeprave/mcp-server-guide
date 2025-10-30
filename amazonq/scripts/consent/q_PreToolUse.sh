@@ -9,7 +9,16 @@ if [[ -f .hook_log ]]; then
   log_file="$HOME/.aws/amazonq/logs/hook.log"
   mkdir -p "$(dirname "$log_file")"
   json_data=$(jq -c '.' <<<"$hook_data" || true)
-  echo "$(date '+%Y-%m-%d %H:%M:%S')" "$json_data" >> "$log_file"
+  function logger() {
+    local data="$*"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')" "$data" >> "$log_file"
+  }
+  logger "$json_data"
+else
+  function logger() {
+    # shellcheck disable=SC2317
+    local no_op
+  }
 fi
 
 # ---------------- Paths allowlist (glob patterns)
@@ -49,18 +58,22 @@ Attempted changes are not permitted in DISCUSSION/PLANNING phase
 EOF
 
 # ---------------- Path allowlist check
-is_path_exempt() {
-  local path=$1
-  local pattern
+  # ---------------- Path allowlist check
+  is_path_exempt() {
+    local path=$1
+    local pattern
 
-  for pattern in "${EXEMPT_PATHS[@]}"; do
-    # Use bash pattern matching
-    if [[ $path == $pattern ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
+    [[ "$path" == "$PWD"/* ]] && path="${path#$PWD/}"
+    [[ "$path" == "$PWD" ]] && path=.
+    for pattern in "${EXEMPT_PATHS[@]}"; do
+      # Use bash pattern matching
+      if [[ $path == $pattern ]]; then
+        logger "path: $path == $pattern"
+        exit 0
+      fi
+    done
+    logger "path $path != $pattern"
+  }
 
 # ---------------- Command allowlist check
 is_command_exempt() {
@@ -90,11 +103,12 @@ is_command_exempt() {
   # Check against exempt patterns
   for re in "${EXEMPT_COMMAND_PATTERNS[@]}"; do
     if [[ $input =~ $re ]]; then
-      return 0
+      logger "command: $input =~ $re"
+      exit 0
     fi
   done
 
-  return 1
+  logger "command: $input !~ $re"
 }
 
 has_consent() {
