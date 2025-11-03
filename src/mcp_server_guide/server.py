@@ -38,6 +38,18 @@ class GuideMCP(FastMCP):
         self.docroot = docroot
         self.config_file = config_file
 
+    def get_registered_prompts(self) -> list:
+        """Get list of registered prompts from this server instance."""
+        return self._prompt_manager.list_prompts()
+
+    def get_registered_tools(self) -> list:
+        """Get list of registered tools from this server instance."""
+        return list(self._tool_manager.list_tools())
+
+    def get_registered_resources(self) -> list:
+        """Get list of registered resources from this server instance."""
+        return list(self._resource_manager.list_resources())
+
 
 def create_server(
     name: Optional[str] = None,
@@ -98,12 +110,11 @@ def create_server(
                 return FileSource(FileSourceType.HTTP, result["url"])
             # For file categories, return file source
             return FileSource(FileSourceType.FILE, result.get("path", "."))
-        except Exception:
-            pass
-
-        # Fallback to old behavior if category doesn't exist
-        fallback_source = FileSource(FileSourceType.FILE, ".")
-        return fallback_source
+        except Exception as e:
+            logger = get_logger(__name__)
+            logger.debug(f"Category content retrieval failed for {category_name}: {e}")
+            # Fallback to old behavior if category doesn't exist
+            return FileSource(FileSourceType.FILE, ".")
 
     async def _read_category_content(category_name: str, project_context: str = "") -> str:
         """Common helper for reading category content."""
@@ -114,14 +125,14 @@ def create_server(
                 content = await server.ext.file_accessor.read_file("", source)
                 return str(content)
             return str(result.get("content", ""))
-        except Exception:
-            pass
-
-        # Fallback to old behavior
-        config_key = "guide" if category_name == "guide" else "language"
-        source = await _get_file_source(config_key, project_context)
-        content = await server.ext.file_accessor.read_file("", source)
-        return str(content)
+        except Exception as e:
+            logger = get_logger(__name__)
+            logger.debug(f"Category content retrieval failed for {category_name}: {e}")
+            # Fallback to old behavior
+            config_key = "guide" if category_name == "guide" else "language"
+            source = await _get_file_source(config_key, project_context)
+            content = await server.ext.file_accessor.read_file("", source)
+            return str(content)
 
     async def read_guide(project_context: str = "") -> str:
         """Read guide content for a project context."""
@@ -143,6 +154,9 @@ def create_server(
     # Single setattr to add all extensions
     setattr(server, "ext", extensions)
 
+    # Set as current server
+    set_current_server(server)
+
     # Register prompts immediately for test compatibility
     register_prompts(server)
 
@@ -162,10 +176,39 @@ def create_server_with_config(config: Dict[str, Any]) -> GuideMCP:
     return create_server(**config)
 
 
-# Create a default server instance for backward compatibility
-mcp: Optional[GuideMCP] = None
-try:
-    mcp = create_server()
-except Exception as e:
-    logger.error(f"Failed to create server: {e}")
-    mcp = None  # Allow module to be imported even if server creation fails
+# Global server instance and config (singleton)
+_current_server: Optional[GuideMCP] = None
+_current_config: Optional[Dict[str, Any]] = None
+
+
+def get_current_server() -> Optional[GuideMCP]:
+    """Get the current server instance, creating it if needed."""
+    global _current_server, _current_config
+    if _current_server is None:
+        if _current_config is not None:
+            _current_server = create_server_with_config(_current_config)
+    return _current_server
+
+
+def set_current_server(server: GuideMCP) -> None:
+    """Set the current server instance."""
+    global _current_server
+    _current_server = server
+
+
+def set_current_config(config: Dict[str, Any]) -> None:
+    """Set the current config for lazy server creation."""
+    global _current_config
+    _current_config = config
+
+
+def get_mcp() -> Optional[GuideMCP]:
+    """Get the current MCP server instance for backward compatibility."""
+    return get_current_server()
+
+
+def reset_server_state() -> None:
+    """Reset global server state (for testing purposes)."""
+    global _current_server, _current_config
+    _current_server = None
+    _current_config = None

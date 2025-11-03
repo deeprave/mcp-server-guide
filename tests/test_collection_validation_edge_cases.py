@@ -1,9 +1,11 @@
 """Tests for collection validation edge cases."""
 
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import Mock, patch
 from mcp_server_guide.tools.collection_tools import add_collection, remove_collection
-from mcp_server_guide.project_config import ProjectConfig, Category, Collection
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.category import Category
 
 
 class TestCollectionValidationEdgeCases:
@@ -53,7 +55,11 @@ class TestCollectionValidationEdgeCases:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
-            mock_session.get_or_create_project_config = AsyncMock(return_value=config)
+
+            async def mock_get_config(project=None):
+                return config
+
+            mock_session.get_or_create_project_config = mock_get_config
 
             result = await add_collection("test", categories=[])
             assert not result["success"]
@@ -68,7 +74,11 @@ class TestCollectionValidationEdgeCases:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
-            mock_session.get_or_create_project_config = AsyncMock(return_value=config)
+
+            async def mock_get_config(project=None):
+                return config
+
+            mock_session.get_or_create_project_config = mock_get_config
 
             result = await add_collection("test", categories=["cat1", None, "", "  "])
             assert not result["success"]
@@ -83,7 +93,11 @@ class TestCollectionValidationEdgeCases:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
-            mock_session.get_or_create_project_config = AsyncMock(return_value=config)
+
+            async def mock_get_config(project=None):
+                return config
+
+            mock_session.get_or_create_project_config = mock_get_config
 
             result = await add_collection("test", categories=["Cat1", "cat1"])
             assert not result["success"]
@@ -98,7 +112,11 @@ class TestCollectionValidationEdgeCases:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
-            mock_session.get_or_create_project_config = AsyncMock(return_value=config)
+
+            async def mock_get_config(project=None):
+                return config
+
+            mock_session.get_or_create_project_config = mock_get_config
 
             result = await remove_collection("nonexistent")
             assert not result["success"]
@@ -116,8 +134,16 @@ class TestCollectionValidationEdgeCases:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
-            mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock()
+
+            async def mock_get_config(project=None):
+                return config
+
+            mock_session.get_or_create_project_config = mock_get_config
+
+            async def mock_save():
+                pass
+
+            mock_session.save_session = mock_save
 
             result = await remove_collection("test")
             assert result["success"]

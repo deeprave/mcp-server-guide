@@ -7,7 +7,7 @@ from pathlib import Path
 def test_get_category_documents_finds_multiple_document_types(temp_project_dir):
     """Test get_category_documents finds managed documents of various types in DOCUMENT_SUBDIR."""
     from mcp_server_guide.services.document_discovery import get_category_documents
-    from mcp_server_guide.project_config import Category
+    from mcp_server_guide.models.category import Category
 
     category_dir = temp_project_dir
     docs_dir = category_dir / "__docs__"
@@ -54,7 +54,7 @@ def test_get_category_documents_finds_multiple_document_types(temp_project_dir):
 def test_get_category_documents_finds_managed_documents(temp_project_dir):
     """Test get_category_documents finds managed documents in DOCUMENT_SUBDIR."""
     from mcp_server_guide.services.document_discovery import get_category_documents
-    from mcp_server_guide.project_config import Category
+    from mcp_server_guide.models.category import Category
 
     category_dir = temp_project_dir
     docs_dir = category_dir / "__docs__"
@@ -85,7 +85,7 @@ def test_get_category_documents_finds_managed_documents(temp_project_dir):
 def test_get_category_documents_empty_directory(temp_project_dir):
     """Test get_category_documents with empty __docs__ directory."""
     from mcp_server_guide.services.document_discovery import get_category_documents
-    from mcp_server_guide.project_config import Category
+    from mcp_server_guide.models.category import Category
 
     category_dir = temp_project_dir
     docs_dir = category_dir / "__docs__"
@@ -101,7 +101,7 @@ def test_get_category_documents_empty_directory(temp_project_dir):
 def test_get_category_documents_no_docs_directory(temp_project_dir):
     """Test get_category_documents when __docs__ directory doesn't exist."""
     from mcp_server_guide.services.document_discovery import get_category_documents
-    from mcp_server_guide.project_config import Category
+    from mcp_server_guide.models.category import Category
 
     category_dir = temp_project_dir
 

@@ -17,7 +17,7 @@ class TestLazyPathFileSourceIntegration:
         lazy_path = LazyPath("relative/path")
 
         # Should be able to get FileSource representation
-        file_source = await lazy_path.to_file_source()
+        file_source = lazy_path.to_file_source()
         assert isinstance(file_source, FileSource)
         assert file_source.type == FileSourceType.FILE
         assert file_source.base_path == "relative/path"
@@ -35,7 +35,7 @@ class TestLazyPathFileSourceIntegration:
 
         for uri, expected_type, expected_path in test_cases:
             lazy_path = LazyPath(uri)
-            file_source = await lazy_path.to_file_source()
+            file_source = lazy_path.to_file_source()
             assert file_source.type == expected_type
             assert file_source.base_path == expected_path
 
@@ -55,12 +55,12 @@ class TestLazyPathFileSourceIntegration:
             lazy_path = LazyPath("relative/path")
 
             # First resolution should create FileSource
-            result1 = await lazy_path.resolve()
-            file_source1 = await lazy_path.to_file_source()
+            result1 = lazy_path.resolve()
+            file_source1 = lazy_path.to_file_source()
 
             # Second resolution should use cached FileSource
-            result2 = await lazy_path.resolve()
-            file_source2 = await lazy_path.to_file_source()
+            result2 = lazy_path.resolve()
+            file_source2 = lazy_path.to_file_source()
 
             assert result1 == result2
             assert file_source1 is file_source2  # Same object (cached)
@@ -78,7 +78,7 @@ class TestLazyPathFileSourceIntegration:
         assert lazy_path.path_str == "relative/path"
 
         # Should be able to convert back
-        converted_source = await lazy_path.to_file_source()
+        converted_source = lazy_path.to_file_source()
         assert converted_source.type == file_source.type
         assert converted_source.base_path == file_source.base_path
 
@@ -89,7 +89,7 @@ class TestLazyPathFileSourceIntegration:
 
         # HTTP URIs resolve to Path objects (which normalize the URL)
         # Note: Path normalization converts "http://example.com" to "http:/example.com"
-        result = await lazy_path.resolve()
+        result = lazy_path.resolve()
         assert str(result) == "http:/example.com/file.txt"
 
     def test_lazypath_server_uri_fallback(self):
@@ -97,7 +97,7 @@ class TestLazyPathFileSourceIntegration:
         lazy_path = LazyPath("relative/path")
 
         # Should resolve relative to current working directory (server-side)
-        result = lazy_path.resolve_sync()
+        result = lazy_path.resolve()
         expected = Path("relative/path").expanduser().resolve()
         assert result == expected
 
@@ -110,7 +110,7 @@ class TestLazyPathFileSourceErrorHandling:
         lazy_path = LazyPath("invalid://path/file")
 
         # Should fall back to treating as regular path
-        result = lazy_path.resolve_sync()
+        result = lazy_path.resolve()
         expected = Path("invalid://path/file").expanduser().resolve()
         assert result == expected
 
@@ -119,12 +119,12 @@ class TestLazyPathFileSourceErrorHandling:
         """Test edge cases in LazyPath-FileSource conversion."""
         # Empty path
         lazy_path = LazyPath("")
-        file_source = await lazy_path.to_file_source()
+        file_source = lazy_path.to_file_source()
         assert file_source.type == FileSourceType.FILE  # Default for non-URI paths
         assert file_source.base_path == ""
 
         # Path with no scheme
         lazy_path = LazyPath("relative/path")
-        file_source = await lazy_path.to_file_source()
+        file_source = lazy_path.to_file_source()
         assert file_source.type == FileSourceType.FILE
         assert file_source.base_path == "relative/path"

@@ -12,13 +12,14 @@ async def list_prompts() -> Dict[str, Any]:
         - prompts: List of prompt metadata dicts
         - total_prompts: int count of prompts
     """
-    from ..server import mcp
+    from ..server import get_current_server
 
-    if mcp is None:
-        return {"success": False, "error": "MCP server not initialized", "prompts": []}
+    server = get_current_server()
+    if server is None:
+        return {"success": False, "error": "No server instance available", "prompts": [], "total_prompts": 0}
 
-    # Access the prompt manager from the global mcp instance
-    prompts = mcp._prompt_manager.list_prompts()
+    # Access the prompt manager from the current server instance
+    prompts = server.get_registered_prompts()
 
     # Convert prompt objects to dicts with metadata
     prompt_list: List[Dict[str, Any]] = []
@@ -54,36 +55,14 @@ async def list_resources() -> Dict[str, Any]:
         - total_resources: int count of resources
     """
     try:
-        from ..server import mcp
+        from ..server import get_current_server
 
-        if mcp is None:
-            return {"success": False, "error": "MCP server not initialized", "resources": []}
+        server = get_current_server()
+        if server is None:
+            return {"success": False, "error": "No server instance available", "resources": [], "total_resources": 0}
 
-        # Try to access resource manager safely
-        resources_result: Any = None
-        resources: Any = None
-        if hasattr(mcp, "list_resources"):
-            # Use public method if available (may be async)
-            resources_result = mcp.list_resources()
-            if hasattr(resources_result, "__await__"):
-                resources = await resources_result
-            else:
-                resources = resources_result
-        elif hasattr(mcp, "_resource_manager") and hasattr(mcp._resource_manager, "list_resources"):
-            # Fallback to private access with safety check
-            resources_result = mcp._resource_manager.list_resources()
-            if hasattr(resources_result, "__await__"):
-                resources = await resources_result
-            else:
-                resources = resources_result
-        else:
-            # Graceful fallback when resource manager is not accessible
-            return {
-                "success": False,
-                "error": "Resource listing not available in current MCP version",
-                "resources": [],
-                "total_resources": 0,
-            }
+        # Use the server's method to get registered resources
+        resources = server.get_registered_resources()
 
         # Convert resource objects to dicts with metadata
         resource_list: List[Dict[str, Any]] = []

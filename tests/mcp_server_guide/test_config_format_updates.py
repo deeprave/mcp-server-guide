@@ -22,7 +22,7 @@ class TestConfigFormatUpdates:
 
     async def test_config_serialization_structure(self):
         """Test that config serialization has correct structure."""
-        from mcp_server_guide.project_config import Category
+        from mcp_server_guide.models.category import Category
 
         config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"], description="Test")})
 
@@ -40,7 +40,7 @@ class TestConfigFormatUpdates:
 
     async def test_config_save_format(self, tmp_path, monkeypatch):
         """Test that saving config uses correct format."""
-        from mcp_server_guide.project_config import Category
+        from mcp_server_guide.models.category import Category
 
         manager = ProjectConfigManager()
 

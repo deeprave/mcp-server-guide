@@ -10,7 +10,9 @@ from mcp_server_guide.tools.collection_tools import (
     list_collections,
     get_collection_content,
 )
-from mcp_server_guide.project_config import ProjectConfig, Collection, Category
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.category import Category
 
 
 class TestCollectionToolsEdgeCases:
@@ -59,7 +61,11 @@ class TestCollectionToolsEdgeCases:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock()
+
+            async def mock_save():
+                pass
+
+            mock_session.save_session = mock_save
 
             result = await add_collection("new", categories=["cat1"], description="Test collection")
             assert result["success"]
@@ -76,7 +82,11 @@ class TestCollectionToolsEdgeCases:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock()
+
+            async def mock_save():
+                pass
+
+            mock_session.save_session = mock_save
 
             result = await add_collection("new", categories=["cat1"])
             assert result["success"]
@@ -113,7 +123,11 @@ class TestCollectionToolsEdgeCases:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock()
+
+            async def mock_save():
+                pass
+
+            mock_session.save_session = mock_save
 
             result = await update_collection("test")  # No description provided
             assert result["success"]
@@ -131,7 +145,11 @@ class TestCollectionToolsEdgeCases:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock()
+
+            async def mock_save():
+                pass
+
+            mock_session.save_session = mock_save
 
             result = await add_to_collection("test", categories=["cat1"])  # Already exists
             assert not result["success"]  # Should fail for duplicates
@@ -154,7 +172,11 @@ class TestCollectionToolsEdgeCases:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock()
+
+            async def mock_save():
+                pass
+
+            mock_session.save_session = mock_save
 
             result = await remove_from_collection("test", categories=["cat1", "cat2"])
             assert result["success"]

@@ -22,32 +22,48 @@ async def test_validate_mode_invalid():
 
 async def test_start_mcp_server_stdio():
     """Test start_mcp_server with stdio mode."""
+    from mcp_server_guide.server import reset_server_state
+    reset_server_state()  # Reset global state
+
     config = {"docroot": ".", "project": "test"}
 
     # Test stdio mode with mocked server
-    with patch("mcp_server_guide.server.mcp") as mock_mcp:
-        mock_mcp.run = Mock()
+    with patch("mcp_server_guide.server.create_server_with_config") as mock_create:
+        mock_server = Mock()
+        mock_server.run = Mock()
+        mock_create.return_value = mock_server
+
         result = start_mcp_server("stdio", config)
         assert "stdio mode" in result
-        mock_mcp.run.assert_called_once()
+        mock_server.run.assert_called_once()
 
 
 async def test_start_mcp_server_stdio_keyboard_interrupt():
     """Test start_mcp_server stdio mode with KeyboardInterrupt."""
+    from mcp_server_guide.server import reset_server_state
+    reset_server_state()  # Reset global state
+
     config = {"docroot": ".", "project": "test"}
 
-    with patch("mcp_server_guide.server.mcp") as mock_mcp:
-        mock_mcp.run = Mock(side_effect=KeyboardInterrupt())
+    with patch("mcp_server_guide.server.create_server_with_config") as mock_create:
+        mock_server = Mock()
+        mock_server.run = Mock(side_effect=KeyboardInterrupt())
+        mock_create.return_value = mock_server
         result = start_mcp_server("stdio", config)
         assert "stdio mode" in result
 
 
 async def test_start_mcp_server_stdio_broken_pipe():
     """Test start_mcp_server stdio mode with BrokenPipeError."""
+    from mcp_server_guide.server import reset_server_state
+    reset_server_state()  # Reset global state
+
     config = {"docroot": ".", "project": "test"}
 
-    with patch("mcp_server_guide.server.mcp") as mock_mcp:
-        mock_mcp.run = Mock(side_effect=BrokenPipeError())
+    with patch("mcp_server_guide.server.create_server_with_config") as mock_create:
+        mock_server = Mock()
+        mock_server.run = Mock(side_effect=BrokenPipeError())
+        mock_create.return_value = mock_server
         result = start_mcp_server("stdio", config)
         assert "stdio mode" in result
 

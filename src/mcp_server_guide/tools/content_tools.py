@@ -1,6 +1,9 @@
 """Content retrieval tools."""
 
+import re
+from pathlib import Path
 from typing import Dict, Any, List, Optional
+from ..logging_config import get_logger
 from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from .category_tools import get_category_content
@@ -33,9 +36,7 @@ async def get_content(category_or_collection: str, document: str, project: Optio
                 return None
     except Exception as e:
         # Log exception for debugging
-        import logging
-
-        logger = logging.getLogger(__name__)
+        logger = get_logger(__name__)
         logger.error(f"Category content retrieval failed: {e}", exc_info=True)
         category_error = e
 
@@ -49,9 +50,7 @@ async def get_content(category_or_collection: str, document: str, project: Optio
             await CategoryDocumentCache.set(category_or_collection, document, False, None)
     except Exception as ce:
         # Log exception for debugging
-        import logging
-
-        logger = logging.getLogger(__name__)
+        logger = get_logger(__name__)
         if category_error:
             logger.critical(
                 f"Both category and collection content retrieval raised exceptions for '{category_or_collection}': "
@@ -75,8 +74,6 @@ def _extract_document_from_content(content: str, document: str) -> Optional[str]
     """
     if not content.strip():
         return None
-
-    import re
 
     # Robust header detection - handle various markdown header formats
     # Match: # filename, ## filename, ### filename at start of line
@@ -103,8 +100,6 @@ def _extract_document_from_content(content: str, document: str) -> Optional[str]
         sections.append((current_header, "\n".join(current_section)))
 
     # Find matching section using normalized filename comparison
-    from pathlib import Path
-
     # Normalize the document name for comparison
     document_normalized = document.strip().lower()
 

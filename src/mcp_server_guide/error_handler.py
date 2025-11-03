@@ -1,7 +1,6 @@
 """Error handling utilities for consistent error management."""
 
-import logging
-from typing import Any, Union, Optional, Callable
+from typing import Any, Union, Callable, Optional
 from .exceptions import MCPError, ErrorResponse, SuccessResponse
 from .logging_config import get_logger
 
@@ -9,7 +8,13 @@ from .logging_config import get_logger
 class ErrorHandler:
     """Centralized error handling and response formatting."""
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: Optional[Any] = None) -> None:
+        """Initialize ErrorHandler with optional logger.
+
+        Args:
+            logger: Logger instance with .error() and .exception() methods.
+                   If None, uses get_logger() default.
+        """
         self.logger = logger or get_logger()
 
     def handle_error(self, error: Exception, operation: str = "") -> ErrorResponse:

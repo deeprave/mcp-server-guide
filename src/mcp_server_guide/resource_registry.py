@@ -6,7 +6,8 @@ from mcp.server.fastmcp import FastMCP
 
 from .help_system import format_guide_help
 from .logging_config import get_logger
-from .project_config import Category, Collection
+from .models.collection import Collection
+from .models.category import Category
 from .tools.category_tools import get_category_content
 from .tools.collection_tools import get_collection_content
 

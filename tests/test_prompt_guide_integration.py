@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 from mcp.types import GetPromptResult, PromptMessage
-from mcp_server_guide.server import mcp
+from mcp_server_guide.server import create_server_with_config
 from mcp_server_guide.session_manager import SessionManager
 from mcp_server_guide.document_cache import CategoryDocumentCache
 
@@ -16,8 +16,14 @@ class TestPromptGuideIntegration:
         """Clear cache before each test."""
         await CategoryDocumentCache.clear_all()
 
+    @pytest.fixture
+    async def server(self):
+        """Create a server instance for testing."""
+        config = {"docroot": ".", "project": "test"}
+        return create_server_with_config(config)
+
     @pytest.mark.asyncio
-    async def test_discuss_prompt_works_with_or_without_guide(self, isolated_config_file):
+    async def test_discuss_prompt_works_with_or_without_guide(self, isolated_config_file, server):
         """Test that @discuss works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
@@ -29,7 +35,7 @@ class TestPromptGuideIntegration:
             consent_file.unlink()
 
         # Act: Call @discuss prompt
-        result = await mcp.get_prompt("discuss", {})
+        result = await server.get_prompt("discuss", {})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -43,7 +49,7 @@ class TestPromptGuideIntegration:
         assert not consent_file.exists()
 
     @pytest.mark.asyncio
-    async def test_implement_prompt_works_with_or_without_guide(self, isolated_config_file):
+    async def test_implement_prompt_works_with_or_without_guide(self, isolated_config_file, server):
         """Test that @implement works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
@@ -54,7 +60,7 @@ class TestPromptGuideIntegration:
         consent_file.write_text("implementation")
 
         # Act: Call @implement prompt
-        result = await mcp.get_prompt("implement", {})
+        result = await server.get_prompt("implement", {})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -69,7 +75,7 @@ class TestPromptGuideIntegration:
         assert consent_file.read_text().strip() == "implementation"
 
     @pytest.mark.asyncio
-    async def test_check_prompt_works_with_or_without_guide(self, isolated_config_file):
+    async def test_check_prompt_works_with_or_without_guide(self, isolated_config_file, server):
         """Test that @check works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
@@ -80,7 +86,7 @@ class TestPromptGuideIntegration:
         consent_file.write_text("check")
 
         # Act: Call @check prompt
-        result = await mcp.get_prompt("check", {})
+        result = await server.get_prompt("check", {})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -95,7 +101,7 @@ class TestPromptGuideIntegration:
         assert consent_file.read_text().strip() == "check"
 
     @pytest.mark.asyncio
-    async def test_status_prompt_works_with_or_without_guide(self, isolated_config_file):
+    async def test_status_prompt_works_with_or_without_guide(self, isolated_config_file, server):
         """Test that @status works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
@@ -107,7 +113,7 @@ class TestPromptGuideIntegration:
             consent_file.unlink()
 
         # Act: Call @status prompt
-        result = await mcp.get_prompt("status", {})
+        result = await server.get_prompt("status", {})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -121,7 +127,7 @@ class TestPromptGuideIntegration:
         assert not consent_file.exists()
 
     @pytest.mark.asyncio
-    async def test_plan_prompt_works_with_or_without_guide(self, isolated_config_file):
+    async def test_plan_prompt_works_with_or_without_guide(self, isolated_config_file, server):
         """Test that @plan works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
@@ -133,7 +139,7 @@ class TestPromptGuideIntegration:
             consent_file.unlink()
 
         # Act: Call @plan prompt
-        result = await mcp.get_prompt("plan", {})
+        result = await server.get_prompt("plan", {})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -148,7 +154,7 @@ class TestPromptGuideIntegration:
         assert "Create empty `.issue` file" in content or ".issue" in content
 
     @pytest.mark.asyncio
-    async def test_prompt_guide_caching_works(self, isolated_config_file):
+    async def test_prompt_guide_caching_works(self, isolated_config_file, server):
         """Test that prompt guide content caching works correctly."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
@@ -160,8 +166,8 @@ class TestPromptGuideIntegration:
             consent_file.unlink()
 
         # Act: Call @discuss prompt twice
-        result1 = await mcp.get_prompt("discuss", {})
-        result2 = await mcp.get_prompt("discuss", {})
+        result1 = await server.get_prompt("discuss", {})
+        result2 = await server.get_prompt("discuss", {})
 
         # Assert: Both calls should succeed (caching should work transparently)
         assert isinstance(result1, GetPromptResult)

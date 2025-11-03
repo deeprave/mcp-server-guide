@@ -249,7 +249,7 @@ async def test_fallback_to_cache_on_network_error():
             mock_client.get = AsyncMock(return_value=first_response)
 
             # Second request fails
-            mock_client.get_conditional = AsyncMock(side_effect=HttpError("Network error"))
+            mock_client.get_conditional = Mock(side_effect=HttpError("Network error"))
             mock_client_class.return_value = mock_client
 
             http_source = FileSource(FileSourceType.HTTP, "https://example.com/docs/")

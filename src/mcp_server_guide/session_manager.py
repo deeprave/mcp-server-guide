@@ -2,41 +2,51 @@
 
 import asyncio
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from .path_resolver import LazyPath
-from .project_config import ProjectConfigManager, ProjectConfig, Category, Collection
+from .project_config import ProjectConfigManager, ProjectConfig
+from .models.collection import Collection
+from .models.category import Category
 from .session import SessionState
 from .logging_config import get_logger
 
+if TYPE_CHECKING:
+    from .models.speckit_config import SpecKitConfig
+
 
 logger = get_logger()
+
+# Global session manager instance (singleton)
+_session_manager_instance: Optional["SessionManager"] = None
 
 
 class SessionManager:
     """Singleton session manager with integrated project management."""
 
-    _instance: Optional["SessionManager"] = None
-    _session_state: SessionState
+    _session_state: "SessionState"
+    _config_manager: "ProjectConfigManager"
     _project_locks: Dict[str, asyncio.Lock]
     _locks_lock: asyncio.Lock
-    _config_manager: ProjectConfigManager
 
     def __new__(cls) -> "SessionManager":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._session_state = SessionState()
-            cls._instance._config_manager = ProjectConfigManager()
-            cls._instance._project_locks = {}
-            cls._instance._locks_lock = asyncio.Lock()
+        # Check global instance first
+        global _session_manager_instance
+        if _session_manager_instance is None:
+            _session_manager_instance = super().__new__(cls)
+            _session_manager_instance._session_state = SessionState()
+            _session_manager_instance._config_manager = ProjectConfigManager()
+            _session_manager_instance._project_locks = {}
+            _session_manager_instance._locks_lock = asyncio.Lock()
             logger.debug("Session manager initialized")
-        return cls._instance
+        return _session_manager_instance
 
     @classmethod
     def clear(cls) -> None:
         """Clear the session state (for testing purposes)."""
-        cls._instance = None
+        global _session_manager_instance
+        _session_manager_instance = None
         logger.debug("Session manager state cleared")
 
     @property
@@ -145,7 +155,7 @@ class SessionManager:
             return
 
         # Load existing config from file (if it exists)
-        from .project_config import Category
+        from .models.category import Category
 
         if existing_config := self._config_manager.load_config(project_name):
             # Merge session state changes into existing config
@@ -271,6 +281,19 @@ class SessionManager:
     @property
     def docroot(self) -> Optional[LazyPath]:
         return self._config_manager.docroot or LazyPath(".")
+
+    def get_speckit_config(self) -> Optional["SpecKitConfig"]:
+        """Get SpecKit configuration - delegates to service."""
+        return self._config_manager.get_speckit_config()
+
+    def set_speckit_config(self, speckit_config: "SpecKitConfig") -> None:
+        """Set SpecKit configuration - delegates to service."""
+        self._config_manager.set_speckit_config(speckit_config)
+
+    def is_speckit_enabled(self) -> bool:
+        """Check if SpecKit is enabled - delegates to service."""
+        speckit_config = self.get_speckit_config()
+        return speckit_config is not None and speckit_config.enabled
 
 
 async def set_project_config(key: str, value: str) -> Dict[str, Any]:

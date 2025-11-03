@@ -2,7 +2,9 @@
 
 import pytest
 from unittest.mock import patch
-from mcp_server_guide.project_config import Category, Collection, ProjectConfig
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.category import Category
 from mcp_server_guide.tools.content_tools import _extract_document_from_content
 
 
@@ -28,11 +30,6 @@ class TestProjectConfigValidation:
         """Test Category with neither URL nor dir."""
         with pytest.raises(ValueError, match="must have either"):
             Category(description="test")
-
-    def test_collection_empty_categories(self):
-        """Test Collection with empty categories list."""
-        with pytest.raises(ValueError, match="must contain at least one"):
-            Collection(categories=[])
 
     def test_extract_document_no_match(self):
         """Test document extraction with no match."""

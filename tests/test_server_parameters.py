@@ -51,7 +51,13 @@ class TestServerParameters:
                 mock_config_manager.set_config_filename = Mock()  # Regular method
                 mock_sm = AsyncMock()
                 mock_sm._config_manager = mock_config_manager
-                mock_sm.get_or_create_project_config = AsyncMock()
+
+                async def mock_get_config(project=None):
+                    from mcp_server_guide.project_config import ProjectConfig
+
+                    return ProjectConfig(categories={}, collections={})
+
+                mock_sm.get_or_create_project_config = mock_get_config
                 mock_sm_class.return_value = mock_sm
 
                 # Mock other dependencies
@@ -76,7 +82,13 @@ class TestServerParameters:
         with patch("mcp_server_guide.server_lifecycle.SessionManager") as mock_sm_class:
             mock_sm = AsyncMock()
             mock_sm.switch_project = AsyncMock()
-            mock_sm.get_or_create_project_config = AsyncMock()
+
+            async def mock_get_config2(project=None):
+                from mcp_server_guide.project_config import ProjectConfig
+
+                return ProjectConfig(categories={}, collections={})
+
+            mock_sm.get_or_create_project_config = mock_get_config2
             mock_sm_class.return_value = mock_sm
 
             # Mock other dependencies
@@ -103,7 +115,13 @@ class TestServerParameters:
             mock_config_manager.set_config_filename = Mock()  # Regular method
             mock_sm = AsyncMock()
             mock_sm._config_manager = mock_config_manager
-            mock_sm.get_or_create_project_config = AsyncMock()
+
+            async def mock_get_config3(project=None):
+                from mcp_server_guide.project_config import ProjectConfig
+
+                return ProjectConfig(categories={}, collections={})
+
+            mock_sm.get_or_create_project_config = mock_get_config3
             mock_sm_class.return_value = mock_sm
 
             # Mock other dependencies
@@ -145,7 +163,13 @@ class TestServerParameters:
             mock_sm = AsyncMock()
             mock_sm._config_manager = mock_config_manager
             mock_sm.switch_project.side_effect = track_project_call
-            mock_sm.get_or_create_project_config = AsyncMock()
+
+            async def mock_get_config4(project=None):
+                from mcp_server_guide.project_config import ProjectConfig
+
+                return ProjectConfig(categories={}, collections={})
+
+            mock_sm.get_or_create_project_config = mock_get_config4
             mock_sm_class.return_value = mock_sm
 
             # Mock LazyPath to track docroot calls
@@ -175,7 +199,13 @@ class TestServerParameters:
         with patch.dict(os.environ, {"PWD": "/test/project/path"}):
             with patch("mcp_server_guide.server_lifecycle.SessionManager") as mock_sm_class:
                 mock_sm = AsyncMock()
-                mock_sm.get_or_create_project_config = AsyncMock()
+
+                async def mock_get_config5(project=None):
+                    from mcp_server_guide.project_config import ProjectConfig
+
+                    return ProjectConfig(categories={}, collections={})
+
+                mock_sm.get_or_create_project_config = AsyncMock(side_effect=mock_get_config5)
                 mock_sm_class.return_value = mock_sm
 
                 # Mock other dependencies

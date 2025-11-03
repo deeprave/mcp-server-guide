@@ -1,9 +1,18 @@
 """Tests for prompt tools functionality."""
 
+import pytest
 from mcp_server_guide.tools.prompt_tools import list_prompts, list_resources
+from mcp_server_guide.server import create_server_with_config
 
 
-async def test_list_prompts_returns_expected_structure():
+@pytest.fixture
+async def server():
+    """Create a server instance for testing."""
+    config = {"docroot": ".", "project": "test"}
+    return create_server_with_config(config)
+
+
+async def test_list_prompts_returns_expected_structure(server):
     """Test that list_prompts returns the expected structure."""
     result = await list_prompts()
 
@@ -15,12 +24,12 @@ async def test_list_prompts_returns_expected_structure():
     assert result["total_prompts"] == len(result["prompts"])
 
 
-async def test_list_prompts_includes_all_registered_prompts():
+async def test_list_prompts_includes_all_registered_prompts(server):
     """Test that list_prompts includes all 6 registered prompts."""
     result = await list_prompts()
 
     assert result["success"] is True
-    assert result["total_prompts"] == 8
+    assert result["total_prompts"] == 9  # Updated to include spec prompt
 
     prompt_names = {p["name"] for p in result["prompts"]}
     assert "guide" in prompt_names
@@ -33,7 +42,7 @@ async def test_list_prompts_includes_all_registered_prompts():
     assert "status" in prompt_names
 
 
-async def test_list_prompts_includes_prompt_metadata():
+async def test_list_prompts_includes_prompt_metadata(server):
     """Test that each prompt includes required metadata."""
     result = await list_prompts()
 
@@ -48,7 +57,7 @@ async def test_list_prompts_includes_prompt_metadata():
         assert isinstance(prompt["arguments"], list)
 
 
-async def test_list_prompts_guide_has_category_argument():
+async def test_list_prompts_guide_has_category_argument(server):
     """Test that the 'guide' prompt has a 'category' argument."""
     result = await list_prompts()
 
@@ -59,7 +68,7 @@ async def test_list_prompts_guide_has_category_argument():
     assert "category" in arg_names
 
 
-async def test_list_prompts_category_has_required_arguments():
+async def test_list_prompts_category_has_required_arguments(server):
     """Test that the 'category' prompt has required arguments."""
     result = await list_prompts()
 

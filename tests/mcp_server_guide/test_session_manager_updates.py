@@ -50,7 +50,7 @@ class TestSessionManagerUpdates:
                 session.session_state.project_config = config
 
             # Add a new category to the current project
-            from mcp_server_guide.project_config import Category
+            from mcp_server_guide.models.category import Category
 
             # Get existing categories and add new one
             existing_categories = dict(session.session_state.project_config.categories)
@@ -131,7 +131,7 @@ class TestSessionManagerUpdates:
             session._set_config_filename(config_file)
 
             # Add a category to the project
-            from mcp_server_guide.project_config import Category
+            from mcp_server_guide.models.category import Category
 
             session.session_state.set_project_config(
                 "categories", {"guide": Category(dir="guides/", patterns=["*.md"])}
@@ -176,7 +176,7 @@ class TestSessionManagerUpdates:
 
             # Should handle a corrupted file gracefully
             # Either backup and recreate, or merge with defaults
-            from mcp_server_guide.project_config import Category
+            from mcp_server_guide.models.category import Category
 
             session.session_state.set_project_config("categories", {"guide": Category(dir="guide/", patterns=["*.md"])})
             # Save session (will auto-detect project name from PWD)
@@ -231,7 +231,7 @@ class TestSessionManagerUpdates:
                 session.session_state.project_config = config
 
             # Operation 1: Add language category
-            from mcp_server_guide.project_config import Category
+            from mcp_server_guide.models.category import Category
 
             # Get existing categories and add new ones
             existing_categories = dict(session.session_state.project_config.categories)

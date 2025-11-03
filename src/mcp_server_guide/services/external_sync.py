@@ -12,13 +12,29 @@ from ..utils.document_utils import generate_content_hash, detect_mime_type
 
 logger = get_logger()
 
-# In-memory TTL cache for change tracking
-_changes_cache: Dict[str, Dict] = {}
+# Global cache state (shared across all contexts)
+_changes_cache: Optional[Dict[str, Dict]] = None
+_cleanup_tasks: Optional[Set[asyncio.Task]] = None
 _cache_lock = asyncio.Lock()
-_cleanup_tasks: Set[asyncio.Task] = set()
 
 # TTL for cache entries (5 minutes)
 CACHE_TTL = 300
+
+
+def get_changes_cache() -> Dict[str, Dict]:
+    """Get or create the changes cache."""
+    global _changes_cache
+    if _changes_cache is None:
+        _changes_cache = {}
+    return _changes_cache
+
+
+def get_cleanup_tasks() -> Set[asyncio.Task]:
+    """Get or create the cleanup tasks set."""
+    global _cleanup_tasks
+    if _cleanup_tasks is None:
+        _cleanup_tasks = set()
+    return _cleanup_tasks
 
 
 async def validate_document_integrity(doc_path: Path) -> Dict[str, Any]:
@@ -92,14 +108,16 @@ async def _cleanup_category_documents(category_dir: str) -> None:
         for doc_path in docs_dir.iterdir():
             if doc_path.is_file() and not doc_path.name.endswith(METADATA_SUFFIX):
                 # Check if document needs sync
-                if not await validate_document_integrity(doc_path):
+                validation_result = await validate_document_integrity(doc_path)
+                if not validation_result["success"]:
                     logger.info(f"Syncing modified document: {doc_path}")
                     await sync_document_metadata(doc_path)
 
                     # Log change in cache
                     async with _cache_lock:
                         cache_key = str(doc_path)
-                        _changes_cache[cache_key] = {
+                        cache = get_changes_cache()
+                        cache[cache_key] = {
                             "timestamp": time.time(),
                             "action": "modified",
                             "category": category_dir,
@@ -113,9 +131,10 @@ async def _cleanup_expired_cache_entries() -> None:
     """Remove expired entries from changes cache."""
     async with _cache_lock:
         current_time = time.time()
-        expired_keys = [key for key, entry in _changes_cache.items() if current_time - entry["timestamp"] > CACHE_TTL]
+        cache = get_changes_cache()
+        expired_keys = [key for key, entry in cache.items() if current_time - entry["timestamp"] > CACHE_TTL]
         for key in expired_keys:
-            del _changes_cache[key]
+            del cache[key]
 
 
 async def get_recent_changes(category_dir: Optional[str] = None) -> Dict:
@@ -123,6 +142,7 @@ async def get_recent_changes(category_dir: Optional[str] = None) -> Dict:
     await _cleanup_expired_cache_entries()
 
     async with _cache_lock:
+        cache = get_changes_cache()
         if category_dir:
-            return {key: entry for key, entry in _changes_cache.items() if entry["category"] == category_dir}
-        return _changes_cache.copy()
+            return {key: entry for key, entry in cache.items() if entry["category"] == category_dir}
+        return cache.copy()

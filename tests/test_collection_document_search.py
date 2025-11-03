@@ -8,14 +8,16 @@ from mcp_server_guide.tools.collection_tools import (
     remove_from_collection,
     get_collection_document,
 )
-from mcp_server_guide.project_config import ProjectConfig, Collection, Category
+from mcp_server_guide.models.project_config import ProjectConfig
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.category import Category
 
 
 class TestCollectionDocumentSearch:
     """Tests for collection document search and retrieval."""
 
     @pytest.mark.asyncio
-    async def test_update_collection_value_error(self):
+    async def test_update_collection_value_error(self) -> None:
         """Test update_collection ValueError catch block."""
         config = ProjectConfig(
             categories={"cat1": Category(dir="/test", patterns=["*.py"])},
@@ -34,7 +36,7 @@ class TestCollectionDocumentSearch:
             assert "Invalid collection configuration" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_add_to_collection_value_error(self):
+    async def test_add_to_collection_value_error(self) -> None:
         """Test add_to_collection ValueError catch block."""
         config = ProjectConfig(
             categories={
@@ -56,7 +58,7 @@ class TestCollectionDocumentSearch:
             assert "Invalid collection configuration" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_remove_from_collection_value_error(self):
+    async def test_remove_from_collection_value_error(self) -> None:
         """Test remove_from_collection ValueError catch block."""
         config = ProjectConfig(
             categories={
@@ -78,7 +80,7 @@ class TestCollectionDocumentSearch:
             assert "Invalid collection configuration" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_get_collection_document_success(self):
+    async def test_get_collection_document_success(self) -> None:
         """Test get_collection_document success path."""
         config = ProjectConfig(
             categories={"cat1": Category(dir="/test", patterns=["*.py"])},
@@ -108,7 +110,7 @@ class TestCollectionDocumentSearch:
             assert result["document"] == "document.md"
 
     @pytest.mark.asyncio
-    async def test_get_collection_document_not_found(self):
+    async def test_get_collection_document_not_found(self) -> None:
         """Test get_collection_document when document not found."""
         config = ProjectConfig(
             categories={"cat1": Category(dir="/test", patterns=["*.py"])},
@@ -134,7 +136,7 @@ class TestCollectionDocumentSearch:
             assert "not found" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_get_collection_document_collection_not_found(self):
+    async def test_get_collection_document_collection_not_found(self) -> None:
         """Test get_collection_document with non-existent collection."""
         config = ProjectConfig(categories={}, collections={})
 
@@ -149,7 +151,7 @@ class TestCollectionDocumentSearch:
             assert "does not exist" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_get_collection_document_with_exception(self):
+    async def test_get_collection_document_with_exception(self) -> None:
         """Test get_collection_document with exception in category processing."""
         config = ProjectConfig(
             categories={"cat1": Category(dir="/test", patterns=["*.py"])},
@@ -174,7 +176,7 @@ class TestCollectionDocumentSearch:
             mock_logger.warning.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_collection_document_multiple_match_patterns(self):
+    async def test_get_collection_document_multiple_match_patterns(self) -> None:
         """Test get_collection_document with different file path matching patterns."""
         config = ProjectConfig(
             categories={"cat1": Category(dir="/test", patterns=["*.py"])},

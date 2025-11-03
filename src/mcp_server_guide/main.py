@@ -257,33 +257,26 @@ async def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
 
 def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
-    from .server import mcp, create_server_with_config
+    from .server import get_current_server, set_current_config
 
     logger.debug("Starting MCP server configuration")
     logger.debug(f"Mode: {mode}")
     logger.debug(f"Config keys: {list(config.keys())}")
 
-    try:
-        logger.debug("Creating server with configuration")
-        # Create server with resolved configuration
-        create_server_with_config(config)
-        logger.debug("Server configuration completed successfully")
-    except Exception as e:
-        logger.error(f"FATAL: Server configuration failed during initialization: {e}", exc_info=True)
-        # Force flush before re-raising
-        for handler in logger.handlers:
-            handler.flush()
-        raise
+    # Set config for lazy server creation
+    set_current_config(config)
 
     if mode == "stdio":
         logger.info("Starting MCP server in stdio mode")
         # Start MCP server in stdio mode
         try:
-            if mcp is None:
-                logger.error("MCP server not initialized, cannot start")
-                return "Server initialization failed"
-            mcp.run()
-            logger.info("MCP server shutdown normally (exit code 0)")
+            server = get_current_server()
+            if server is not None:
+                server.run()
+                logger.info("MCP server shutdown normally (exit code 0)")
+            else:
+                logger.error("Failed to create server instance")
+                return "Failed to create server instance"
         except (BrokenPipeError, KeyboardInterrupt):
             logger.debug("MCP server shutdown (pipe closed or interrupted)")
             logger.info("MCP server shutdown due to interruption (exit code 0)")

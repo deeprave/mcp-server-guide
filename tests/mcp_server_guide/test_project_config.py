@@ -4,7 +4,8 @@ import tempfile
 import yaml
 from pathlib import Path
 import pytest
-from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig, Category
+from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+from mcp_server_guide.models.category import Category
 
 
 async def test_project_config_manager_save_config_corrupted_file(monkeypatch):

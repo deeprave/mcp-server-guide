@@ -101,6 +101,18 @@ class MockMCP:
             raise Exception(self._fail_message)
         return self.tools
 
+    def get_registered_prompts(self):
+        """Get registered prompts (alias for list_prompts for compatibility)."""
+        return self.list_prompts()
+
+    def get_registered_tools(self):
+        """Get registered tools (alias for list_tools for compatibility)."""
+        return self.list_tools()
+
+    def get_registered_resources(self):
+        """Get registered resources (alias for list_resources for compatibility)."""
+        return self.list_resources()
+
     def set_failure(self, should_fail: bool = True, message: str = "Mock failure"):
         """Configure mock to fail on next operation."""
         self._should_fail = should_fail

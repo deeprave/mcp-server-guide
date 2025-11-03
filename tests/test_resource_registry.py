@@ -3,7 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from mcp_server_guide.resource_registry import register_resources, _register_category_resources, _register_help_resource
-from mcp_server_guide.project_config import Category, Collection
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.category import Category
 
 
 @pytest.fixture

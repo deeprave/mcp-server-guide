@@ -1,8 +1,10 @@
 """Collection management tools for organizing categories."""
 
+import os
 import re
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Literal
-from ..project_config import Collection
+from ..models.collection import Collection
 from ..session_manager import SessionManager
 from ..logging_config import get_logger
 from .category_tools import get_category_content
@@ -28,8 +30,6 @@ def _create_collection(
     existing_collection: Optional[Collection] = None,
 ) -> Collection:
     """Helper function to create a Collection with consistent metadata."""
-    from datetime import datetime, timezone
-
     return Collection(
         categories=categories,
         description=description,
@@ -214,8 +214,6 @@ async def update_collection(name: str, *, description: Optional[str] = None) -> 
 
         # Update description if provided
         if description is not None:
-            from datetime import datetime, timezone
-
             # Update only the changed fields to preserve any future fields
             collection.description = description
             collection.modified_date = datetime.now(timezone.utc)
@@ -280,13 +278,11 @@ async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
 
     try:
         # Update collection with added categories and new modified_date
-        from datetime import datetime
-
         updated_categories = list(collection.categories) + added
         config.collections[name] = collection.model_copy(
             update={
                 "categories": updated_categories,
-                "modified_date": datetime.now(),
+                "modified_date": datetime.now(timezone.utc),
             }
         )
 
@@ -396,12 +392,10 @@ async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, 
             }
 
         # Re-instantiate the Collection object to ensure validation is applied
-        from datetime import datetime
-
         config.collections[name] = collection.model_copy(
             update={
                 "categories": updated_categories,
-                "modified_date": datetime.now(),
+                "modified_date": datetime.now(timezone.utc),
             }
         )
 
@@ -605,8 +599,6 @@ async def get_collection_document(
             result = await get_category_content(category_name, project)
             if result.get("success") and result.get("matched_files"):
                 # Check for filename matches (exact, with extensions, or containing the document name)
-                import os
-
                 for file_path in result["matched_files"]:
                     filename = os.path.basename(file_path)
                     # Exact match or with common extensions

@@ -6,7 +6,7 @@ import json
 def test_discovery_ignores_orphaned_metadata(temp_project_dir):
     """Test discovery ignores orphaned metadata files for various document types."""
     from mcp_server_guide.services.document_discovery import get_category_documents
-    from mcp_server_guide.project_config import Category
+    from mcp_server_guide.models.category import Category
 
     category_dir = temp_project_dir
     docs_dir = category_dir / "__docs__"

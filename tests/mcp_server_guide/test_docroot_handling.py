@@ -3,7 +3,8 @@
 import yaml
 from pathlib import Path
 
-from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig, Category
+from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+from mcp_server_guide.models.category import Category
 from mcp_server_guide.path_resolver import LazyPath
 
 

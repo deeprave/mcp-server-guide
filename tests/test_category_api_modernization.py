@@ -1,7 +1,8 @@
 """Tests for modernized category API."""
 
 import pytest
-from unittest.mock import AsyncMock, patch, Mock
+import asyncio
+from unittest.mock import patch, Mock
 from mcp_server_guide.tools.category_tools import (
     add_category,
     update_category,
@@ -10,14 +11,23 @@ from mcp_server_guide.tools.category_tools import (
     remove_category,
     list_categories,
 )
-from mcp_server_guide.project_config import ProjectConfig, Category
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.models.category import Category
+
+
+@pytest.fixture(scope="function")
+def event_loop():
+    """Create a new event loop for each test."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture
-def mock_session():
-    """Mock session manager."""
+async def mock_session():
+    """Async mock session manager fixture."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
-        session_instance = Mock()  # Use regular Mock instead of AsyncMock
+        session_instance = Mock()
         mock.return_value = session_instance
 
         config = ProjectConfig(
@@ -27,8 +37,16 @@ def mock_session():
             },
             collections={},
         )
-        session_instance.get_or_create_project_config = AsyncMock(return_value=config)
-        session_instance.save_session = AsyncMock(return_value=None)
+
+        # Use regular Mock that returns a coroutine
+        async def mock_get_config_func(project=None):
+            return config
+
+        async def mock_save_func():
+            return None
+
+        session_instance.get_or_create_project_config = mock_get_config_func
+        session_instance.save_session = mock_save_func
         session_instance.get_project_name.return_value = "test-project"
 
         # Set up session_state as a regular Mock since set_project_config is sync
@@ -39,6 +57,7 @@ def mock_session():
         yield session_instance, config
 
 
+@pytest.mark.asyncio
 @pytest.mark.asyncio
 async def test_add_category_no_project_param(mock_session):
     """Test add_category works without project parameter."""

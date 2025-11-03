@@ -82,8 +82,10 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_
     # Get or create logger
     logger = logging.getLogger(logger_name())
 
-    # Clear any existing handlers
-    logger.handlers.clear()
+    # Clear any existing handlers and close them properly
+    for handler in logger.handlers[:]:
+        handler.close()
+        logger.removeHandler(handler)
 
     # Handle OFF level
     if level.upper() == "OFF":

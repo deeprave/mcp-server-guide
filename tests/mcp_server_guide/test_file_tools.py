@@ -1,6 +1,6 @@
 """Tests for file tools functionality."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from mcp_server_guide.tools.file_tools import get_file_content
 
 
@@ -30,7 +30,7 @@ async def test_get_file_content_error_handling():
             # Mock aiofiles.open context manager properly
             mock_file = AsyncMock()
             mock_file.read = AsyncMock(return_value="file content")
-            mock_context = MagicMock()
+            mock_context = AsyncMock()
             mock_context.__aenter__ = AsyncMock(return_value=mock_file)
             mock_context.__aexit__ = AsyncMock(return_value=None)
 

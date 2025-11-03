@@ -12,7 +12,8 @@ from mcp_server_guide.session_manager import (
 
 async def test_get_project_config():
     """Test get_project_config function."""
-    from mcp_server_guide.project_config import ProjectConfig, Category
+    from mcp_server_guide.project_config import ProjectConfig
+    from mcp_server_guide.models.category import Category
 
     # Set up some project data first
     session = SessionManager()
@@ -31,7 +32,8 @@ async def test_get_project_config():
 
 async def test_set_project_config():
     """Test set_project_config function."""
-    from mcp_server_guide.project_config import ProjectConfig, Category
+    from mcp_server_guide.project_config import ProjectConfig
+    from mcp_server_guide.models.category import Category
 
     # Set up project data first
     session = SessionManager()
@@ -66,7 +68,8 @@ async def test_switch_project(isolated_config_file):
 
 async def test_session_manager_save_session(isolated_config_file):
     """Test SessionManager.save_session method."""
-    from mcp_server_guide.project_config import ProjectConfig, Category
+    from mcp_server_guide.project_config import ProjectConfig
+    from mcp_server_guide.models.category import Category
 
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "test_save.yaml"
@@ -90,7 +93,8 @@ async def test_session_manager_save_session(isolated_config_file):
 
 async def test_session_manager_get_or_create_project_config():
     """Test SessionManager.get_or_create_project_config method."""
-    from mcp_server_guide.project_config import ProjectConfig, Category
+    from mcp_server_guide.project_config import ProjectConfig
+    from mcp_server_guide.models.category import Category
 
     session = SessionManager()
     session.set_project_name("test-project")

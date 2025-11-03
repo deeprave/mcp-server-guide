@@ -5,7 +5,7 @@ from pathlib import Path
 import glob
 import re
 import aiofiles
-from ..project_config import Category
+from ..models.category import Category
 from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from ..logging_config import get_logger

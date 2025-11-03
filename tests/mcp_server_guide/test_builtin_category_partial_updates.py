@@ -9,7 +9,8 @@ from mcp_server_guide.tools.category_tools import update_category
 def mock_session():
     """Mock session manager with builtin categories."""
     with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
-        from mcp_server_guide.project_config import ProjectConfig, Category
+        from mcp_server_guide.project_config import ProjectConfig
+        from mcp_server_guide.models.category import Category
 
         session_instance = Mock()
         mock.return_value = session_instance

@@ -127,10 +127,14 @@ async def test_server_file_functions():
 
 async def test_server_tool_integration():
     """Test server correctly registers and exposes tools."""
-    from mcp_server_guide.server import mcp
+    from mcp_server_guide.server import create_server_with_config
+
+    # Create server instance
+    config = {"docroot": ".", "project": "test"}
+    server = create_server_with_config(config)
 
     # Test that tools are registered with the server
-    tools_list = await mcp.list_tools()
+    tools_list = await server.list_tools()
     tool_names = [tool.name for tool in tools_list]
 
     # Verify key tools are registered
@@ -148,15 +152,15 @@ async def test_server_tool_integration():
 
 def test_tool_registration_error_handling():
     """Test error handling during server creation."""
-    # Verify that error handling code exists in server.py
+    # Verify that server creation functions exist in server.py
     import inspect
     from mcp_server_guide import server
 
     source = inspect.getsource(server)
-    assert "try:" in source
     assert "create_server" in source
-    assert "except Exception" in source
-    assert "logger.error" in source
+    assert "create_server_with_config" in source
+    assert "get_current_server" in source
+    assert "GuideMCP" in source
 
 
 async def test_server_session_functions():

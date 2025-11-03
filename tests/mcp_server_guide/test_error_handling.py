@@ -41,8 +41,8 @@ async def test_set_project_config_values_exception():
             # Mock session to raise exception during auto-save
             mock_instance = MagicMock()
             mock_session.return_value = mock_instance
-            mock_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-            mock_instance.save_to_file = AsyncMock(side_effect=Exception("Save failed"))
+            mock_instance.get_current_project_safe = Mock(return_value="test-project")
+            mock_instance.save_to_file = Mock(side_effect=Exception("Save failed"))
             mock_instance.session_state.set_project_config = Mock()
             mock_instance.get_or_create_project_config = AsyncMock(
                 return_value={"categories": {"test": {"dir": "test/", "patterns": ["*.md"]}}}
@@ -62,8 +62,8 @@ async def test_set_project_config_exception():
         # Mock session to raise exception during auto-save
         mock_instance = MagicMock()
         mock_session.return_value = mock_instance
-        mock_instance.get_current_project_safe = AsyncMock(return_value="test-project")
-        mock_instance.save_to_file = AsyncMock(side_effect=Exception("Save failed"))
+        mock_instance.get_current_project_safe = Mock(return_value="test-project")
+        mock_instance.save_to_file = Mock(side_effect=Exception("Save failed"))
         mock_instance.session_state.set_project_config = Mock()
 
         # This should trigger the exception handling but still succeed - using valid categories field

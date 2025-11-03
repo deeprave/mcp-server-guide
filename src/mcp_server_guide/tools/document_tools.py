@@ -8,6 +8,7 @@ from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_met
 from ..utils.document_helpers import get_metadata_path
 from ..logging_config import get_logger
 from ..utils.document_utils import generate_content_hash, detect_mime_type
+from ..session_manager import SessionManager
 
 logger = get_logger()
 
@@ -35,6 +36,22 @@ def _generate_document_uri(category_dir: str, name: str) -> str:
     return f"guide://{Path(category_dir).name}/{DOCUMENT_SUBDIR}/{name}"
 
 
+def _get_docs_dir(category_dir: str) -> Path:
+    """Get the documents directory for a category."""
+    session = SessionManager()
+    docroot = session.docroot
+    base_path = docroot.resolve_sync() if docroot else Path(".")
+
+    # If category_dir is absolute, use it directly (for tests and special cases)
+    # Otherwise, resolve relative to docroot
+    if Path(category_dir).is_absolute():
+        category_path = Path(category_dir)
+    else:
+        category_path = base_path / category_dir
+
+    return category_path / DOCUMENT_SUBDIR
+
+
 async def create_mcp_document(
     category_dir: str, name: str, content: str, source_type: str = "manual", mime_type: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -47,8 +64,8 @@ async def create_mcp_document(
         return {"success": False, "error": "Document content too large", "error_type": "validation"}
 
     try:
-        category_path = Path(category_dir)
-        docs_dir = category_path / DOCUMENT_SUBDIR
+        # Get documents directory
+        docs_dir = _get_docs_dir(category_dir)
         docs_dir.mkdir(parents=True, exist_ok=True)
 
         # Create document file
@@ -98,8 +115,8 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
         return {"success": False, "error": "Document content too large", "error_type": "validation"}
 
     try:
-        category_path = Path(category_dir)
-        docs_dir = category_path / DOCUMENT_SUBDIR
+        # Get documents directory
+        docs_dir = _get_docs_dir(category_dir)
         doc_path = docs_dir / name
 
         # Check if document exists
@@ -157,8 +174,8 @@ async def delete_mcp_document(category_dir: str, name: str) -> Dict[str, Any]:
         return {"success": False, "error": f"Invalid document name: {name}", "error_type": "validation"}
 
     try:
-        category_path = Path(category_dir)
-        docs_dir = category_path / DOCUMENT_SUBDIR
+        # Get documents directory
+        docs_dir = _get_docs_dir(category_dir)
         doc_path = docs_dir / name
 
         # Check if document exists
@@ -198,8 +215,8 @@ async def list_mcp_documents(
 
         add_category(category_dir)
 
-        category_path = Path(category_dir)
-        docs_dir = category_path / DOCUMENT_SUBDIR
+        # Get documents directory
+        docs_dir = _get_docs_dir(category_dir)
 
         if not docs_dir.exists():
             return {"success": True, "documents": []}

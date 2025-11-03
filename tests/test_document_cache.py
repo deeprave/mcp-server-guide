@@ -166,7 +166,8 @@ class TestDocumentCacheIntegration:
     async def test_cache_invalidation_on_category_update(self, isolated_config_file):
         """Test that cache is invalidated when categories are updated."""
         from mcp_server_guide.session_manager import SessionManager
-        from mcp_server_guide.project_config import ProjectConfig, Category
+        from mcp_server_guide.project_config import ProjectConfig
+        from mcp_server_guide.models.category import Category
 
         # Setup session with a category
         session_manager = SessionManager()
@@ -190,7 +191,7 @@ class TestDocumentCacheIntegration:
             mock_session_class.return_value = session_manager
 
             # Mock the get_or_create_project_config method to return our config
-            async def mock_get_config(project):
+            async def mock_get_config(project=None):
                 return config
 
             session_manager.get_or_create_project_config = mock_get_config

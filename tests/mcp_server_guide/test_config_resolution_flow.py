@@ -2,7 +2,7 @@
 
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from mcp_server_guide.main import resolve_config_file_path, resolve_config_path
 from mcp_server_guide.path_resolver import LazyPath
 
@@ -108,9 +108,9 @@ class TestServerInitialization:
     @pytest.mark.asyncio
     async def test_server_lifespan_initializes_project_from_pwd(self):
         """Test that server_lifespan initializes project from PWD."""
-        from mcp_server_guide.server import server_lifespan
-        from mcp_server_guide.server import mcp as server
+        from mcp_server_guide.server import server_lifespan, create_server
 
+        server = create_server()
         with patch.dict(os.environ, {"PWD": "/home/user/my-project"}):
             async with server_lifespan(server):
                 # After initialization, SessionManager should have project set
@@ -124,10 +124,10 @@ class TestServerInitialization:
     @pytest.mark.asyncio
     async def test_server_lifespan_raises_on_missing_pwd(self):
         """Test that server_lifespan raises ValueError if PWD not set."""
-        from mcp_server_guide.server import server_lifespan
-        from mcp_server_guide.server import mcp as server
+        from mcp_server_guide.server import server_lifespan, create_server
         from mcp_server_guide.session_manager import SessionManager
 
+        server = create_server()
         # Reset session state
         session = SessionManager()
         session.session_state.project_name = None
@@ -140,12 +140,12 @@ class TestServerInitialization:
     @pytest.mark.asyncio
     async def test_server_lifespan_calls_get_or_create_project_config(self):
         """Test that server_lifespan calls get_or_create_project_config."""
-        from mcp_server_guide.server import server_lifespan
-        from mcp_server_guide.server import mcp as server
+        from mcp_server_guide.server import server_lifespan, create_server
         from mcp_server_guide.session_manager import SessionManager
         from mcp_server_guide.project_config import ProjectConfig
-        from unittest.mock import AsyncMock, patch
+        from unittest.mock import patch
 
+        server = create_server()
         with patch.dict(os.environ, {"PWD": "/home/user/test-project"}):
             with patch.object(
                 SessionManager, "get_or_create_project_config", new=AsyncMock(return_value=ProjectConfig(categories={}))

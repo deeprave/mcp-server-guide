@@ -28,7 +28,7 @@ class TestLazyPath:
     async def test_resolve_server_path(self):
         """Test resolving server-side paths."""
         lazy_path = LazyPath("test/path")
-        resolved = await lazy_path.resolve()
+        resolved = lazy_path.resolve()
 
         expected = Path("test/path").expanduser().resolve()
         assert resolved == expected
@@ -38,7 +38,7 @@ class TestLazyPath:
     async def test_resolve_server_path_with_tilde(self):
         """Test resolving paths with ~ expansion."""
         lazy_path = LazyPath("~/test/path")
-        resolved = await lazy_path.resolve()
+        resolved = lazy_path.resolve()
 
         expected = Path("~/test/path").expanduser().resolve()
         assert resolved == expected
@@ -57,7 +57,7 @@ class TestLazyPath:
 
         try:
             lazy_path = LazyPath("relative/path")
-            resolved = await lazy_path.resolve()
+            resolved = lazy_path.resolve()
 
             expected = test_dir / "relative/path"
             assert resolved == expected
@@ -82,9 +82,9 @@ class TestLazyPath:
             lazy_path = LazyPath("client:test")
 
             # First resolution
-            result1 = await lazy_path.resolve()
+            result1 = lazy_path.resolve()
             # Second resolution should use cache
-            result2 = await lazy_path.resolve()
+            result2 = lazy_path.resolve()
 
             assert result1 == result2
             assert result1 is result2  # Same object reference (cached)
@@ -93,74 +93,14 @@ class TestLazyPath:
             if test_dir.exists():
                 test_dir.rmdir()
 
-    def test_resolve_sync_cached(self):
+    def test_resolve_cached(self):
         """Test sync resolution when already cached."""
         lazy_path = LazyPath("test/path")
         cached_path = Path("/cached/path")
         lazy_path._resolved_path = cached_path
 
-        result = lazy_path.resolve_sync()
+        result = lazy_path.resolve()
         assert result == cached_path
-
-    def test_resolve_sync_no_loop(self):
-        """Test sync resolution when no event loop is running."""
-        with patch("asyncio.get_event_loop") as mock_get_loop:
-            mock_get_loop.side_effect = RuntimeError("No loop")
-
-            with patch("asyncio.run") as mock_run:
-                expected_path = Path("/test/path").resolve()
-                mock_run.return_value = expected_path
-
-                lazy_path = LazyPath("test/path")
-                result = lazy_path.resolve_sync()
-
-                assert result == expected_path
-                mock_run.assert_called_once()
-
-    def test_resolve_sync_loop_not_running(self):
-        """Test sync resolution when loop exists but not running."""
-        mock_loop = Mock()
-        mock_loop.is_running.return_value = False
-
-        with patch("asyncio.get_event_loop", return_value=mock_loop):
-            with patch("asyncio.run") as mock_run:
-                expected_path = Path("/test/path").resolve()
-                mock_run.return_value = expected_path
-
-                lazy_path = LazyPath("test/path")
-                result = lazy_path.resolve_sync()
-
-                assert result == expected_path
-                mock_run.assert_called_once()
-
-    def test_resolve_sync_loop_running_server_path(self):
-        """Test sync resolution fallback when loop is running - server path."""
-        mock_loop = Mock()
-        mock_loop.is_running.return_value = True
-
-        with patch("asyncio.get_event_loop", return_value=mock_loop):
-            lazy_path = LazyPath("test/path")
-            result = lazy_path.resolve_sync()
-
-            expected = Path("test/path").expanduser().resolve()
-            assert result == expected
-
-    def test_resolve_sync_loop_running_relative_path(self):
-        """Test sync resolution fallback when loop is running - relative path."""
-        mock_loop = Mock()
-        mock_loop.is_running.return_value = True
-
-        with patch("asyncio.get_event_loop", return_value=mock_loop):
-            lazy_path = LazyPath("relative/path")
-            result = lazy_path.resolve_sync()
-
-            # Should resolve relative to actual current directory
-            expected = Path("relative/path").expanduser().resolve()
-            assert result == expected
-
-
-class TestLazyPathInit:
-    """Test LazyPath initialization with different input types."""
 
     def test_init_from_string(self):
         """Test creating LazyPath from string."""
@@ -182,7 +122,7 @@ class TestEdgeCases:
     def test_empty_path(self):
         """Test handling of empty path."""
         lazy_path = LazyPath("")
-        result = lazy_path.resolve_sync()
+        result = lazy_path.resolve()
         expected = Path("").expanduser().resolve()
         assert result == expected
 
@@ -200,7 +140,7 @@ class TestEdgeCases:
 
         try:
             lazy_path = LazyPath(".")
-            resolved = await lazy_path.resolve()
+            resolved = lazy_path.resolve()
 
             expected = test_dir  # Current directory
             assert resolved == expected
@@ -209,58 +149,6 @@ class TestEdgeCases:
             if test_dir.exists():
                 test_dir.rmdir()
 
-    def test_resolve_sync_runtime_error_fallback(self):
-        """Test RuntimeError handling in resolve_sync."""
-        with patch("asyncio.get_event_loop") as mock_get_loop:
-            # First call raises RuntimeError, second call in except block succeeds
-            mock_get_loop.side_effect = [RuntimeError("No loop"), Mock()]
-
-            with patch("asyncio.run") as mock_run:
-                expected_path = Path("/test/path").resolve()
-                mock_run.return_value = expected_path
-
-                lazy_path = LazyPath("test/path")
-                result = lazy_path.resolve_sync()
-
-                assert result == expected_path
-                assert mock_run.call_count == 1
-
-
-class TestUriPathResolution:
-    """Test URI-style path resolution including file:// URLs."""
-
-    @pytest.mark.asyncio
-    async def test_resolve_file_uri_with_client_root(self):
-        """Test resolving file:// URI with client_root."""
-        lazy_path = LazyPath("file://test/path")
-
-        # Resolve should use FileSource.FILE type
-        resolved = await lazy_path.resolve()
-
-        # Should resolve relative to current working directory
-        expected = Path.cwd() / "test/path"
-        assert resolved == expected
-
-    @pytest.mark.asyncio
-    async def test_resolve_http_uri(self):
-        """Test resolving http:// URI."""
-        lazy_path = LazyPath("http://example.com/path")
-
-        resolved = await lazy_path.resolve()
-
-        # HTTP URIs resolve to themselves as Path objects
-        assert resolved == Path("http://example.com/path")
-
-    @pytest.mark.asyncio
-    async def test_resolve_https_uri(self):
-        """Test resolving https:// URI."""
-        lazy_path = LazyPath("https://example.com/path")
-
-        resolved = await lazy_path.resolve()
-
-        # HTTPS URIs resolve to themselves as Path objects
-        assert resolved == Path("https://example.com/path")
-
     def test_sync_fallback_with_file_uri(self):
         """Test sync fallback resolution for file:// URI."""
         mock_loop = Mock()
@@ -268,7 +156,7 @@ class TestUriPathResolution:
 
         with patch("asyncio.get_event_loop", return_value=mock_loop):
             lazy_path = LazyPath("file://test/path")
-            result = lazy_path.resolve_sync()
+            result = lazy_path.resolve()
 
             # Should resolve using sync fallback
             expected = Path.cwd() / "test/path"
@@ -281,7 +169,7 @@ class TestUriPathResolution:
 
         with patch("asyncio.get_event_loop", return_value=mock_loop):
             lazy_path = LazyPath("http://example.com/path")
-            result = lazy_path.resolve_sync()
+            result = lazy_path.resolve()
 
             # Should resolve to itself as Path
             assert result == Path("http://example.com/path")
@@ -294,7 +182,7 @@ class TestUriPathResolution:
         with patch("asyncio.get_event_loop", return_value=mock_loop):
             # Create a file:// URI that results in absolute path
             lazy_path = LazyPath("file:///absolute/path")
-            result = lazy_path.resolve_sync()
+            result = lazy_path.resolve()
 
             # Should resolve to absolute path
             assert result == Path("/absolute/path")
@@ -309,7 +197,7 @@ class TestUriPathResolution:
         lazy_path._resolved_path = cached_path
 
         with patch("asyncio.get_event_loop", return_value=mock_loop):
-            result = lazy_path.resolve_sync()
+            result = lazy_path.resolve()
 
             # Should return cached path without re-resolving
             assert result == cached_path
@@ -455,7 +343,7 @@ class TestLazyPathResolveOptions:
         os.environ["TEST_DIR"] = "test"
         try:
             lazy_path = LazyPath("${TEST_DIR}/path")
-            resolved = await lazy_path.resolve(expand=True)
+            resolved = lazy_path.resolve(expand=True)
 
             # Should expand env var and resolve
             expected = Path("test/path").resolve()
@@ -472,7 +360,7 @@ class TestLazyPathResolveOptions:
             # Clear cached resolution to force re-resolve
             lazy_path._resolved_path = None
 
-            resolved = await lazy_path.resolve(expand=False)
+            resolved = lazy_path.resolve(expand=False)
 
             # Should NOT expand env var, just resolve literal path
             # This will resolve ${TEST_DIR}/path as a literal directory name
@@ -487,7 +375,7 @@ class TestLazyPathResolveOptions:
         lazy_path = LazyPath("/nonexistent/path/that/does/not/exist")
 
         # Should not raise error with strict=False (default)
-        resolved = await lazy_path.resolve(strict=False)
+        resolved = lazy_path.resolve(strict=False)
         assert resolved == Path("/nonexistent/path/that/does/not/exist")
 
     @pytest.mark.asyncio
@@ -497,13 +385,13 @@ class TestLazyPathResolveOptions:
 
         # Should raise FileNotFoundError with strict=True
         with pytest.raises(FileNotFoundError):
-            await lazy_path.resolve(strict=True)
+            lazy_path.resolve(strict=True)
 
     @pytest.mark.asyncio
     async def test_resolve_tilde_expansion(self):
         """Test resolve with tilde expansion."""
         lazy_path = LazyPath("~/test/path")
-        resolved = await lazy_path.resolve(expand=True)
+        resolved = lazy_path.resolve(expand=True)
 
         expected = Path.home() / "test" / "path"
         assert resolved == expected
@@ -516,7 +404,7 @@ class TestLazyPathResolveOptions:
             # Note: This creates a path like /home/user/mydir/file
             # The ~ expands first, then we append the expanded env var
             lazy_path = LazyPath("~/${SUBDIR}/file")
-            resolved = await lazy_path.resolve(expand=True)
+            resolved = lazy_path.resolve(expand=True)
 
             expected = Path.home() / "mydir" / "file"
             assert resolved == expected

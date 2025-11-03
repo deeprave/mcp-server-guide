@@ -11,7 +11,9 @@ from mcp_server_guide.tools.collection_tools import (
     remove_collection,
     get_collection_content,
 )
-from mcp_server_guide.project_config import ProjectConfig, Category, Collection
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.category import Category
 
 
 @pytest.fixture
@@ -31,7 +33,7 @@ def mock_session():
             collections={},
         )
 
-        async def mock_get_config(project):
+        async def mock_get_config(project=None):
             return config
 
         async def mock_save_session():
@@ -291,7 +293,7 @@ async def test_get_collection_content():
             collections={"docs": Collection(categories=["guide"], description="Test")},
         )
 
-        async def mock_get_config(project):
+        async def mock_get_config(project=None):
             return config
 
         session_instance.get_or_create_project_config = mock_get_config

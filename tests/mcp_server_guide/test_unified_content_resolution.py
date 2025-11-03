@@ -1,8 +1,9 @@
 """Tests for unified content resolution system (Phase 2)."""
 
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from mcp_server_guide.project_config import ProjectConfig, Category
+from unittest.mock import Mock, patch
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.models.category import Category
 from mcp_server_guide.tools.content_tools import (
     get_guide,
     get_language_guide,
@@ -68,7 +69,7 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
     with patch("mcp_server_guide.tools.content_tools.SessionManager") as mock_session:
         session_instance = Mock()
         mock_session.return_value = session_instance
-        session_instance.get_current_project_safe = AsyncMock(return_value="current-project")
+        session_instance.get_current_project_safe = Mock(return_value="current-project")
 
         await get_guide(None)
 
@@ -79,7 +80,7 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
         # Set up mock session with auto_load categories
         mock_session = Mock()
         mock_session_class.return_value = mock_session
-        mock_session.get_current_project_safe = AsyncMock(return_value="test-project")
+        mock_session.get_current_project_safe = Mock(return_value="test-project")
         mock_session.get_project_name.return_value = "test-project"
         config_data = ProjectConfig(
             categories={
@@ -88,7 +89,11 @@ async def test_content_functions_use_current_project_when_none_provided(mock_cat
                 "context": Category(dir="context/", patterns=["*.md"], description="Context"),
             }
         )
-        mock_session.get_or_create_project_config = AsyncMock(return_value=config_data)
+
+        async def mock_get_config(project=None):
+            return config_data
+
+        mock_session.get_or_create_project_config = mock_get_config
 
         with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category_content:
             # Mock responses for each category
