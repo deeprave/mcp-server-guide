@@ -9,7 +9,7 @@ from ..logging_config import get_logger
 
 # Global queue state (simpler than ContextVar for this use case)
 _category_queue: Optional[Queue[str]] = None
-_supervisor_task: Optional[asyncio.Task] = None
+_supervisor_task: Optional[asyncio.Task[None]] = None
 _lock = threading.Lock()
 
 logger = get_logger(__name__)

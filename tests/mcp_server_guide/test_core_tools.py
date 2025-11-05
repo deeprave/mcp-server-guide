@@ -1,7 +1,7 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
 from unittest.mock import patch, Mock
-from mcp_server_guide.tools import get_current_project, get_guide, get_project_config, switch_project
+from mcp_server_guide.tools import get_current_project, get_project_config, switch_project, get_guide
 
 
 async def test_get_current_project():
@@ -19,24 +19,6 @@ async def test_get_current_project_none():
 
         result = await get_current_project()
         assert result is None
-
-
-async def test_get_guide_default_project():
-    """Test getting guide for default project."""
-    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category:
-        mock_category.return_value = {"success": True, "content": "# Test Guide Content"}
-        result = await get_guide()
-        assert isinstance(result, str)
-        assert len(result) > 0
-
-
-async def test_get_guide_specific_project():
-    """Test getting guide for specific project."""
-    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_category:
-        mock_category.return_value = {"success": True, "content": "# Test Guide Content"}
-        result = await get_guide("mcp_server_guide")
-        assert isinstance(result, str)
-        assert len(result) > 0
 
 
 async def test_get_project_config_default():
@@ -68,3 +50,41 @@ async def test_switch_project(isolated_config_file):
     # Verify the switch worked
     current = await get_current_project()
     assert current == "test-project"
+
+
+@patch("mcp_server_guide.tools.content_tools.get_category_content")
+async def test_get_guide_success(mock_get_category):
+    """Test get_guide with successful document retrieval."""
+    mock_get_category.return_value = {
+        "success": True,
+        "content": "# doc1\nSome content\n# doc2\nOther content",
+        "matched_files": ["doc1.md"],
+    }
+
+    result = await get_guide("category1", "doc1")
+    assert result == "Some content"
+    mock_get_category.assert_called_once_with("category1", None)
+
+
+@patch("mcp_server_guide.tools.content_tools.get_category_content")
+async def test_get_guide_missing_document(mock_get_category):
+    """Test get_guide with missing document."""
+    mock_get_category.return_value = {
+        "success": True,
+        "content": "# other_doc\nSome content",
+        "matched_files": ["other_doc.md"],
+    }
+
+    result = await get_guide("category1", "missing_doc")
+    assert result is None
+    mock_get_category.assert_called_once_with("category1", None)
+
+
+@patch("mcp_server_guide.tools.content_tools.get_category_content")
+async def test_get_guide_invalid_category(mock_get_category):
+    """Test get_guide with invalid category."""
+    mock_get_category.side_effect = Exception("Invalid category")
+
+    result = await get_guide("invalid_category", "doc1")
+    assert result is None
+    mock_get_category.assert_called_once_with("invalid_category", None)

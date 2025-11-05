@@ -43,66 +43,6 @@ class Config:
             group="docroot",
         )
 
-        self.guide = ConfigOption(
-            name="guide",
-            cli_short="-g",
-            cli_long="--guide",
-            env_var="MG_GUIDE",
-            default="guidelines",
-            description="*guide file patterns",
-            group="content",
-        )
-
-        self.guidesdir = ConfigOption(
-            name="guidesdir",
-            cli_short="",
-            cli_long="--guidesdir",
-            env_var="MG_GUIDEDIR",
-            default="guide/",
-            description="**guide directory path",
-            group="content",
-        )
-
-        self.lang = ConfigOption(
-            name="lang",
-            cli_short="-l",
-            cli_long="--lang",
-            env_var="MG_LANGUAGE",
-            default="none",
-            description="*language file patterns",
-            group="content",
-        )
-
-        self.langsdir = ConfigOption(
-            name="langsdir",
-            cli_short="",
-            cli_long="--langsdir",
-            env_var="MG_LANGDIR",
-            default="lang/",
-            description="**language directory path",
-            group="content",
-        )
-
-        self.context = ConfigOption(
-            name="context",
-            cli_short="",
-            cli_long="--context",
-            env_var="MG_CONTEXT",
-            default="project-context",
-            description="*context file patterns",
-            group="content",
-        )
-
-        self.contextdir = ConfigOption(
-            name="contextdir",
-            cli_short="",
-            cli_long="--contextdir",
-            env_var="MG_CONTEXTDIR",
-            default="context/",
-            description="**context directory path",
-            group="content",
-        )
-
         # Logging configuration
         self.log_level = ConfigOption(
             name="log_level",

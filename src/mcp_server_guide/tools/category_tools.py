@@ -15,9 +15,6 @@ from ..utils.document_discovery import get_category_documents_by_path
 
 logger = get_logger()
 
-# Built-in categories that cannot be removed or overwritten
-BUILTIN_CATEGORIES = {"guide", "lang", "context"}
-
 # Safety limits for glob operations
 MAX_GLOB_DEPTH = 8
 MAX_DOCUMENTS_PER_GLOB = 100
@@ -153,9 +150,6 @@ async def add_category(
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
 
-    if name in BUILTIN_CATEGORIES:
-        return {"success": False, "error": f"Cannot override built-in category '{name}'"}
-
     # Provide default description if description is None or empty
     if not description or not description.strip():
         description = f"Custom category: {name}"
@@ -219,9 +213,6 @@ async def update_category(
     if name not in categories:
         return {"success": False, "error": f"Category '{name}' does not exist"}
 
-    if name in BUILTIN_CATEGORIES:
-        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
-
     existing_category = categories[name]
 
     # Handle description with proper defaults
@@ -276,9 +267,6 @@ async def remove_category(name: str) -> Dict[str, Any]:
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
 
-    if name in BUILTIN_CATEGORIES:
-        return {"success": False, "error": f"Cannot remove built-in category '{name}'"}
-
     session = SessionManager()
 
     # Use current session config directly instead of loading from disk
@@ -322,7 +310,7 @@ async def list_categories(verbose: bool = False) -> Dict[str, Any]:
 
     categories_data = {}
     for name, category in categories.items():
-        category_info = {"description": category.description, "builtin": name in BUILTIN_CATEGORIES}
+        category_info: Dict[str, Any] = {"description": category.description}
 
         if verbose:
             category_info.update({"dir": category.dir, "patterns": category.patterns, "url": category.url})
@@ -336,9 +324,6 @@ async def add_to_category(name: str, patterns: List[str]) -> Dict[str, Any]:
     """Add patterns to existing category."""
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
-
-    if name in BUILTIN_CATEGORIES:
-        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
 
     session = SessionManager()
     project = session.get_project_name()
@@ -398,9 +383,6 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
     """Remove patterns from category."""
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
-
-    if name in BUILTIN_CATEGORIES:
-        return {"success": False, "error": f"Cannot modify built-in category '{name}'"}
 
     session = SessionManager()
     project = session.get_project_name()
@@ -550,5 +532,4 @@ __all__ = [
     "remove_category",
     "list_categories",
     "get_category_content",
-    "BUILTIN_CATEGORIES",
 ]

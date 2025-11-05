@@ -39,18 +39,6 @@ async def test_complete_workflow_with_cli_args():
                 [
                     "--docroot",
                     "/custom/root",
-                    "--guidesdir",
-                    "custom_guide/",
-                    "--guide",
-                    "custom_guidelines",
-                    "--langsdir",
-                    "custom_lang/",
-                    "--lang",
-                    "rust",
-                    "--contextdir",
-                    "custom_project/",
-                    "--context",
-                    "test_project",
                 ],
             )
 

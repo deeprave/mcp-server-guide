@@ -6,34 +6,36 @@ This is a MCP server that provides developer support by providing a common resou
 
 This MCP is more than a developer convenience. It centralises how AI agent instructions are served, regardless which one you happen to be using.
 
-This MCP server works with:
+This MCP server is designed to work with:
 
 - AmazonQ
 - Claude Code
 - github copilot (in VSCode & Jetbrains IDEs)
 - gemini
+- possibly copilot cli
 
-Since I use multiple (often switching between the first three), I needed a common place I could store AI agent instructions. I used symlinks at first, but this became a little unwieldy to manage, copying files between directories and keeping them updated whenever they changed.
+Since I use multiple agents (often switching between the first three), I needed a common place I could store AI agent instructions. I used symlinks at first, but this became a little unwieldy to manage, sometimes needing to copy files between directories and keeping them updated whenever they changed.
 
-Every AI client has its own idea of where to source instructions by default, and some of the implementations or versions from the same vendor often disagree with each other or just aren't consistent. This was my solution. This also keeps these docs in a central location plus it can keep them out of the project itself.
+Every AI client has its own idea of where to source instructions, and some of the implementations or versions from the same vendor often disagree with each other or just aren't consistent. This was my solution. This also keeps prompts in a central location plus it can keep them out of the project itself.
 
 ## The Objective
 
-Prompts are key to keeping an agentic agent within working guidelines. Without them, the agent will implement your instructions (usually) plus some, based on the temperature and tuning of its LLM. When provided with an idea, the agent will immediately start making changes regardless of it having incomplete context and knowledge of past events.
+Prompts are key to keeping an agentic agent within working guidelines. Without them, the agent will implement your instructions (usually) plus some, based on the temperature and tuning of its LLM. When provided with an idea, the agent will immediately start making changes regardless of it having only incomplete context, knowledge of past events and eften giving little regard for duplicating code, breaking encapsulation or going about things completely different from elsewhere in the codebase.
 
-This MCP is a step towards providing the AI with guardrails that it cannot (or should not) ignore. This solution is not guaranteed, and AI will sometimes completely ignore instructions.
+This MCP is a step towards providing the AI with guardrails that it cannot (or should not) ignore in the hope of providing more deterministic behaviour and output. This solution is not guaranteed, and AI will sometimes completely ignore instructions.
 
 ### The Implementation
 
-Document are served to the AI for its consumption. These take the form of general guidelines,
+Documents containing prompts are served to the AI for its consumption. These take the form of general guidelines,
 
-Documents are organized using a **unified categories system** with three built-in categories:
+Documents are organized using a **unified categories system**. The following three default categories are created when a project is first instantiated - implicitly, when started in a new project:, using using the switch_project tool with a different name.
 
 - **guide**: General developer guidelines (TDD methodology, coding standards, workflow requirements)
 - **lang**: Programming language-specific guidelines (syntax, best practices, tooling, project structure)
 - **context**: Project-specific information (issue management, specifications, workflow details)
+- **prompt**: AI prompts shown by various built in `@guide --action` prompts that override the builtin default.
 
-The CLI arguments (`--guidesdir`, `--guide`, `--langsdir`, `--lang`, `--contextdir`, `--context`) configure the appropriate built-in categories.
+These are all regular categories that can be customized, removed or renamed like any other category through the configuration system. However the `prompt` category is special in that this category is checked for a file that corresponds to a `@guide --action` otherwise it will use the built-in ones.
 
 ## Installation
 
@@ -49,75 +51,48 @@ uv run pip install -e .
 
 ### Command Line Interface
 
-The `mcp-server-guide` command provides a configurable MCP server with support for CLI arguments, environment variables, and sensible defaults.
+The `mcp-server-guide` command provides a configurable MCP server.
 
 ```bash
 # Start with defaults
 mcp-server-guide
 
-# Custom paths
-mcp-server-guide --docroot /path/to/docs --guidesdir custom_guides/ --langsdir languages/
+# Custom document root
+mcp-server-guide --docroot /path/to/docs
 
-# Use short options
-mcp-server-guide -d /docs -g guides/ -l langs/ -L python -c contexts/
+# With configuration file
+mcp-server-guide --config /path/to/config.json
 ```
+
+By default, this mcp runs in "stdio" mode (the only mode currently supported). It converses with the AI agent using the established MCP protocol which uses jsonrpc version 2.0.
 
 ### CLI Options
 
 
-| Short | Long           | Environment Variable | Default                           | Description                                          |
-| ----- | -------------- | -------------------- | --------------------------------- | ---------------------------------------------------- |
-| `-d`  | `--docroot`    | `MG_DOCROOT`         | `.`                               | Document root directory                              |
-| `-c`  | `--config`     | `MG_CONFIG`          | `[platform location]/config.json` | Configuration file path                              |
-| `-g`  | `--guidesdir`  | `MG_GUIDEDIR`        | `guide/`                          | Guidelines directory (configures 'guide' category)   |
-| `-G`  | `--guide`      | `MG_GUIDE`           | `guidelines`                      | Guidelines file (configures 'guide' category)        |
-| `-l`  | `--langsdir`   | `MG_LANGDIR`         | `lang/`                           | Languages directory (configures 'lang' category)     |
-| `-L`  | `--lang`       | `MG_LANGUAGE`        | `none` (auto-detect)              | Language file (configures 'lang' category)           |
-|       | `--contextdir` | `MG_CONTEXTDIR`      | `context/`                        | Context directory (configures 'context' category)    |
-| `-C`  | `--context`    | `MG_CONTEXT`         | `project-context`                 | Project context file (configures 'context' category) |
+| Short | Long               | Description                                                  |
+| ----- | ------------------ | ------------------------------------------------------------ |
+| `-c`  | `--config`         | Configuration file path                                      |
+| `-d`  | `--docroot`        | Document root directory (default:`.`)                        |
+| -C    | `--log-console`    | Enable console logging (default: true unless file specified) |
+| -N    | `--no-log-console` | Disable console logging                                      |
+| -F    | `--log-file`       | Log file path (empty for no file logging)                    |
+| -J    | `--log-json`       | Enable JSON structured logging to file                       |
+| -L    | `--log-level`      | Logging level (DEBUG, INFO, WARN, ERROR, OFF)                |
+| -v    | `--version`        | Show version and exit                                        |
+| -h    | `--help`           | Show help message and exit                                   |
 
-**platform location is one of**
-
-- On Unix-like systems (incl MacOS, Linux): ~/.config/mcp-server-guide/
-- On Windows: %APPDATA%/mcp-server-guide/
-
-### Language Auto-Detection
-
-On first startup on an unknown project, the server automatically detects your project's programming language when `--lang` is not specified or set to `none`. Supports 15+ languages:
-
-- **Build file detection**: `Cargo.toml` → Rust, `pyproject.toml` → Python, `go.mod` → Go
-- **Multi-language projects**: `build.gradle` → Java/Kotlin/Scala (analyzes source files)
-- **Source file detection**: `*.swift` → Swift, `*.cs` → C#, `*.dart` → Dart, `*.sh` → Shell, etc.
-
-### Environment Variables
-
-Set environment variables to configure default behavior:
-
-```bash
-# Set custom paths
-export MG_DOCROOT="/path/to/documentation"
-export MG_GUIDEDIR="/path/to/guidelines"
-export MG_LANGDIR="/path/to/languages"
-
-# Start server (will use environment variables)
-mcp-server-guide
-
-# Override specific options (CLI takes precedence)
-mcp-server-guide --docroot /different/path
-```
-
-#### Tool Name Prefixing
+### Configuration
 
 The `GUIDE_TOOL_PREFIX` environment variable controls how MCP tools are named:
 
 ```bash
 # Default behavior - tools prefixed with "guide_"
-# Tools: guide_get_current_project, guide_get_guide, etc.
+# Tools: guide_get_current_project, guide_get_category_content, guide_get_guide, etc.
 # (No environment variable set or explicitly set to "guide_")
 export GUIDE_TOOL_PREFIX="guide_"
 
 # Remove prefix for clients that auto-namespace tools (e.g., Claude Code)
-# Tools: get_current_project, get_guide, etc.
+# Tools: get_current_project, get_category_content, get_guide, etc.
 export GUIDE_TOOL_PREFIX=""
 
 # Use custom prefix for specific clients
@@ -129,6 +104,135 @@ export GUIDE_TOOL_PREFIX="myprefix_"
 - **Amazon Q** does not automatically namespace MCP tools, so the `guide_` prefix prevents name collisions with other MCP servers
 - **Claude Code** automatically namespaces tools by server name, so the prefix is redundant and can be removed by setting `GUIDE_TOOL_PREFIX=""`
 - Other clients may have different behaviors - adjust the prefix accordingly
+
+## API Reference
+
+### Tools
+
+#### `get_guide(category_or_collection, document, project=None)`
+
+Retrieve guide content for a specific document in a category or collection.
+
+**Parameters:**
+
+- `category_or_collection` (string): Name of the category or collection to search
+- `document` (string): Name of the document to retrieve
+- `project` (string, optional): Project name (defaults to current project)
+
+**Returns:** String content of the document, or `None` if not found
+
+**Examples:**
+
+```python
+# Get a specific document from the 'guide' category
+content = await get_guide("guide", "guidelines")
+
+# Get language-specific guidelines
+content = await get_guide("lang", "python")
+
+# Get project context information
+content = await get_guide("context", "project-context")
+```
+
+### Prompts
+
+#### `@guide` Prompt
+
+Get comprehensive guide content or specific category content.
+
+**Usage:**
+
+```
+@guide                    # Get help and overview of all available categories
+@guide category_name      # Get all content from a specific category
+```
+
+**Parameters:**
+
+- `category` (optional): Name of the category to retrieve content from
+
+**Examples:**
+
+1. **Get help and overview:**
+
+   ```
+   @guide
+   ```
+
+   Returns: Complete help system with available categories, collections, and usage instructions.
+2. **Get specific category content:**
+
+   ```
+   @guide guide
+   ```
+
+   Returns: All content from the 'guide' category (coding standards, workflows, etc.)
+
+   ```
+   @guide lang
+   ```
+
+   Returns: All language-specific guidelines and best practices.
+
+   ```
+   @guide context
+   ```
+
+   Returns: All project-specific context and information.
+3. **Get custom category content:**
+
+   ```
+   @guide my-custom-category
+   ```
+
+   Returns: All content from your custom category.
+
+**Error Handling:**
+
+- If category doesn't exist: Returns error message with details
+- If category is empty: Returns empty content
+- If no category specified: Returns comprehensive help
+
+### Resources
+
+MCP resources provide a standardized way to access category and collection content through URI-based addressing.
+
+#### Resource URIs
+
+The server exposes resources using the `guide://` URI scheme:
+
+- **Categories**: `guide://category/{category_name}`
+- **Collections**: `guide://collection/{collection_name}`
+- **Help**: `guide://help`
+
+#### Category Resources
+
+Each category is automatically registered as an MCP resource when the server starts:
+
+```
+guide://category/guide     - Access the 'guide' category content
+guide://category/lang      - Access the 'lang' category content
+guide://category/context   - Access the 'context' category content
+guide://category/my-custom - Access custom category content
+```
+
+#### Collection Resources
+
+Collections are also exposed as resources:
+
+```
+guide://collection/my-collection - Access collection content
+```
+
+#### Resource Content
+
+When accessed, category resources return:
+
+- All documents matching the category's patterns
+- Managed documents from the category's `__docs__/` directory
+- Combined content formatted for AI consumption
+
+Collection resources return content from all categories within the collection.
 
 ### Configuration Files
 

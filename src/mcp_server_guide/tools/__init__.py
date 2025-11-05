@@ -5,12 +5,8 @@ from .config_tools import (
     set_project_config_values,
 )
 from .content_tools import (
-    get_guide,
-    get_language_guide,
-    get_project_context,
     search_content,
-    show_guide,
-    show_language_guide,
+    get_guide,
 )
 from .file_tools import get_file_content
 from .category_tools import (
@@ -44,12 +40,8 @@ __all__ = [
     "set_project_config",
     "set_project_config_values",
     # Content Retrieval
-    "get_guide",
-    "get_language_guide",
-    "get_project_context",
     "search_content",
-    "show_guide",
-    "show_language_guide",
+    "get_guide",
     # File Operations
     "get_file_content",
     # Category Management

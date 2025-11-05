@@ -65,6 +65,14 @@ async def get_content(category_or_collection: str, document: str, project: Optio
     return None
 
 
+async def get_guide(category_or_collection: str, document: str, project: Optional[str] = None) -> Optional[str]:
+    """Get guide content for a specific document in a category or collection.
+
+    This is an alias for get_content() to provide a more intuitive API for guide retrieval.
+    """
+    return await get_content(category_or_collection, document, project)
+
+
 def _extract_document_from_content(content: str, document: str) -> Optional[str]:
     """Extract a specific document from combined category content.
 
@@ -118,33 +126,17 @@ def _extract_document_from_content(content: str, document: str) -> Optional[str]
     return None
 
 
-async def get_guide(project: Optional[str] = None) -> str:
-    """Get project guidelines using unified category system."""
-    result = await get_category_content("guide", project)
-    return result.get("content", "") if result.get("success") else ""
-
-
-async def get_language_guide(project: Optional[str] = None) -> str:
-    """Get language-specific guidelines using unified category system."""
-    result = await get_category_content("lang", project)
-    return result.get("content", "") if result.get("success") else ""
-
-
-async def get_project_context(project: Optional[str] = None) -> str:
-    """Get project context using unified category system."""
-    result = await get_category_content("context", project)
-    return result.get("content", "") if result.get("success") else ""
-
-
 async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across all categories for content matching query."""
     session = SessionManager()
     if project is None:
         project = session.get_project_name()
 
-    results = []
-    categories = ["guide", "lang", "context"]
+    # Get all categories from project config instead of hardcoded list
+    config = await session.get_or_create_project_config(project)
+    categories = list(config.categories.keys())
 
+    results = []
     for category in categories:
         result = await get_category_content(category, project)
         if result.get("success") and result.get("content"):
@@ -162,29 +154,7 @@ async def search_content(query: str, project: Optional[str] = None) -> List[Dict
     return results
 
 
-async def show_guide(project: Optional[str] = None) -> Dict[str, Any]:
-    """Display guide to user."""
-    content = await get_guide(project)
-    return {"success": True, "content": content, "message": f"Guide content for project {project or 'current'}"}
-
-
-async def show_language_guide(project: Optional[str] = None) -> Dict[str, Any]:
-    """Display language guide to user."""
-    content = await get_language_guide(project)
-    return {
-        "success": True,
-        "content": content,
-        "message": f"Language guide content for project {project or 'current'}",
-    }
-
-
 __all__ = [
     "get_content",
-    "get_guide",
-    "get_language_guide",
-    "get_project_context",
     "search_content",
-    "show_guide",
-    "show_language_guide",
-    "get_category_content",
 ]

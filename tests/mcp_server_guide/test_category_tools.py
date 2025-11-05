@@ -8,7 +8,6 @@ from mcp_server_guide.tools.category_tools import (
     update_category,
     list_categories,
     get_category_content,
-    BUILTIN_CATEGORIES,
 )
 
 
@@ -45,11 +44,6 @@ def mock_session():
         yield session_instance
 
 
-async def test_builtin_categories_constant():
-    """Test that builtin categories are defined correctly."""
-    assert BUILTIN_CATEGORIES == {"guide", "lang", "context"}
-
-
 async def test_add_category_success(mock_session):
     """Test successful category addition."""
     result = await add_category("testing", "test/", ["*.md", "test-*.txt"])
@@ -60,20 +54,23 @@ async def test_add_category_success(mock_session):
     assert result["category"]["patterns"] == ["*.md", "test-*.txt"]
 
 
-async def test_add_category_builtin_rejected(mock_session):
-    """Test that adding builtin categories is rejected."""
+async def test_add_category_existing_rejected(mock_session):
+    """Test that adding existing categories is rejected."""
     result = await add_category("guide", "test/", ["*.md"])
 
     assert result["success"] is False
-    assert "Cannot override built-in category" in result["error"]
+    assert "already exists" in result["error"]
 
 
-async def test_remove_category_builtin_rejected(mock_session):
-    """Test that removing builtin categories is rejected."""
+async def test_remove_category_success(mock_session):
+    """Test that removing categories (including former builtins) succeeds."""
+    # Mock the category exists in config
+    mock_session.session_state.project_config.categories = {"guide": Mock()}
+
     result = await remove_category("guide")
 
-    assert result["success"] is False
-    assert "Cannot remove built-in category" in result["error"]
+    # Should succeed - no builtin protection
+    assert result["success"] is True
 
 
 async def test_list_categories_basic(mock_session):
@@ -94,21 +91,26 @@ async def test_update_category_nonexistent(mock_session):
 
 
 @pytest.mark.asyncio
-async def test_update_builtin_category_error(mock_session):
-    """Test updating built-in category returns error."""
+async def test_update_category_success(mock_session):
+    """Test updating category (including former builtins) succeeds."""
+    # Mock the category exists in config
+    mock_session.session_state.project_config.categories = {"guide": Mock()}
+
     result = await update_category("guide", description="test description")
 
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
+    assert result["success"] is True
 
 
 @pytest.mark.asyncio
-async def test_remove_builtin_category_error(mock_session):
-    """Test removing built-in category returns error."""
-    result = await remove_category("guide")
+async def test_remove_category_nonexistent_error(mock_session):
+    """Test removing nonexistent category returns error."""
+    # Mock empty categories
+    mock_session.session_state.project_config.categories = {}
+
+    result = await remove_category("nonexistent")
 
     assert result["success"] is False
-    assert "Cannot remove built-in category" in result["error"]
+    assert "does not exist" in result["error"]
 
 
 async def test_get_category_content_no_files(mock_session):

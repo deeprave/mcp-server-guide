@@ -23,9 +23,7 @@ async def test_path_value_error():
     """Test path value error handling."""
     validator = PathValidator([Path("/allowed")])
 
-    with patch("pathlib.Path.resolve") as mock_resolve:
-        mock_resolve.side_effect = ValueError("Invalid path format")
-
+    with patch("pathlib.Path.resolve", side_effect=ValueError("Invalid path format")):
         with pytest.raises(SecurityError) as exc_info:
             validator.validate_path("some/path", Path("/base"))
 

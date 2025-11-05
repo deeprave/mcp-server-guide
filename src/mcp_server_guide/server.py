@@ -1,6 +1,6 @@
 """MCP server creation and management."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from collections.abc import Mapping
 
 from mcp.server.fastmcp import FastMCP
@@ -38,15 +38,15 @@ class GuideMCP(FastMCP):
         self.docroot = docroot
         self.config_file = config_file
 
-    def get_registered_prompts(self) -> list:
+    def get_registered_prompts(self) -> List[Any]:
         """Get list of registered prompts from this server instance."""
         return self._prompt_manager.list_prompts()
 
-    def get_registered_tools(self) -> list:
+    def get_registered_tools(self) -> List[Any]:
         """Get list of registered tools from this server instance."""
         return list(self._tool_manager.list_tools())
 
-    def get_registered_resources(self) -> list:
+    def get_registered_resources(self) -> List[Any]:
         """Get list of registered resources from this server instance."""
         return list(self._resource_manager.list_resources())
 
@@ -99,9 +99,8 @@ def create_server(
             session_manager = SessionManager()
             await session_manager.get_or_create_project_config(project_context)
 
-        # Map config_key to category names for unified system
-        category_mapping = {"guide": "guide", "language": "lang", "context": "context"}
-        category_name = category_mapping.get(config_key, config_key)
+        # Use config_key directly as category name - no hardcoded mapping needed
+        category_name = config_key
 
         # Try to get category content first
         try:

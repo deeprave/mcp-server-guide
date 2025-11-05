@@ -1,52 +1,41 @@
-"""Tests for builtin category partial updates (Issue 030)."""
+"""Tests for category updates on former builtin categories (Phase 1)."""
 
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from mcp_server_guide.tools.category_tools import update_category
+from unittest.mock import Mock, patch
+from mcp_server_guide.tools.category_tools import update_category, remove_category
 
 
 @pytest.fixture
 def mock_session():
-    """Mock session manager with builtin categories."""
-    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
-        from mcp_server_guide.project_config import ProjectConfig
-        from mcp_server_guide.models.category import Category
+    """Mock session manager for testing."""
+    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
 
-        session_instance = Mock()
-        mock.return_value = session_instance
-        session_instance.get_project_name = Mock(return_value="test-project")
+        # Mock project config with guide category
+        mock_config = Mock()
+        mock_config.categories = {"guide": Mock()}
+        mock_session.session_state.project_config = mock_config
+        mock_session.get_project_name.return_value = "test_project"
 
-        config_data = ProjectConfig(
-            categories={
-                "guide": Category(
-                    dir="guide/",
-                    patterns=["guidelines.md"],
-                    description="Project guidelines",
-                    auto_load=False,
-                ),
-                "lang": Category(
-                    dir="lang/",
-                    patterns=["python.md"],
-                    description="Language guides",
-                    auto_load=True,
-                ),
-                "context": Category(
-                    dir="context/",
-                    patterns=["context.md"],
-                    description="Context files",
-                    auto_load=False,
-                ),
-            }
-        )
+        # Make get_or_create_project_config async
+        async def async_get_config(project):
+            return mock_config
 
-        session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
-        session_instance.save_session = AsyncMock()
-        yield session_instance
+        mock_session.get_or_create_project_config = async_get_config
+
+        # Make save_project_config async
+        async def async_save_config(config):
+            return None
+
+        mock_session.save_project_config = async_save_config
+
+        yield mock_session
 
 
 @pytest.mark.asyncio
-async def test_update_builtin_category_dir_field(mock_session):
-    """Test updating dir field on builtin category should fail (builtin protection)."""
+async def test_update_former_builtin_category_dir_field(mock_session):
+    """Test updating dir field on former builtin category succeeds."""
     result = await update_category(
         name="guide",
         dir="new-guide/",
@@ -54,58 +43,52 @@ async def test_update_builtin_category_dir_field(mock_session):
         description="Project guidelines",
     )
 
-    # This should fail because builtin categories are protected
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
+    # This should succeed - no builtin protection
+    assert result["success"] is True
 
 
 @pytest.mark.asyncio
-async def test_update_builtin_category_patterns_field(mock_session):
-    """Test updating patterns field on builtin category should fail (builtin protection)."""
-    result = await update_category(
-        name="lang",
-        dir="lang/",
-        patterns=["*.py", "*.md"],
-        description="Language guides",
-    )
-
-    # This should fail because builtin categories are protected
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
-
-
-@pytest.mark.asyncio
-async def test_update_builtin_category_description_field(mock_session):
-    """Test updating description field on builtin category should fail (builtin protection)."""
-    result = await update_category(
-        name="context",
-        description="Context files",
-    )
-
-    # This should fail because builtin categories are protected
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
-
-
-@pytest.mark.asyncio
-async def test_builtin_category_deletion_still_forbidden(mock_session):
-    """Test that deleting builtin categories is still forbidden."""
-    from mcp_server_guide.tools.category_tools import remove_category
-
-    result = await remove_category("guide")
-
-    assert result["success"] is False
-    assert "Cannot remove built-in category" in result["error"]
-
-
-@pytest.mark.asyncio
-async def test_update_builtin_category_invalid_field_rejected(mock_session):
-    """Test that updating builtin category is rejected."""
+async def test_update_former_builtin_category_patterns_field(mock_session):
+    """Test updating patterns field on former builtin category succeeds."""
     result = await update_category(
         name="guide",
-        description="Project guidelines",
+        patterns=["*.guide", "guide-*.md"],
     )
 
-    # This should fail because builtin categories are protected
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
+    # This should succeed - no builtin protection
+    assert result["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_former_builtin_category_description_field(mock_session):
+    """Test updating description field on former builtin category succeeds."""
+    result = await update_category(
+        name="guide",
+        description="Updated project guidelines",
+    )
+
+    # This should succeed - no builtin protection
+    assert result["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_former_builtin_category_deletion_allowed(mock_session):
+    """Test that deleting former builtin categories is now allowed."""
+    result = await remove_category("guide")
+
+    # This should succeed - no builtin protection
+    assert result["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_former_builtin_category_all_fields(mock_session):
+    """Test that updating all fields on former builtin category succeeds."""
+    result = await update_category(
+        name="guide",
+        dir="updated-guide/",
+        patterns=["*.guide", "guide-*.md"],
+        description="Updated project guidelines",
+    )
+
+    # This should succeed - no builtin protection
+    assert result["success"] is True

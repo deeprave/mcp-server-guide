@@ -8,6 +8,7 @@ from mcp_server_guide.main import start_mcp_server
 async def test_stdio_mode_starts_mcp_server():
     """Test that stdio mode starts actual MCP server."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": ".", "project": "test"}
@@ -28,6 +29,7 @@ async def test_stdio_mode_starts_mcp_server():
 async def test_stdio_mode_handles_keyboard_interrupt():
     """Test that stdio mode handles KeyboardInterrupt gracefully."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": ".", "project": "test"}
@@ -46,6 +48,7 @@ async def test_stdio_mode_handles_keyboard_interrupt():
 async def test_stdio_mode_handles_broken_pipe():
     """Test that stdio mode handles BrokenPipeError gracefully."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": ".", "project": "test"}
@@ -64,6 +67,7 @@ async def test_stdio_mode_handles_broken_pipe():
 async def test_server_startup_with_config():
     """Test server startup uses provided configuration."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": "/custom/path", "project": "test_project", "guide": "custom_guide", "lang": "python"}

@@ -131,12 +131,7 @@ async def test_all_tools_have_guide_prefix():
         "guide_set_project_config_values",
         "guide_set_project_config",
         "guide_get_effective_config",
-        "guide_get_guide",
-        "guide_get_language_guide",
-        "guide_get_project_context",
         "guide_search_content",
-        "guide_show_guide",
-        "guide_show_language_guide",
         "guide_list_files",
         "guide_file_exists",
         "guide_get_file_content",
@@ -144,6 +139,4 @@ async def test_all_tools_have_guide_prefix():
     ]
 
     # This test will initially fail until we implement the decorator
-    assert (
-        len(expected_tools) == 16
-    )  # Verify we have all tools listed (removed get_all_guides and show_project_summary)
+    assert len(expected_tools) == 11  # Updated count after removing 5 builtin category functions

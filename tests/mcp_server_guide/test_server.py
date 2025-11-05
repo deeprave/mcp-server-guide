@@ -65,27 +65,6 @@ async def test_get_current_project_no_project_set():
 
 async def test_server_content_functions():
     """Test server content-related functions."""
-    # Test get_guide via tools
-    result = await tools.get_guide()
-    assert isinstance(result, str)
-
-    result = await tools.get_guide("test_project")
-    assert isinstance(result, str)
-
-    # Test get_language_guide via tools
-    result = await tools.get_language_guide()
-    assert isinstance(result, str)
-
-    result = await tools.get_language_guide("test_project")
-    assert isinstance(result, str)
-
-    # Test get_project_context via tools
-    result = await tools.get_project_context()
-    assert isinstance(result, str)
-
-    result = await tools.get_project_context("test_project")
-    assert isinstance(result, str)
-
     # Test search_content via tools
     result = await tools.search_content("test")
     assert isinstance(result, list)
@@ -96,20 +75,6 @@ async def test_server_content_functions():
 
 async def test_server_display_functions():
     """Test server display functions."""
-    # Test show_guide via tools
-    result = await tools.show_guide()
-    assert isinstance(result, dict)
-
-    result = await tools.show_guide("test_project")
-    assert isinstance(result, dict)
-
-    # Test show_language_guide via tools
-    result = await tools.show_language_guide()
-    assert isinstance(result, dict)
-
-    result = await tools.show_language_guide("test_project")
-    assert isinstance(result, dict)
-
     # Test list_prompts via tools
     result = await tools.list_prompts()
     assert isinstance(result, dict)
@@ -141,7 +106,6 @@ async def test_server_tool_integration():
     expected_tools = [
         "guide_get_current_project",
         "guide_switch_project",
-        "guide_get_guide",
         "guide_add_category",
         "guide_list_categories",
     ]

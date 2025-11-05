@@ -206,55 +206,6 @@ def validate_mode(mode: str) -> tuple[str, str]:
     raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio'")
 
 
-async def configure_builtin_categories(resolved_config: Dict[str, Any]) -> None:
-    """Configure built-in categories from CLI arguments."""
-    from .tools.category_tools import update_category, list_categories
-
-    # CLI argument to category mappings
-    cli_mappings = [
-        ("guidesdir", "guide", "guide"),
-        ("langsdir", "lang", "lang"),
-        ("contextdir", "context", "context"),
-    ]
-
-    for dir_key, file_key, category_name in cli_mappings:
-        dir_value = resolved_config.get(dir_key)
-        file_value = resolved_config.get(file_key)
-
-        if dir_value or file_value:
-            try:
-                categories_result = await list_categories()
-
-                # Find existing built-in category
-                existing_category = None
-                builtin_categories = categories_result.get("categories", {}).get("builtin_categories", [])
-                for cat in builtin_categories:
-                    if cat["name"] == category_name:
-                        existing_category = cat
-                        break
-
-                if existing_category:
-                    # Update category with CLI values
-                    new_dir = dir_value or existing_category["dir"]
-
-                    # Set file patterns
-                    if file_value and file_value != "none":
-                        new_patterns = [f"{file_value}.md"]
-                    else:
-                        new_patterns = existing_category["patterns"]
-
-                    # Update the category
-                    await update_category(
-                        name=category_name,
-                        dir=new_dir,
-                        patterns=new_patterns,
-                        description=existing_category["description"],
-                    )
-
-            except Exception:
-                logger.warning(f"Failed to configure category {category_name}")
-
-
 def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
     from .server import get_current_server, set_current_config
@@ -507,11 +458,9 @@ def main() -> click.Command:
                 help=option.description,
             )(cli_main)
         else:
-            # Regular options with updated metavar for patterns
+            # Regular options with updated metavar
             metavar = None
-            if option.name in ["guide", "lang", "context"]:
-                metavar = "PATTERNS"
-            elif option.name in ["docroot", "guidesdir", "langsdir", "contextdir"]:
+            if option.name in ["docroot"]:
                 metavar = "DIRECTORY"
             elif option.name in ["config", "log_file"]:
                 metavar = "FILENAME"

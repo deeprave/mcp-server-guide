@@ -8,9 +8,11 @@ from datetime import datetime
 from .file_lock import lock_update
 from .logging_config import get_logger
 from .path_resolver import LazyPath
-from .models.config_file import ConfigFile
 from .models.project_config import ProjectConfig
+from .models.config_file import ConfigFile
 from .models.speckit_config import SpecKitConfig
+
+__all__ = ["ProjectConfig", "ProjectConfigManager"]
 
 logger = get_logger(__name__)
 

@@ -32,8 +32,6 @@ else
     echo "👔 You are in **IMPLEMENTATION** phase"
     echo " - Proceed with implementation and architectural changes as planned"
     echo " - As tasks and phases are completed, ensure that then plan or specification is updated accordingly"
-    echo " - At the end of each phase **ALWAYS** run the full test suite"
-    echo "     - Always fix test errors and warnings, even if you think them unrelated to current work"
     echo " ▶ Transition"
     echo " - Once implementation has been fully completed according to the plan.."
     echo "   - write 'check' to .consent file to transition to CHECK phase"

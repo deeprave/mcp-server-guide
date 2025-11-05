@@ -5,19 +5,14 @@ DO NOT USE @guide.tool() DECORATORS IN TOOL DEFINITIONS
 Tools are plain functions - decoration happens only during registration
 """
 
-from typing import Callable
+from typing import Callable, Any
 from mcp.server.fastmcp import FastMCP
 
 # Import all tool functions
 from .tools.project_tools import get_current_project, switch_project
 from .tools.config_tools import get_project_config, set_project_config, set_project_config_values
 from .tools.content_tools import (
-    get_guide,
-    get_language_guide,
-    get_project_context,
     search_content,
-    show_guide,
-    show_language_guide,
 )
 from .tools.file_tools import get_file_content
 from .tools.document_tools import create_mcp_document, update_mcp_document, delete_mcp_document, list_mcp_documents
@@ -25,8 +20,16 @@ from .tools.category_tools import add_category, remove_category, update_category
 from .tools.collection_tools import add_collection, update_collection, list_collections, remove_collection
 from .tools.prompt_tools import list_prompts
 
+# Import JSON-based consolidated tools
+from .tools.category_tools_json import guide_categories
+from .tools.collection_tools_json import guide_collections
+from .tools.document_tools_json import guide_documents
+from .tools.content_tools_json import guide_content
+from .tools.config_tools_json import guide_config
+from .tools.schema_tools import guide_get_schemas, guide_get_schema
 
-def register_tools(mcp: FastMCP, log_tool_usage: Callable) -> None:
+
+def register_tools(mcp: FastMCP, log_tool_usage: Callable[..., Any]) -> None:
     """Register all MCP tools with the server.
 
     IMPORTANT: This is the ONLY place where tools are registered.
@@ -49,12 +52,7 @@ def register_tools(mcp: FastMCP, log_tool_usage: Callable) -> None:
     guide_decorator.tool("set_project_config")(log_tool_usage(set_project_config))
 
     # Content Tools
-    guide_decorator.tool("get_guide")(log_tool_usage(get_guide))
-    guide_decorator.tool("get_language_guide")(log_tool_usage(get_language_guide))
-    guide_decorator.tool("get_project_context")(log_tool_usage(get_project_context))
     guide_decorator.tool("search_content")(log_tool_usage(search_content))
-    guide_decorator.tool("show_guide")(log_tool_usage(show_guide))
-    guide_decorator.tool("show_language_guide")(log_tool_usage(show_language_guide))
 
     # File Tools
     guide_decorator.tool("get_file_content")(log_tool_usage(get_file_content))
@@ -80,3 +78,14 @@ def register_tools(mcp: FastMCP, log_tool_usage: Callable) -> None:
 
     # Prompt Tools
     guide_decorator.tool("list_prompts")(log_tool_usage(list_prompts))
+
+    # JSON-based Consolidated Tools (Phase 2 implementation)
+    guide_decorator.tool("categories")(log_tool_usage(guide_categories))
+    guide_decorator.tool("collections")(log_tool_usage(guide_collections))
+    guide_decorator.tool("documents")(log_tool_usage(guide_documents))
+    guide_decorator.tool("content")(log_tool_usage(guide_content))
+    guide_decorator.tool("config")(log_tool_usage(guide_config))
+
+    # Schema Visibility Tools (VERY VISIBLE to AI agents)
+    guide_decorator.tool("get_schemas")(log_tool_usage(guide_get_schemas))
+    guide_decorator.tool("get_schema")(log_tool_usage(guide_get_schema))

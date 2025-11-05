@@ -23,6 +23,7 @@ async def test_validate_mode_invalid():
 async def test_start_mcp_server_stdio():
     """Test start_mcp_server with stdio mode."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": ".", "project": "test"}
@@ -41,6 +42,7 @@ async def test_start_mcp_server_stdio():
 async def test_start_mcp_server_stdio_keyboard_interrupt():
     """Test start_mcp_server stdio mode with KeyboardInterrupt."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": ".", "project": "test"}
@@ -56,6 +58,7 @@ async def test_start_mcp_server_stdio_keyboard_interrupt():
 async def test_start_mcp_server_stdio_broken_pipe():
     """Test start_mcp_server stdio mode with BrokenPipeError."""
     from mcp_server_guide.server import reset_server_state
+
     reset_server_state()  # Reset global state
 
     config = {"docroot": ".", "project": "test"}
@@ -99,18 +102,6 @@ async def test_main_cli_with_all_options():
             [
                 "--docroot",
                 "/custom",
-                "--guidesdir",
-                "guides/",
-                "--guide",
-                "custom_guide",
-                "--langsdir",
-                "langs/",
-                "--lang",
-                "python",
-                "--contextdir",
-                "projects/",
-                "--context",
-                "test_project",
                 "--log-level",
                 "INFO",
                 "--log-file",

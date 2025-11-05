@@ -13,15 +13,15 @@ from ..utils.document_utils import generate_content_hash, detect_mime_type
 logger = get_logger()
 
 # Global cache state (shared across all contexts)
-_changes_cache: Optional[Dict[str, Dict]] = None
-_cleanup_tasks: Optional[Set[asyncio.Task]] = None
+_changes_cache: Optional[Dict[str, Dict[str, Any]]] = None
+_cleanup_tasks: Optional[Set[asyncio.Task[None]]] = None
 _cache_lock = asyncio.Lock()
 
 # TTL for cache entries (5 minutes)
 CACHE_TTL = 300
 
 
-def get_changes_cache() -> Dict[str, Dict]:
+def get_changes_cache() -> Dict[str, Dict[str, Any]]:
     """Get or create the changes cache."""
     global _changes_cache
     if _changes_cache is None:
@@ -29,7 +29,7 @@ def get_changes_cache() -> Dict[str, Dict]:
     return _changes_cache
 
 
-def get_cleanup_tasks() -> Set[asyncio.Task]:
+def get_cleanup_tasks() -> Set[asyncio.Task[None]]:
     """Get or create the cleanup tasks set."""
     global _cleanup_tasks
     if _cleanup_tasks is None:
@@ -137,7 +137,7 @@ async def _cleanup_expired_cache_entries() -> None:
             del cache[key]
 
 
-async def get_recent_changes(category_dir: Optional[str] = None) -> Dict:
+async def get_recent_changes(category_dir: Optional[str] = None) -> Dict[str, Any]:
     """Get recent changes from cache, optionally filtered by category."""
     await _cleanup_expired_cache_entries()
 

@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from mcp.server.fastmcp import FastMCP
 
@@ -285,7 +285,7 @@ The SpecKit configuration has been updated. You may need to restart your develop
         return f"❌ Error during upgrade: {str(e)}"
 
 
-async def fetch_latest_github_release(repo_url: str) -> dict:
+async def fetch_latest_github_release(repo_url: str) -> Dict[str, Any]:
     """Fetch latest release information from GitHub API."""
     logger = get_logger(__name__)
 

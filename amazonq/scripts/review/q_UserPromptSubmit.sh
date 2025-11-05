@@ -9,7 +9,6 @@ cat <<EOF
  - Ensure that no "dead code" remains which is not referenced or used anywhere in the code base,
    and otherwise does not exist for well-known and documented reasons.
  - Focus on the most important failures first.
- - Provide a detailed review including source files, line numbers and function names
-   BE VERY SPECIFIC.
+ - Provide a detailed review including source files, line numbers and function names. BE SPECIFIC.
 EOF
 exit 0

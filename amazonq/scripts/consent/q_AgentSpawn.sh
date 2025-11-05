@@ -1,4 +1,5 @@
 #!/bin/bash
+rm -f .consent
 cat <<EOF
 🚨 You are in consent mode.
 

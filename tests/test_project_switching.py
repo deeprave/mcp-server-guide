@@ -29,8 +29,9 @@ async def test_switch_to_new_project_creates_builtin_categories(isolated_config_
     assert "lang" in categories
     assert "context" in categories
 
-    # Check that each category exists
-    for name in ["guide", "lang", "context"]:
+    # Check that default categories are created for new projects
+    default_categories = ["guide", "lang", "context"]  # These are just defaults
+    for name in default_categories:
         assert name in categories
 
 
@@ -42,9 +43,9 @@ async def test_builtin_categories_structure(isolated_config_file):
     # Get builtin categories from SessionManager
     builtin_cats = SessionManager.builtin_categories()
 
-    # Verify all categories created with correct defaults
-    expected_categories = {"guide", "lang", "context"}
-    assert set(builtin_cats.keys()) == expected_categories
+    # Verify default categories created with correct defaults
+    default_categories = {"guide", "lang", "context"}
+    assert set(builtin_cats.keys()) == default_categories
 
     for name, cat_config in builtin_cats.items():
         # cat_config is a Category object

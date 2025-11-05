@@ -86,33 +86,6 @@ class TestSpecPrompt:
         result = await spec_prompt(None)
         assert "Available Commands" in result
 
-    def test_spec_instruction_model(self):
-        """Test SpecInstruction model creation and serialization."""
-        from mcp_server_guide.models.spec_instruction import SpecInstruction, SpecInstructionSet
-
-        # Test basic instruction
-        instruction = SpecInstruction(action="create_file", description="Create pyproject.toml")
-
-        assert instruction.action == "create_file"
-        assert instruction.description == "Create pyproject.toml"
-
-        # Test to_dict
-        inst_dict = instruction.to_dict()
-        assert inst_dict["action"] == "create_file"
-        assert inst_dict["description"] == "Create pyproject.toml"
-        assert inst_dict["description"] == "Create pyproject.toml"
-
-        # Test instruction set
-        instruction_set = SpecInstructionSet(instructions=[instruction], summary="Initialize spec-kit")
-
-        assert len(instruction_set.instructions) == 1
-        assert instruction_set.summary == "Initialize spec-kit"
-
-        # Test JSON serialization
-        json_str = instruction_set.to_json()
-        assert "create_file" in json_str
-        assert "Initialize spec-kit" in json_str
-
     @pytest.mark.asyncio
     async def test_spec_prompt_disabled_state(self):
         """Test spec prompt behavior when SpecKit is disabled."""

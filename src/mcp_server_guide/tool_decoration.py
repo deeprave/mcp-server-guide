@@ -39,7 +39,7 @@ def log_tool_usage(func: Callable[..., Any]) -> Callable[..., Any]:
                 logger.error(f"Tool {tool_name} failed: {str(e)}")
                 raise
 
-        return sync_wrapper  # type: ignore[return-value]
+        return sync_wrapper
 
 
 def get_tool_prefix() -> str:

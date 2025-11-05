@@ -49,9 +49,10 @@ async def mock_session():
         session_instance.save_session = mock_save_func
         session_instance.get_project_name.return_value = "test-project"
 
-        # Set up session_state as a regular Mock since set_project_config is sync
+        # Set up session_state with project_config
         session_state_mock = Mock()
         session_state_mock.set_project_config = Mock(return_value=None)
+        session_state_mock.project_config = config  # Add this line
         session_instance.session_state = session_state_mock
 
         yield session_instance, config
@@ -198,7 +199,6 @@ async def test_list_categories_verbose(mock_session):
     assert "dir" in guide_info
     assert "patterns" in guide_info
     assert "url" in guide_info
-    assert guide_info["builtin"] is True
 
 
 @pytest.mark.asyncio
@@ -210,44 +210,40 @@ async def test_list_categories_non_verbose(mock_session):
 
     assert result["success"] is True
 
-    # Non-verbose mode should only include description and builtin flag
+    # Non-verbose mode should only include description
     guide_info = result["categories"]["guide"]
     assert "description" in guide_info
-    assert "builtin" in guide_info
     assert "dir" not in guide_info
     assert "patterns" not in guide_info
 
 
 @pytest.mark.asyncio
-async def test_builtin_category_protection(mock_session):
-    """Test that built-in categories cannot be modified or removed."""
+async def test_former_builtin_category_modification_allowed(mock_session):
+    """Test that former built-in categories can now be modified."""
     session_instance, config = mock_session
 
-    # Try to update built-in category
+    # Try to update former built-in category - should succeed
     result = await update_category("guide", description="New description")
 
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
+    assert result["success"] is True
 
 
 @pytest.mark.asyncio
-async def test_remove_builtin_category_protection(mock_session):
-    """Test that built-in categories cannot be removed."""
+async def test_remove_former_builtin_category_allowed(mock_session):
+    """Test that former built-in categories can now be removed."""
     session_instance, config = mock_session
 
-    # Try to remove built-in category
+    # Try to remove former built-in category - should succeed
     result = await remove_category("guide")
 
-    assert result["success"] is False
-    assert "Cannot remove built-in category" in result["error"]
+    assert result["success"] is True
 
 
 @pytest.mark.asyncio
-async def test_add_to_builtin_category_protection(mock_session):
-    """Test that patterns cannot be added to built-in categories."""
+async def test_add_to_former_builtin_category_allowed(mock_session):
+    """Test that patterns can now be added to former built-in categories."""
     session_instance, config = mock_session
 
     result = await add_to_category("guide", ["*.new"])
 
-    assert result["success"] is False
-    assert "Cannot modify built-in category" in result["error"]
+    assert result["success"] is True
