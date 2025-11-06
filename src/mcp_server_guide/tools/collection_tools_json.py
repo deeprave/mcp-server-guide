@@ -1,9 +1,5 @@
-"""JSON-based collection management tools using Pydantic operations."""
+"""JSON-based collection management tools using factory pattern."""
 
-from typing import Dict, Any
-from ..operations.base import execute_json_operation
+from .json_tool_factory import create_json_tool
 
-
-async def guide_collections(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle collection operations via JSON instructions."""
-    return await execute_json_operation("collection", data)
+guide_collections = create_json_tool("collection")

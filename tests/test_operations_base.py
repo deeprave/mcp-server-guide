@@ -2,11 +2,11 @@
 
 import pytest
 from typing import Dict, Any
-from src.mcp_server_guide.operations.base import BaseOperation
+from src.mcp_server_guide.operations.operation_base import BaseOperation
 from src.mcp_server_guide.models.project_config import ProjectConfig
 
 
-class MockOperation(BaseOperation[str]):
+class MockOperation(BaseOperation):
     """Mock implementation of BaseOperation."""
 
     test_value: str = "test"

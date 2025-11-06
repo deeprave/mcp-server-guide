@@ -5,7 +5,6 @@ import re
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Literal
 from ..models.collection import Collection
-from ..session_manager import SessionManager
 from ..logging_config import get_logger
 from .category_tools import get_category_content
 
@@ -44,6 +43,8 @@ async def create_spec_kit_collection(
     name: str, categories: List[str], description: str = "", spec_kit_version: str = ""
 ) -> Dict[str, Any]:
     """Create a collection with spec_kit source_type and version."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Validate collection name
@@ -121,6 +122,8 @@ async def create_spec_kit_collection(
 
 async def add_collection(name: str, categories: List[str], description: Optional[str] = None) -> Dict[str, Any]:
     """Add a new collection."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Validate collection name
@@ -199,6 +202,8 @@ async def add_collection(name: str, categories: List[str], description: Optional
 
 async def update_collection(name: str, *, description: Optional[str] = None) -> Dict[str, Any]:
     """Update collection description."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -234,6 +239,8 @@ async def update_collection(name: str, *, description: Optional[str] = None) -> 
 
 async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
     """Add categories to existing collection."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -306,6 +313,8 @@ async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
 
 async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, Any]:
     """Remove categories from collection."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -419,6 +428,8 @@ async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, 
 
 async def remove_collection(name: str) -> Dict[str, Any]:
     """Remove a collection."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -447,6 +458,8 @@ async def remove_collection(name: str) -> Dict[str, Any]:
 
 async def list_collections(verbose: bool = False) -> Dict[str, Any]:
     """List all collections."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -492,6 +505,8 @@ async def list_collections(verbose: bool = False) -> Dict[str, Any]:
 
 async def get_collection_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Get aggregated content from all categories in a collection."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -537,6 +552,8 @@ async def get_collection_content(name: str, project: Optional[str] = None) -> Di
 
 async def get_collection_listing(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Get directory listing of all documents in a collection."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -579,6 +596,8 @@ async def get_collection_document(
         project: Project name (optional)
         partial_match: If True, allow partial filename matching (default: False)
     """
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config

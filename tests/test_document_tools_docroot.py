@@ -26,7 +26,7 @@ class TestDocumentToolsDocroot:
             category_path.mkdir()
 
             # Mock SessionManager to return our test docroot
-            with patch("mcp_server_guide.tools.document_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 # Simplified mock
                 mock_session.docroot = LazyPath(str(docroot_path))
@@ -63,7 +63,7 @@ class TestDocumentToolsDocroot:
                 os.chdir(temp_dir)
 
                 # Mock SessionManager to return None docroot
-                with patch("mcp_server_guide.tools.document_tools.SessionManager") as mock_session_class:
+                with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                     mock_session = Mock()
                     # Simplified mock
                     mock_session.docroot = None  # No docroot configured
@@ -102,7 +102,7 @@ class TestDocumentToolsDocroot:
             category_path.mkdir()
 
             # Mock SessionManager to return our test docroot
-            with patch("mcp_server_guide.tools.document_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 # Simplified mock
                 mock_session.docroot = LazyPath(str(docroot_path))
@@ -138,7 +138,7 @@ class TestDocumentToolsDocroot:
             category_path.mkdir()
 
             # Mock SessionManager to return our test docroot
-            with patch("mcp_server_guide.tools.document_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 # Simplified mock
                 mock_session.docroot = LazyPath(str(docroot_path))
@@ -176,7 +176,7 @@ class TestDocumentToolsDocroot:
             category_path.mkdir()
 
             # Mock SessionManager to return our test docroot
-            with patch("mcp_server_guide.tools.document_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 # Simplified mock
                 mock_session.docroot = LazyPath(str(docroot_path))

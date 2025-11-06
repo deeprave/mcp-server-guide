@@ -1,4 +1,14 @@
-"""Operation framework for type-safe JSON instruction handling."""
+"""Simplified operation framework for type-safe JSON instruction handling."""
 
-# Base classes are used internally by operation implementations
-# No need to export them as they're not used by external code
+from .model_base import BaseModelOperations, discover_models
+from .operation_base import BaseOperation
+from .base import execute_json_operation
+from .schema_generator import generate_tool_description
+
+__all__ = [
+    "BaseModelOperations",
+    "BaseOperation",
+    "execute_json_operation",
+    "discover_models",
+    "generate_tool_description",
+]

@@ -13,7 +13,7 @@ class TestGenericCategoryAccess:
     @pytest.mark.asyncio
     async def test_get_any_category_content(self):
         """Should work for ANY category, not just hardcoded ones."""
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_project_name.return_value = "test_project"
             mock_session_class.return_value = mock_session
@@ -51,7 +51,7 @@ class TestGenericCategoryAccess:
     @pytest.mark.asyncio
     async def test_remove_builtin_category_allowed(self):
         """Should allow removing former builtin categories."""
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_project_name.return_value = "test_project"
             mock_session_class.return_value = mock_session
@@ -81,7 +81,7 @@ class TestGenericCategoryAccess:
     @pytest.mark.asyncio
     async def test_add_category_with_builtin_name_allowed(self):
         """Should allow creating categories with former builtin names."""
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_project_name.return_value = "test_project"
             mock_session_class.return_value = mock_session

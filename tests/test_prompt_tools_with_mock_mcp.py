@@ -19,7 +19,7 @@ class TestPromptToolsWithMockMCP:
         mock_mcp._prompt_manager = Mock()
         mock_mcp._prompt_manager.list_prompts.return_value = mock_mcp.prompts
 
-        with patch("mcp_server_guide.server.get_current_server", return_value=mock_mcp):
+        with patch("mcp_server_guide.server.get_current_server_sync", return_value=mock_mcp):
             result = await list_prompts()
             assert result["success"]
             assert len(result["prompts"]) == 1
@@ -31,7 +31,7 @@ class TestPromptToolsWithMockMCP:
         mock_mcp = MockMCP()
         mock_mcp.set_failure(True, "Resource access failed")
 
-        with patch("mcp_server_guide.server.get_current_server", return_value=mock_mcp):
+        with patch("mcp_server_guide.server.get_current_server_sync", return_value=mock_mcp):
             result = await list_resources()
             assert not result["success"]
             assert "error" in result
@@ -51,7 +51,7 @@ class TestPromptToolsWithMockMCP:
             Mock(name="test_resource", description="Test description", uri="test://resource", mime_type="text/plain")
         ]
 
-        with patch("mcp_server_guide.server.get_current_server", return_value=mock_mcp):
+        with patch("mcp_server_guide.server.get_current_server_sync", return_value=mock_mcp):
             result = await list_resources()
             assert result["success"]
             assert len(result["resources"]) == 1
@@ -74,7 +74,7 @@ class TestPromptToolsWithMockMCP:
             Mock(name="async_resource", description="Async description", uri="async://resource", mime_type="text/plain")
         ]
 
-        with patch("mcp_server_guide.server.get_current_server", return_value=mock_mcp):
+        with patch("mcp_server_guide.server.get_current_server_sync", return_value=mock_mcp):
             result = await list_resources()
             assert result["success"]
             assert len(result["resources"]) == 1

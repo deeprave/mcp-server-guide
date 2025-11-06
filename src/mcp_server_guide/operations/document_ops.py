@@ -1,14 +1,15 @@
 """Document-specific operations."""
 
 from typing import Dict, Any, Optional
-from .crud import AddOperation, UpdateOperation, RemoveOperation, ListOperation
+from .operation_base import BaseOperation
 from ..tools.document_tools import create_mcp_document, update_mcp_document, delete_mcp_document, list_mcp_documents
 from ..models.project_config import ProjectConfig
 
 
-class DocumentCreateOperation(AddOperation):
+class DocumentCreateOperation(BaseOperation):
     """Create a new document."""
 
+    name: str
     category_dir: str
     content: str
     mime_type: Optional[str] = None
@@ -24,9 +25,10 @@ class DocumentCreateOperation(AddOperation):
         )
 
 
-class DocumentUpdateOperation(UpdateOperation):
+class DocumentUpdateOperation(BaseOperation):
     """Update an existing document."""
 
+    name: str
     category_dir: str
     content: str
 
@@ -34,16 +36,17 @@ class DocumentUpdateOperation(UpdateOperation):
         return await update_mcp_document(category_dir=self.category_dir, name=self.name, content=self.content)
 
 
-class DocumentDeleteOperation(RemoveOperation):
+class DocumentDeleteOperation(BaseOperation):
     """Delete a document."""
 
+    name: str
     category_dir: str
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await delete_mcp_document(category_dir=self.category_dir, name=self.name)
 
 
-class DocumentListOperation(ListOperation):
+class DocumentListOperation(BaseOperation):
     """List documents."""
 
     category_dir: str

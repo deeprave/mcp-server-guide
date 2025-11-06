@@ -1,9 +1,5 @@
-"""JSON-based content access tools using Pydantic operations."""
+"""JSON-based content management tools using factory pattern."""
 
-from typing import Dict, Any
-from ..operations.base import execute_json_operation
+from .json_tool_factory import create_json_tool
 
-
-async def guide_content(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle content operations via JSON instructions."""
-    return await execute_json_operation("content", data)
+guide_content = create_json_tool("content")

@@ -1,8 +1,7 @@
 """Category-specific operations."""
 
 from typing import List, Dict, Any, Optional
-from .base import BaseOperation
-from .crud import AddOperation, UpdateOperation, RemoveOperation, ListOperation
+from .operation_base import BaseOperation
 from ..models.project_config import ProjectConfig
 from ..tools.category_tools import (
     add_category,
@@ -14,35 +13,43 @@ from ..tools.category_tools import (
 )
 
 
-class CategoryAddOperation(AddOperation):
+class CategoryAddOperation(BaseOperation):
     """Add a new category."""
 
+    name: str
     dir: str
     patterns: List[str]
+    description: Optional[str] = None
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await add_category(name=self.name, dir=self.dir, patterns=self.patterns, description=self.description)
 
 
-class CategoryUpdateOperation(UpdateOperation):
+class CategoryUpdateOperation(BaseOperation):
     """Update an existing category."""
 
+    name: str
     dir: Optional[str] = None
     patterns: Optional[List[str]] = None
+    description: Optional[str] = None
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await update_category(name=self.name, dir=self.dir, patterns=self.patterns, description=self.description)
 
 
-class CategoryRemoveOperation(RemoveOperation):
+class CategoryRemoveOperation(BaseOperation):
     """Remove a category."""
+
+    name: str
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await remove_category(name=self.name)
 
 
-class CategoryListOperation(ListOperation):
+class CategoryListOperation(BaseOperation):
     """List categories."""
+
+    verbose: bool = False
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await list_categories(verbose=self.verbose)

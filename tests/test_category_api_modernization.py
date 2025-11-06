@@ -26,7 +26,7 @@ def event_loop():
 @pytest.fixture
 async def mock_session():
     """Async mock session manager fixture."""
-    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock:
         session_instance = Mock()
         mock.return_value = session_instance
 

@@ -1,7 +1,7 @@
 """Content-specific operations."""
 
 from typing import Dict, Any, Optional
-from .base import BaseOperation
+from .operation_base import BaseOperation
 from ..tools.content_tools import get_content, search_content
 from ..tools.file_tools import get_file_content
 from ..models.project_config import ProjectConfig

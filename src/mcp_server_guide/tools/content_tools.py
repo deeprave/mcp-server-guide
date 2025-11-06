@@ -4,7 +4,6 @@ import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from ..logging_config import get_logger
-from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from .category_tools import get_category_content
 from .collection_tools import get_collection_document
@@ -128,6 +127,8 @@ def _extract_document_from_content(content: str, document: str) -> Optional[str]
 
 async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
     """Search across all categories for content matching query."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
     if project is None:
         project = session.get_project_name()

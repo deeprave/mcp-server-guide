@@ -1,16 +1,18 @@
 """Category management tools for custom document categories."""
 
-from typing import Dict, Any, List, Optional, Set
+from typing import Dict, Any, List, Optional, Set, TYPE_CHECKING
 from pathlib import Path
 import glob
 import re
 import aiofiles
 from ..models.category import Category
-from ..session_manager import SessionManager
 from ..document_cache import CategoryDocumentCache
 from ..logging_config import get_logger
 from ..constants import METADATA_SUFFIX
 from ..utils.document_discovery import get_category_documents_by_path
+
+if TYPE_CHECKING:
+    from ..session_manager import SessionManager
 
 
 logger = get_logger()
@@ -28,7 +30,7 @@ def _validate_category_name(name: str) -> bool:
     return bool(name and CATEGORY_NAME_PATTERN.match(name))
 
 
-async def _auto_save_session(session: SessionManager) -> None:
+async def _auto_save_session(session: "SessionManager") -> None:
     """Auto-save session state with error handling."""
     try:
         await session.save_session()
@@ -165,6 +167,8 @@ async def add_category(
     except ValueError as e:
         return {"success": False, "error": f"Invalid category configuration: {e}"}
 
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Get current config
@@ -202,6 +206,8 @@ async def update_category(
     # Validate category name
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
+    from ..session_manager import SessionManager
 
     session = SessionManager()
 
@@ -267,6 +273,8 @@ async def remove_category(name: str) -> Dict[str, Any]:
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
 
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     # Use current session config directly instead of loading from disk
@@ -302,6 +310,8 @@ async def remove_category(name: str) -> Dict[str, Any]:
 
 async def list_categories(verbose: bool = False) -> Dict[str, Any]:
     """List all categories (built-in and custom)."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     project = session.get_project_name()
@@ -324,6 +334,8 @@ async def add_to_category(name: str, patterns: List[str]) -> Dict[str, Any]:
     """Add patterns to existing category."""
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
+    from ..session_manager import SessionManager
 
     session = SessionManager()
     project = session.get_project_name()
@@ -383,6 +395,8 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
     """Remove patterns from category."""
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
+
+    from ..session_manager import SessionManager
 
     session = SessionManager()
     project = session.get_project_name()
@@ -450,6 +464,8 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
 
 async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
     """Get content from a category using glob patterns or HTTP URL."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
     if project is None:
         project = session.get_project_name()

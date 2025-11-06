@@ -187,7 +187,7 @@ class TestDocumentCacheIntegration:
         # Update category (this should invalidate cache)
 
         # Mock the session manager to use our instance and ensure get_or_create_project_config returns our config
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session_class.return_value = session_manager
 
             # Mock the get_or_create_project_config method to return our config

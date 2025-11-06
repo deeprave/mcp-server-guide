@@ -1,11 +1,12 @@
 """Configuration access tools."""
 
 from typing import Dict, Any, Optional
-from ..session_manager import SessionManager
 
 
 async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
     if project is None:
         project = session.get_project_name()
@@ -23,6 +24,8 @@ async def set_project_config_values(config_dict: Dict[str, Any]) -> Dict[str, An
     Returns:
         Dictionary with success status and updated configuration
     """
+    from ..session_manager import SessionManager
+
     session = SessionManager()
     project = session.get_project_name()
 
@@ -61,6 +64,8 @@ async def set_project_config(config_key: str, value: Any) -> Dict[str, Any]:
     """Update project settings."""
 
     # Note: Key and value validation will be handled by Pydantic models in future phases
+
+    from ..session_manager import SessionManager
 
     session = SessionManager()
     project = session.get_project_name()

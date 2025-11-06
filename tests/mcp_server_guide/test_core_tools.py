@@ -12,7 +12,7 @@ async def test_get_current_project():
 
 async def test_get_current_project_none():
     """Test get_current_project returns None when no project is set."""
-    with patch("mcp_server_guide.tools.project_tools.SessionManager") as mock_session_class:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session.get_project_name = Mock(return_value=None)  # NOT async
         mock_session_class.return_value = mock_session

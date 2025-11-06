@@ -25,17 +25,29 @@ root/
 - **f-strings:** `f"Error: {e}"` vs `"Error: {}".format(e)`
 - **Use `mypy`** for type checking
 - **pre-commit hooks** ensure all commits are checked
+- **Use PEP 8 conventions** _imports at the top of modules_ unless required to avoid circular dependencies
+- Avoid large `if`/`elif`/`else` blocks with more than 1 `elif`.
+  se `match` instead, a dictionary or some form  of functional approach.
 
 ## Code Complexity
 - **Early returns** with guard clauses
-- **List/dict comprehensions** over loops when readable
+- **List/dict comprehensions** over loops when this produces readable code
 - **Chain operations** - avoid intermediate variables
+  - return a function result directly if last statement in a function or method
+  - use the walrus operator if the only reason for the variable is for an `if` or `while` statement or expression
 
 ## Type Hints
-- **Use modern typing:** `list[str]` over `List[str]` (Python 3.9+)
+- **Use modern typing:** `List[str]`, avoid use if `Any` if possible
 - **Function signatures:** Always type parameters and returns
 - **Use `typing.Protocol`** for structural typing
 - **`Optional[T]` or `T | None`** for nullable types
+
+## Code Quality checks
+- **For Oython, use the following code quality tools**
+  - linting → ruff check
+  - type checking → mypy
+  - testing → pytest
+  - security → osvcheck (if available)
 
 ## Iterator Patterns
 **Prefer comprehensions and generators:**
@@ -50,13 +62,17 @@ for item in items:
         results.append(item.process())
 ```
 
+## Imports
+- **Use imports at module level** - follow PEP 8 standards
+- Only use function/class level imports to avoid circular imports & similar
+
 ## Error Handling
-- **Use specific exceptions** - avoid bare `except:`
+- **Use specific exceptions** - DO NOT USE bare `except:` or `except Exception:`
 - **Context managers** for resource management
-- **`raise ... from e`** to preserve exception chains
+- **`raise ... from e`** - preserve exception chains
 - **Custom exceptions** for domain-specific errors
 
-## Pattern Matching (Python 3.10+)
+## Pattern Matching (Python 3.11+)
 - **Use `match/case`** for complex conditionals
 - **Structural pattern matching** for data extraction
 - **Guard clauses** with `if` conditions in patterns

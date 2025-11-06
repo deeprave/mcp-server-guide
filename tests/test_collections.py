@@ -19,7 +19,7 @@ from mcp_server_guide.models.category import Category
 @pytest.fixture
 def mock_session():
     """Mock session manager."""
-    with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock:
         session_instance = Mock()  # Use regular Mock instead of AsyncMock
         mock.return_value = session_instance
 
@@ -281,7 +281,7 @@ async def test_list_collections_verbose(mock_session):
 async def test_get_collection_content():
     """Test getting collection content."""
     with (
-        patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_session,
+        patch("mcp_server_guide.session_manager.SessionManager") as mock_session,
         patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
     ):
         # Setup mocks

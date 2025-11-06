@@ -1,9 +1,5 @@
-"""JSON-based config management tools using Pydantic operations."""
+"""JSON-based config management tools using factory pattern."""
 
-from typing import Dict, Any
-from ..operations.base import execute_json_operation
+from .json_tool_factory import create_json_tool
 
-
-async def guide_config(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle config operations via JSON instructions."""
-    return await execute_json_operation("config", data)
+guide_config = create_json_tool("config")

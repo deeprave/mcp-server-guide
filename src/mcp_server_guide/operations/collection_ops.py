@@ -1,8 +1,7 @@
 """Collection-specific operations."""
 
-from typing import List, Dict, Any
-from .crud import AddOperation, UpdateOperation, RemoveOperation, ListOperation
-from .base import BaseOperation
+from typing import List, Dict, Any, Optional
+from .operation_base import BaseOperation
 from ..models.project_config import ProjectConfig
 from ..tools.collection_tools import (
     add_collection,
@@ -15,31 +14,40 @@ from ..tools.collection_tools import (
 )
 
 
-class CollectionAddOperation(AddOperation):
+class CollectionAddOperation(BaseOperation):
     """Add a new collection."""
 
+    name: str
     categories: List[str]
+    description: Optional[str] = None
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await add_collection(name=self.name, categories=self.categories, description=self.description)
 
 
-class CollectionUpdateOperation(UpdateOperation):
+class CollectionUpdateOperation(BaseOperation):
     """Update an existing collection."""
+
+    name: str
+    description: Optional[str] = None
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await update_collection(name=self.name, description=self.description)
 
 
-class CollectionRemoveOperation(RemoveOperation):
+class CollectionRemoveOperation(BaseOperation):
     """Remove a collection."""
+
+    name: str
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await remove_collection(name=self.name)
 
 
-class CollectionListOperation(ListOperation):
+class CollectionListOperation(BaseOperation):
     """List collections."""
+
+    verbose: bool = False
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await list_collections(verbose=self.verbose)

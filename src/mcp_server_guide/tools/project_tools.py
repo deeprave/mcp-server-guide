@@ -1,11 +1,12 @@
 """Project management tools."""
 
 from typing import Dict, Any, Optional
-from ..session_manager import SessionManager
 
 
 async def get_current_project() -> Optional[str]:
     """Get the active project name."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
     return session.get_project_name()
 
@@ -18,6 +19,8 @@ async def switch_project(name: str) -> Dict[str, Any]:
     b. Load the config from file for the new project
     c. If config doesn't exist, initialize with default categories and save
     """
+    from ..session_manager import SessionManager
+
     session = SessionManager()
 
     try:

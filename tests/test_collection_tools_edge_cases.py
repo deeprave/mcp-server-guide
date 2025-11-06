@@ -26,7 +26,7 @@ class TestCollectionToolsEdgeCases:
             collections={"existing": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -41,7 +41,7 @@ class TestCollectionToolsEdgeCases:
         """Test add_collection with non-existent category."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -56,7 +56,7 @@ class TestCollectionToolsEdgeCases:
         """Test add_collection success path with description."""
         config = ProjectConfig(categories={"cat1": Category(dir="/test", patterns=["*.py"])}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -77,7 +77,7 @@ class TestCollectionToolsEdgeCases:
         """Test add_collection success path without description."""
         config = ProjectConfig(categories={"cat1": Category(dir="/test", patterns=["*.py"])}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -97,7 +97,7 @@ class TestCollectionToolsEdgeCases:
         config = ProjectConfig(categories={"cat1": Category(dir="/test", patterns=["*.py"])}, collections={})
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.Collection") as mock_collection,
         ):
             mock_session = Mock()
@@ -118,7 +118,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -140,7 +140,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -167,7 +167,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1", "cat2", "cat3"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -192,7 +192,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -213,7 +213,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1", "Cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -234,7 +234,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -252,7 +252,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -273,7 +273,7 @@ class TestCollectionToolsEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -292,7 +292,7 @@ class TestCollectionToolsEdgeCases:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
         ):
             mock_session = Mock()
@@ -314,7 +314,7 @@ class TestCollectionToolsEdgeCases:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
         ):
             mock_session = Mock()
@@ -336,7 +336,7 @@ class TestCollectionToolsEdgeCases:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
         ):
             mock_session = Mock()
@@ -358,7 +358,7 @@ class TestCollectionToolsEdgeCases:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
         ):
             mock_session = Mock()
@@ -376,7 +376,7 @@ class TestCollectionToolsEdgeCases:
         """Test list_collections with no collections."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -397,7 +397,7 @@ class TestCollectionToolsEdgeCases:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
         ):
             mock_session = Mock()
@@ -423,7 +423,7 @@ class TestCollectionToolsEdgeCases:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
             patch("mcp_server_guide.tools.collection_tools.logger") as mock_logger,
         ):

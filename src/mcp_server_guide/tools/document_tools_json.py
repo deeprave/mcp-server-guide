@@ -1,9 +1,5 @@
-"""JSON-based document management tools using Pydantic operations."""
+"""JSON-based document management tools using factory pattern."""
 
-from typing import Dict, Any
-from ..operations.base import execute_json_operation
+from .json_tool_factory import create_json_tool
 
-
-async def guide_documents(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle document operations via JSON instructions."""
-    return await execute_json_operation("document", data)
+guide_documents = create_json_tool("document")

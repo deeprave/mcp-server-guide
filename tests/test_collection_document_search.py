@@ -24,7 +24,7 @@ class TestCollectionDocumentSearch:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -46,7 +46,7 @@ class TestCollectionDocumentSearch:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -68,7 +68,7 @@ class TestCollectionDocumentSearch:
             collections={"test": Collection(categories=["cat1", "cat2"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -88,7 +88,7 @@ class TestCollectionDocumentSearch:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
             patch("mcp_server_guide.tools.content_tools._extract_document_from_content") as mock_extract,
         ):
@@ -118,7 +118,7 @@ class TestCollectionDocumentSearch:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
         ):
             mock_session = Mock()
@@ -140,7 +140,7 @@ class TestCollectionDocumentSearch:
         """Test get_collection_document with non-existent collection."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -159,7 +159,7 @@ class TestCollectionDocumentSearch:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
             patch("mcp_server_guide.tools.collection_tools.logger") as mock_logger,
         ):
@@ -184,7 +184,7 @@ class TestCollectionDocumentSearch:
         )
 
         with (
-            patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm,
+            patch("mcp_server_guide.session_manager.SessionManager") as mock_sm,
             patch("mcp_server_guide.tools.collection_tools.get_category_content") as mock_get_cat,
             patch("mcp_server_guide.tools.content_tools._extract_document_from_content") as mock_extract,
         ):

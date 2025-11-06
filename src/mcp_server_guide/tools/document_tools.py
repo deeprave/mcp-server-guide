@@ -8,21 +8,69 @@ from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_met
 from ..utils.document_helpers import get_metadata_path
 from ..logging_config import get_logger
 from ..utils.document_utils import generate_content_hash, detect_mime_type
-from ..session_manager import SessionManager
+from ..file_lock import lock_update
+from ..queue.category_queue import add_category
+from ..utils.error_handler import handle_operation_error
 
 logger = get_logger()
 
 
+def _write_document_content(doc_path: Path, content: str) -> None:
+    """Write document content to file (used with lock_update)."""
+    doc_path.write_text(content, encoding="utf-8")
+
+
+WINDOWS_RESERVED = {
+    'con', 'prn', 'aux', 'nul',
+    'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
+    'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9'
+}
+
 def _validate_document_name(name: str) -> bool:
-    """Validate document name for security and filesystem compatibility."""
+    """Validate document name for security and filesystem compatibility.
+
+    Checks performed:
+    - Length: Max 255 chars (NTFS/ext4 limit)
+    - Path traversal: Rejects '/', '\\', '..' to prevent escaping __docs__/
+    - Hidden files: Rejects names starting with '.' (Unix convention)
+    - Reserved names: Rejects Windows reserved device names with/without extensions
+    - Unicode normalization: Prevents combining character attacks
+    - Control characters: Rejects ASCII control characters
+
+    Args:
+        name: Document filename to validate
+
+    Returns:
+        True if name is valid, False otherwise
+    """
     if not name or len(name) > 255:
         return False
-    # Prevent path traversal
-    if "/" in name or "\\" in name or name == "..":
+
+    # Normalize unicode to prevent combining character attacks
+    try:
+        normalized = name.encode('utf-8').decode('utf-8')
+        if normalized != name:
+            return False
+    except UnicodeError:
         return False
-    # Prevent hidden files and reserved names
-    if name.startswith(".") or name.lower() in ("con", "prn", "aux", "nul"):
+
+    # Prevent path traversal variants
+    if "/" in name or "\\" in name or name == ".." or name == ".":
         return False
+
+    # Prevent hidden files
+    if name.startswith("."):
+        return False
+
+    # Check base name without extension against reserved names
+    base_name = name.split('.')[0].lower()
+    if base_name in WINDOWS_RESERVED:
+        return False
+
+    # Prevent control characters
+    if any(ord(c) < 32 for c in name):
+        return False
+
     return True
 
 
@@ -38,6 +86,8 @@ def _generate_document_uri(category_dir: str, name: str) -> str:
 
 def _get_docs_dir(category_dir: str) -> Path:
     """Get the documents directory for a category."""
+    from ..session_manager import SessionManager
+
     session = SessionManager()
     docroot = session.docroot
     base_path = docroot.resolve_sync() if docroot else Path(".")
@@ -68,9 +118,9 @@ async def create_mcp_document(
         docs_dir = _get_docs_dir(category_dir)
         docs_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create document file
+        # Create document file with locking
         doc_path = docs_dir / name
-        doc_path.write_text(content, encoding="utf-8")
+        lock_update(doc_path, _write_document_content, content)
 
         # Generate metadata
         if mime_type is None:
@@ -94,15 +144,8 @@ async def create_mcp_document(
             "metadata": metadata.model_dump(),
         }
 
-    except FileNotFoundError as e:
-        return {"success": False, "error": f"Directory not found: {str(e)}", "error_type": "not_found"}
-    except PermissionError as e:
-        return {"success": False, "error": f"Permission denied: {str(e)}", "error_type": "permission"}
-    except OSError as e:
-        return {"success": False, "error": f"File system error: {str(e)}", "error_type": "filesystem"}
     except Exception as e:
-        logger.exception("Unexpected error in create_mcp_document")
-        return {"success": False, "error": f"Unexpected error: {str(e)}", "error_type": "unexpected"}
+        return handle_operation_error("create_mcp_document", e, {"category_dir": category_dir, "name": name})
 
 
 async def update_mcp_document(category_dir: str, name: str, content: str) -> Dict[str, Any]:
@@ -123,6 +166,10 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
         if not doc_path.exists():
             return {"success": False, "error": f"Document '{name}' does not exist", "error_type": "not_found"}
 
+        # Prevent symlink/hardlink attacks on update
+        if doc_path.is_symlink() or doc_path.stat().st_nlink > 1:
+            return {"success": False, "error": "Cannot update symlink or hardlink", "error_type": "security"}
+
         # Read existing metadata to preserve settings
         existing_metadata = read_sidecar_metadata(doc_path)
         if existing_metadata is None:
@@ -131,8 +178,8 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
                 source_type="manual", content_hash="", mime_type=detect_mime_type(name)
             )
 
-        # Update document content
-        doc_path.write_text(content, encoding="utf-8")
+        # Update document content with locking
+        lock_update(doc_path, _write_document_content, content)
 
         # Update metadata with new content hash
         new_content_hash = generate_content_hash(content)
@@ -156,15 +203,8 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
             "metadata": updated_metadata.model_dump(),
         }
 
-    except FileNotFoundError as e:
-        return {"success": False, "error": f"Document or directory not found: {str(e)}", "error_type": "not_found"}
-    except PermissionError as e:
-        return {"success": False, "error": f"Permission denied: {str(e)}", "error_type": "permission"}
-    except OSError as e:
-        return {"success": False, "error": f"File system error: {str(e)}", "error_type": "filesystem"}
     except Exception as e:
-        logger.exception("Unexpected error in update_mcp_document")
-        return {"success": False, "error": f"Unexpected error: {str(e)}", "error_type": "unexpected"}
+        return handle_operation_error("update_mcp_document", e, {"category_dir": category_dir, "name": name})
 
 
 async def delete_mcp_document(category_dir: str, name: str) -> Dict[str, Any]:
@@ -192,15 +232,8 @@ async def delete_mcp_document(category_dir: str, name: str) -> Dict[str, Any]:
 
         return {"success": True, "message": f"Document '{name}' deleted successfully"}
 
-    except FileNotFoundError as e:
-        return {"success": False, "error": f"Document not found: {str(e)}", "error_type": "not_found"}
-    except PermissionError as e:
-        return {"success": False, "error": f"Permission denied: {str(e)}", "error_type": "permission"}
-    except OSError as e:
-        return {"success": False, "error": f"File system error: {str(e)}", "error_type": "filesystem"}
     except Exception as e:
-        logger.exception("Unexpected error in delete_mcp_document")
-        return {"success": False, "error": f"Unexpected error: {str(e)}", "error_type": "unexpected"}
+        return handle_operation_error("delete_mcp_document", e, {"category_dir": category_dir, "name": name})
 
 
 async def list_mcp_documents(
@@ -211,8 +244,6 @@ async def list_mcp_documents(
     """List server documents from category/__docs__/ with filtering."""
     try:
         # Trigger async cleanup for this category
-        from ..queue.category_queue import add_category
-
         add_category(category_dir)
 
         # Get documents directory
@@ -232,11 +263,17 @@ async def list_mcp_documents(
                 stored_metadata_obj = read_sidecar_metadata(doc_path)
                 stored_metadata = stored_metadata_obj.model_dump() if stored_metadata_obj else {}
 
+                # Use birth time if available (macOS/BSD), fall back to ctime
+                try:
+                    created_at = stat.st_birthtime  # macOS/BSD
+                except AttributeError:
+                    created_at = stat.st_ctime  # Linux/other Unix (inode change time)
+
                 doc_info = {
                     "name": doc_path.name,
                     "path": str(doc_path),
                     "size": stat.st_size,
-                    "created_at": stat.st_ctime,  # Note: On Unix, this is inode change time, not creation time
+                    "created_at": created_at,
                     "updated_at": stat.st_mtime,
                     "source_type": stored_metadata.get("source_type", "unknown"),
                     "mime_type": stored_metadata.get("mime_type", detect_mime_type(doc_path.name)),
@@ -254,9 +291,4 @@ async def list_mcp_documents(
         return {"success": True, "documents": documents}
 
     except Exception as e:
-        logger.exception(f"Error listing documents in '{category_dir}': {e}")
-        return {
-            "success": False,
-            "error": f"Error listing documents: {e}",
-            "error_type": "unexpected",
-        }
+        return handle_operation_error("list_mcp_documents", e, {"category_dir": category_dir})

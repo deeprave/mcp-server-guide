@@ -14,7 +14,7 @@ class TestCollectionValidationEdgeCases:
     @pytest.mark.asyncio
     async def test_add_collection_empty_name(self):
         """Test add_collection with empty name."""
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
 
@@ -25,7 +25,7 @@ class TestCollectionValidationEdgeCases:
     @pytest.mark.asyncio
     async def test_add_collection_whitespace_name(self):
         """Test add_collection with whitespace-only name."""
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
 
@@ -38,7 +38,7 @@ class TestCollectionValidationEdgeCases:
         """Test add_collection with name too long."""
         long_name = "a" * 31  # Over 30 character limit
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
 
@@ -51,7 +51,7 @@ class TestCollectionValidationEdgeCases:
         """Test add_collection with no categories."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -70,7 +70,7 @@ class TestCollectionValidationEdgeCases:
         """Test add_collection with empty/None category values."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -89,7 +89,7 @@ class TestCollectionValidationEdgeCases:
         """Test add_collection with duplicate categories (case-insensitive)."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -108,7 +108,7 @@ class TestCollectionValidationEdgeCases:
         """Test remove_collection with nonexistent collection."""
         config = ProjectConfig(categories={}, collections={})
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
@@ -130,7 +130,7 @@ class TestCollectionValidationEdgeCases:
             collections={"test": Collection(categories=["cat1"])},
         )
 
-        with patch("mcp_server_guide.tools.collection_tools.SessionManager") as mock_sm:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm:
             mock_session = Mock()
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"

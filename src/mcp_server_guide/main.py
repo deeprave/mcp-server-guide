@@ -208,7 +208,7 @@ def validate_mode(mode: str) -> tuple[str, str]:
 
 def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
-    from .server import get_current_server, set_current_config
+    from .server import get_current_server_sync, set_current_config
 
     logger.debug("Starting MCP server configuration")
     logger.debug(f"Mode: {mode}")
@@ -221,7 +221,7 @@ def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
         logger.info("Starting MCP server in stdio mode")
         # Start MCP server in stdio mode
         try:
-            server = get_current_server()
+            server = get_current_server_sync()
             if server is not None:
                 server.run()
                 logger.info("MCP server shutdown normally (exit code 0)")

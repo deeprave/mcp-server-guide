@@ -10,7 +10,7 @@ from mcp_server_guide.session_manager import SessionManager
 @pytest.fixture
 def mock_session_with_save():
     """Mock session manager with save functionality."""
-    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock:
         from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
 
@@ -113,7 +113,7 @@ async def test_auto_save_default(mock_session_with_save):
 # Additional test to verify auto-save error handling
 async def test_auto_save_errors():
     """Test that category operations succeed even if auto-save fails."""
-    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock:
         from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
 

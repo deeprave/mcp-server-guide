@@ -8,7 +8,7 @@ from mcp_server_guide.tools.category_tools import update_category, remove_catego
 @pytest.fixture
 def mock_session():
     """Mock session manager for testing."""
-    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
         mock_session = Mock()
         mock_session_class.return_value = mock_session
 

@@ -12,7 +12,7 @@ from mcp_server_guide.tools.category_tools import (
 @pytest.fixture
 def mock_session():
     """Mock session manager."""
-    with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock:
         from mcp_server_guide.project_config import ProjectConfig
 
         session_instance = Mock()

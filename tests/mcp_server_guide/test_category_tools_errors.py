@@ -64,7 +64,7 @@ class TestAddCategoryErrors:
         category_config = {"dir": "test", "patterns": ["*.md"], "description": "Test category"}
 
         # Mock SessionManager and session_state properly
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_current_project_safe = Mock(return_value="test_project")
             mock_session.get_project_name = Mock(return_value="test_project")
@@ -103,7 +103,7 @@ class TestGetCategoryContentErrors:
         from mcp_server_guide.models.category import Category
 
         # Mock SessionManager properly
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_current_project_safe = Mock(return_value="test_project")
             mock_session.get_project_name = Mock(return_value="test_project")
@@ -129,7 +129,7 @@ class TestGetCategoryContentErrors:
         from mcp_server_guide.models.category import Category
 
         # Mock SessionManager properly
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
             mock_session = Mock()
             mock_session.get_current_project_safe = Mock(return_value="test_project")
             mock_session.get_project_name = Mock(return_value="test_project")
@@ -157,7 +157,7 @@ class TestGetCategoryContentErrors:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Mock SessionManager properly
-            with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = Mock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
@@ -197,7 +197,7 @@ class TestGetCategoryContentErrors:
             test_file.write_text("test content")
 
             # Mock SessionManager properly
-            with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = Mock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
@@ -245,7 +245,7 @@ class TestGetCategoryContentErrors:
             file2 = search_dir / "file2.md"
             file2.write_text("content2")
 
-            with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = Mock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
@@ -290,7 +290,7 @@ class TestGetCategoryContentErrors:
             search_dir.mkdir()
 
             # Mock SessionManager properly
-            with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session_class:
+            with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_current_project_safe = Mock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")

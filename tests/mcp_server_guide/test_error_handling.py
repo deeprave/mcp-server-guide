@@ -36,7 +36,7 @@ async def test_session_manager_write_error():
 
 async def test_set_project_config_values_exception():
     """Test exception handling in set_project_config_values."""
-    with patch("mcp_server_guide.tools.config_tools.SessionManager") as mock_session:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_session:
         with patch("mcp_server_guide.tools.config_tools.get_project_config") as mock_get_config:
             # Mock session to raise exception during auto-save
             mock_instance = MagicMock()
@@ -58,7 +58,7 @@ async def test_set_project_config_values_exception():
 
 async def test_set_project_config_exception():
     """Test exception handling in set_project_config."""
-    with patch("mcp_server_guide.tools.config_tools.SessionManager") as mock_session:
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_session:
         # Mock session to raise exception during auto-save
         mock_instance = MagicMock()
         mock_session.return_value = mock_instance

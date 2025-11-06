@@ -73,7 +73,7 @@ async def test_category_content_directory_not_exists():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Set up session with non-existent directory
-        with patch("mcp_server_guide.tools.category_tools.SessionManager") as mock_session:
+        with patch("mcp_server_guide.session_manager.SessionManager") as mock_session:
             mock_session.return_value.get_project_name = Mock(return_value="test-project")
             config_data = ProjectConfig(
                 categories={"test": Category(dir="nonexistent/", patterns=["*.md"], description="Test category")}

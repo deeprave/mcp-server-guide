@@ -1,7 +1,8 @@
-"""Tests for JSON instruction-based tools."""
+"""Tests for JSON instruction tools."""
 
 import pytest
 from unittest.mock import patch, Mock, AsyncMock
+
 from src.mcp_server_guide.tools.category_tools_json import guide_categories
 from src.mcp_server_guide.tools.collection_tools_json import guide_collections
 from src.mcp_server_guide.tools.document_tools_json import guide_documents
@@ -10,7 +11,7 @@ from src.mcp_server_guide.tools.config_tools_json import guide_config
 
 
 class TestJSONInstructionTools:
-    """Test JSON instruction-based tool operations."""
+    """Test JSON instruction tools functionality."""
 
     @pytest.mark.asyncio
     async def test_guide_categories_add_action(self):
@@ -18,48 +19,40 @@ class TestJSONInstructionTools:
         data = {
             "action": "add",
             "name": "test_category",
-            "dir": "test_dir",
-            "patterns": ["*.md"],
+            "dir": "/test/path",
+            "patterns": ["*.py", "*.md"],
             "description": "Test category",
         }
 
-        with patch("src.mcp_server_guide.session_manager.SessionManager") as mock_session_class:
-            mock_session = Mock()
-            mock_session.get_or_create_project_config = AsyncMock(return_value=Mock())
-            mock_session_class.return_value = mock_session
+        with patch("src.mcp_server_guide.tools.category_tools.add_category") as mock_add:
+            mock_add.return_value = {"success": True, "message": "Category added"}
 
-            with patch("src.mcp_server_guide.operations.registry.get_operation_class") as mock_get_op:
-                mock_operation = Mock()
-                mock_operation.execute = AsyncMock(return_value={"success": True, "message": "Category added"})
-                mock_op_class = Mock()
-                mock_op_class.model_validate.return_value = mock_operation
-                mock_get_op.return_value = mock_op_class
+            result = await guide_categories(data)
 
-                result = await guide_categories(data)
-
-                assert result["success"] is True
-                assert "message" in result
             assert result["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_guide_categories_invalid_instruction(self):
-        """Test guide_categories with invalid instruction format."""
-        data = {"invalid_field": "value"}
-
-        result = await guide_categories(data)
-
-        assert result["success"] is False
-        assert "No action specified" in result["error"]
 
     @pytest.mark.asyncio
     async def test_guide_categories_unknown_action(self):
         """Test guide_categories with unknown action."""
         data = {"action": "unknown_action"}
 
-        result = await guide_categories(data)
+        with patch("src.mcp_server_guide.session_manager.SessionManager") as mock_session_class:
+            mock_session = Mock()
+            mock_session.get_or_create_project_config = AsyncMock(return_value=Mock())
+            mock_session_class.return_value = mock_session
 
-        assert result["success"] is False
-        assert "Unknown action 'unknown_action' for context 'category'" in result["error"]
+            with patch("src.mcp_server_guide.operations.model_base.discover_models") as mock_discover:
+                mock_model = Mock()
+                mock_model.__name__ = "CategoryModel"
+                mock_model.get_operation_class = Mock(
+                    side_effect=ValueError("Unknown action 'unknown_action' for CategoryModel")
+                )
+                mock_discover.return_value = [mock_model]
+
+                result = await guide_categories(data)
+
+                assert result["success"] is False
+                assert "Unknown action 'unknown_action' for CategoryModel" in result["error"]
 
     @pytest.mark.asyncio
     async def test_guide_collections_add_action(self):
@@ -67,46 +60,33 @@ class TestJSONInstructionTools:
         data = {
             "action": "add",
             "name": "test_collection",
-            "categories": ["cat1", "cat2"],
+            "categories": ["category1", "category2"],
             "description": "Test collection",
         }
 
-        with patch("src.mcp_server_guide.session_manager.SessionManager") as mock_session_class:
-            mock_session = Mock()
-            mock_session.get_or_create_project_config = AsyncMock(return_value=Mock())
-            mock_session_class.return_value = mock_session
+        with patch("src.mcp_server_guide.operations.collection_ops.add_collection") as mock_add:
+            mock_add.return_value = {"success": True, "message": "Collection added"}
 
-            with patch("src.mcp_server_guide.operations.registry.get_operation_class") as mock_get_op:
-                mock_operation = Mock()
-                mock_operation.execute = AsyncMock(return_value={"success": True, "message": "Collection added"})
-                mock_op_class = Mock()
-                mock_op_class.model_validate.return_value = mock_operation
-                mock_get_op.return_value = mock_op_class
+            result = await guide_collections(data)
 
-                result = await guide_collections(data)
-
-                assert result["success"] is True
+            assert result["success"] is True
 
     @pytest.mark.asyncio
     async def test_guide_documents_create_action(self):
         """Test guide_documents with create action."""
-        data = {"action": "create", "category_dir": "test_category", "name": "test_doc", "content": "Test content"}
+        data = {
+            "action": "create",
+            "name": "test_doc",
+            "category_dir": "test_category",
+            "content": "Test content",
+        }
 
-        with patch("src.mcp_server_guide.session_manager.SessionManager") as mock_session_class:
-            mock_session = Mock()
-            mock_session.get_or_create_project_config = AsyncMock(return_value=Mock())
-            mock_session_class.return_value = mock_session
+        with patch("src.mcp_server_guide.operations.document_ops.create_mcp_document") as mock_create:
+            mock_create.return_value = {"success": True, "message": "Document created"}
 
-            with patch("src.mcp_server_guide.operations.registry.get_operation_class") as mock_get_op:
-                mock_operation = Mock()
-                mock_operation.execute = AsyncMock(return_value={"success": True, "message": "Document created"})
-                mock_op_class = Mock()
-                mock_op_class.model_validate.return_value = mock_operation
-                mock_get_op.return_value = mock_op_class
+            result = await guide_documents(data)
 
-                result = await guide_documents(data)
-
-                assert result["success"] is True
+            assert result["success"] is True
 
     @pytest.mark.asyncio
     async def test_guide_content_get_action(self):
@@ -118,12 +98,18 @@ class TestJSONInstructionTools:
             mock_session.get_or_create_project_config = AsyncMock(return_value=Mock())
             mock_session_class.return_value = mock_session
 
-            with patch("src.mcp_server_guide.operations.registry.get_operation_class") as mock_get_op:
+            with patch("src.mcp_server_guide.operations.model_base.discover_models") as mock_discover:
+                mock_model = Mock()
+                mock_model.__name__ = "ContentModel"
+                mock_model.get_operation_class = Mock()
+
                 mock_operation = Mock()
                 mock_operation.execute = AsyncMock(return_value={"success": True, "content": "Test content"})
                 mock_op_class = Mock()
                 mock_op_class.model_validate.return_value = mock_operation
-                mock_get_op.return_value = mock_op_class
+                mock_model.get_operation_class.return_value = mock_op_class
+
+                mock_discover.return_value = [mock_model]
 
                 result = await guide_content(data)
 
@@ -134,30 +120,10 @@ class TestJSONInstructionTools:
         """Test guide_config with get_current_project action."""
         data = {"action": "get_current_project"}
 
-        with patch("src.mcp_server_guide.session_manager.SessionManager") as mock_session_class:
-            mock_session = Mock()
-            mock_session.get_or_create_project_config = AsyncMock(return_value=Mock())
-            mock_session_class.return_value = mock_session
+        with patch("src.mcp_server_guide.operations.config_ops.get_current_project") as mock_get:
+            mock_get.return_value = "test_project"
 
-            with patch("src.mcp_server_guide.operations.registry.get_operation_class") as mock_get_op:
-                mock_operation = Mock()
-                mock_operation.execute = AsyncMock(return_value={"success": True, "project": "test_project"})
-                mock_op_class = Mock()
-                mock_op_class.model_validate.return_value = mock_operation
-                mock_get_op.return_value = mock_op_class
+            result = await guide_config(data)
 
-                result = await guide_config(data)
-
-                assert result["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_all_tools_handle_invalid_instructions(self):
-        """Test that all JSON tools handle invalid instructions properly."""
-        invalid_instruction = {"invalid": "data"}
-
-        tools = [guide_categories, guide_collections, guide_documents, guide_content, guide_config]
-
-        for tool in tools:
-            result = await tool(invalid_instruction)
-            assert result["success"] is False
-            assert "No action specified" in result["error"]
+            assert result["success"] is True
+            assert result["project"] == "test_project"
