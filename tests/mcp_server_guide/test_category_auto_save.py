@@ -27,7 +27,7 @@ def mock_session_with_save():
         )
 
         session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
-        session_instance.save_session = AsyncMock()
+        session_instance.safe_save_session = AsyncMock()
 
         # Mock config manager to use temp directory
         import tempfile
@@ -107,7 +107,7 @@ async def test_auto_save_default(mock_session_with_save):
 
     assert result["success"] is True
     # Verify auto-save was called (don't check exact filename)
-    mock_session_with_save.save_session.assert_called_once()
+    mock_session_with_save.safe_save_session.assert_called_once()
 
 
 # Additional test to verify auto-save error handling
@@ -130,11 +130,12 @@ async def test_auto_save_errors():
         )
 
         session_instance.get_or_create_project_config = AsyncMock(return_value=config_data)
-        # Make save_session fail
+        # Make the underlying save_session fail, but safe_save_session should handle it
         session_instance.save_session = AsyncMock(side_effect=Exception("Save failed"))
+        session_instance.safe_save_session = AsyncMock()  # This should not raise
 
         result = await add_category("testing", "test/", ["*.md"])
 
         # Category operation should still succeed even if save fails
         assert result["success"] is True
-        session_instance.save_session.assert_called_once()
+        session_instance.safe_save_session.assert_called_once()

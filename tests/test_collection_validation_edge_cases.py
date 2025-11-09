@@ -143,7 +143,7 @@ class TestCollectionValidationEdgeCases:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
 
             result = await remove_collection("test")
             assert result["success"]

@@ -21,7 +21,7 @@ async def get_content(category_or_collection: str, document: str, project: Optio
 
     # Try category first
     try:
-        result = await get_category_content(category_or_collection, project)
+        result = await get_category_content(category_or_collection)
         if result.get("success") and result.get("content"):
             content = str(result["content"])
             matched_files = result.get("matched_files", [])
@@ -144,7 +144,7 @@ async def search_content(query: str, project: Optional[str] = None) -> List[Dict
 
     results = []
     for category in categories:
-        result = await get_category_content(category, project)
+        result = await get_category_content(category)
         if result.get("success") and result.get("content"):
             content = result["content"]
             if query.lower() in content.lower():

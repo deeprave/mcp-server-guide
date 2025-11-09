@@ -23,6 +23,7 @@ class CategoryModel(BaseModelOperations):
                 CategoryListOperation,
                 AddToCategoryOperation,
                 RemoveFromCategoryOperation,
+                CategoryGetContentOperation,
             )
 
             cls.operations = {
@@ -32,6 +33,7 @@ class CategoryModel(BaseModelOperations):
                 "list": CategoryListOperation,
                 "add_to": AddToCategoryOperation,
                 "remove_from": RemoveFromCategoryOperation,
+                "get_content": CategoryGetContentOperation,
             }
         return MappingProxyType(cls.operations)
 

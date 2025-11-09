@@ -12,7 +12,7 @@ from ..constants import METADATA_SUFFIX
 from ..utils.document_discovery import get_category_documents_by_path
 
 if TYPE_CHECKING:
-    from ..session_manager import SessionManager
+    pass
 
 
 logger = get_logger()
@@ -29,16 +29,6 @@ def _validate_category_name(name: str) -> bool:
     """Validate category name against allowed pattern."""
     # Category names must not start with '-' to avoid confusion with commands
     return bool(name and not name.startswith("-") and CATEGORY_NAME_PATTERN.match(name))
-
-
-async def _auto_save_session(session: "SessionManager") -> None:
-    """Auto-save session state with error handling."""
-    try:
-        await session.save_session()
-        logger.debug("Auto-saved session")
-    except Exception as e:
-        logger.warning(f"Auto-save failed: {e}")
-        # Don't raise - category operations should succeed even if save fails
 
 
 def _safe_glob_search(search_dir: Path, patterns: List[str]) -> List[Path]:
@@ -187,7 +177,7 @@ async def add_category(
     session.session_state.set_project_config("categories", categories)
 
     # Auto-save
-    await _auto_save_session(session)
+    await session.safe_save_session()
 
     return {
         "success": True,
@@ -259,7 +249,7 @@ async def update_category(
     session.session_state.set_project_config("categories", categories)
 
     # Auto-save
-    await _auto_save_session(session)
+    await session.safe_save_session()
 
     return {
         "success": True,
@@ -300,7 +290,7 @@ async def remove_category(name: str) -> Dict[str, Any]:
     session.session_state.project_config = updated_config
 
     # Auto-save
-    await _auto_save_session(session)
+    await session.safe_save_session()
 
     return {
         "success": True,
@@ -380,7 +370,7 @@ async def add_to_category(name: str, patterns: List[str]) -> Dict[str, Any]:
         session.session_state.set_project_config("categories", config.categories)
 
         # Auto-save
-        await _auto_save_session(session)
+        await session.safe_save_session()
 
         return {
             "success": True,
@@ -445,7 +435,7 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
         session.session_state.set_project_config("categories", config.categories)
 
         # Auto-save
-        await _auto_save_session(session)
+        await session.safe_save_session()
 
         result = {
             "success": True,
@@ -463,7 +453,7 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
         return {"success": False, "error": f"Invalid category configuration: {e}"}
 
 
-async def get_category_content(name: str, project: Optional[str] = None, file: Optional[str] = None) -> Dict[str, Any]:
+async def get_category_content(name: str, file: Optional[str] = None) -> Dict[str, Any]:
     """Get content from a category using glob patterns or HTTP URL.
 
     If file parameter is provided, returns content of specific document within the category.
@@ -479,8 +469,7 @@ async def get_category_content(name: str, project: Optional[str] = None, file: O
             file = parts[1]  # document
 
     session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
+    project = session.get_project_name()
 
     # Get current config - use get_or_create_project_config for consistency
     config = await session.get_or_create_project_config(project)

@@ -63,7 +63,7 @@ async def test_get_guide_success(mock_get_category):
 
     result = await get_guide("category1", "doc1")
     assert result == "Some content"
-    mock_get_category.assert_called_once_with("category1", None)
+    mock_get_category.assert_called_once_with("category1")
 
 
 @patch("mcp_server_guide.tools.content_tools.get_category_content")
@@ -77,7 +77,7 @@ async def test_get_guide_missing_document(mock_get_category):
 
     result = await get_guide("category1", "missing_doc")
     assert result is None
-    mock_get_category.assert_called_once_with("category1", None)
+    mock_get_category.assert_called_once_with("category1")
 
 
 @patch("mcp_server_guide.tools.content_tools.get_category_content")
@@ -87,4 +87,4 @@ async def test_get_guide_invalid_category(mock_get_category):
 
     result = await get_guide("invalid_category", "doc1")
     assert result is None
-    mock_get_category.assert_called_once_with("invalid_category", None)
+    mock_get_category.assert_called_once_with("invalid_category")

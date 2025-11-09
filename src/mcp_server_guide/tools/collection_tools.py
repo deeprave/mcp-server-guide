@@ -109,7 +109,7 @@ async def create_spec_kit_collection(
         config.collections[name] = collection
 
         # Save config
-        await session.save_session()
+        await session.safe_save_session()
 
         return {
             "success": True,
@@ -189,7 +189,7 @@ async def add_collection(name: str, categories: List[str], description: Optional
         config.collections[name] = collection
 
         # Save config
-        await session.save_session()
+        await session.safe_save_session()
 
         return {
             "success": True,
@@ -226,7 +226,7 @@ async def update_collection(name: str, *, description: Optional[str] = None) -> 
             config.collections[name] = collection
 
         # Save config
-        await session.save_session()
+        await session.safe_save_session()
 
         return {
             "success": True,
@@ -295,7 +295,7 @@ async def add_to_collection(name: str, categories: List[str]) -> Dict[str, Any]:
         )
 
         # Save config
-        await session.save_session()
+        await session.safe_save_session()
 
         result = {
             "success": True,
@@ -410,7 +410,7 @@ async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, 
         )
 
         # Save config
-        await session.save_session()
+        await session.safe_save_session()
 
         result = {
             "success": True,
@@ -448,7 +448,7 @@ async def remove_collection(name: str) -> Dict[str, Any]:
     del config.collections[name]
 
     # Save config
-    await session.save_session()
+    await session.safe_save_session()
 
     return {
         "success": True,
@@ -504,7 +504,7 @@ async def list_collections(verbose: bool = False) -> Dict[str, Any]:
     return {"success": True, "collections": collections_data}
 
 
-async def get_collection_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
+async def get_collection_content(name: str) -> Dict[str, Any]:
     """Get aggregated content from all categories in a collection."""
     from ..session_manager import SessionManager
 
@@ -528,7 +528,7 @@ async def get_collection_content(name: str, project: Optional[str] = None) -> Di
     for category_name in deduped_categories:
         content_parts.append(f"\n=== Category: {category_name} ===\n")
         try:
-            result = await get_category_content(category_name, project)
+            result = await get_category_content(category_name)
             if result.get("success") and result.get("content"):
                 content_parts.append(f"# Collection: {name} - Category: {category_name}\n\n{result['content']}")
             elif not result.get("success"):
@@ -571,7 +571,7 @@ async def get_collection_listing(name: str, project: Optional[str] = None) -> Di
     # Get file listings from all categories in collection
     for category_name in collection.categories:
         try:
-            result = await get_category_content(category_name, project)
+            result = await get_category_content(category_name)
             if result.get("success") and result.get("matched_files"):
                 category_files = {"category": category_name, "files": result["matched_files"]}
                 all_files.append(category_files)
@@ -616,7 +616,7 @@ async def get_collection_document(
 
     for category_name in collection.categories:
         try:
-            result = await get_category_content(category_name, project)
+            result = await get_category_content(category_name)
             if result.get("success") and result.get("matched_files"):
                 # Check for filename matches (exact, with extensions, or containing the document name)
                 for file_path in result["matched_files"]:
@@ -652,7 +652,7 @@ async def get_collection_document(
     if matches_found:
         category_name, file_path = matches_found[0]
         try:
-            result = await get_category_content(category_name, project)
+            result = await get_category_content(category_name)
             if result.get("success"):
                 # Found the document, extract and return only its content
                 from .content_tools import _extract_document_from_content

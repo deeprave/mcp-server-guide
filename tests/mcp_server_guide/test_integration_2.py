@@ -10,10 +10,10 @@ async def test_save_session_failure():
 
     mock_session_instance = Mock()
     mock_session_instance.get_project_name = Mock(side_effect=Exception("Save error"))
-    mock_session_instance.save_session = AsyncMock(side_effect=Exception("Save error"))
+    mock_session_instance.safe_save_session = AsyncMock(side_effect=Exception("Save error"))
 
     with pytest.raises(Exception, match="Save error"):
-        await mock_session_instance.save_session()
+        await mock_session_instance.safe_save_session()
 
 
 async def test_safe_glob_non_file_skip():

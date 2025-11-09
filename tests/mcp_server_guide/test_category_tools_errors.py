@@ -84,7 +84,7 @@ class TestAddCategoryErrors:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
             mock_session_class.return_value = mock_session
 
             result = await add_category("test_cat", **category_config)

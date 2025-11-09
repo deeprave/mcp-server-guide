@@ -347,29 +347,7 @@ async def main() -> click.Command:
             # Start MCP server
             logger.debug("Starting MCP server")
             try:
-                # Handle async server startup with proper event loop detection
-                try:
-                    # Check if we're already in an async context (e.g., during testing)
-                    asyncio.get_running_loop()
-                    # We're in an async context, we need to run in a new thread
-                    import concurrent.futures
-
-                    def run_in_new_loop() -> str:
-                        # Create a new event loop in this thread
-                        new_loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(new_loop)
-                        try:
-                            return new_loop.run_until_complete(start_mcp_server(mode_type, resolved_config))
-                        finally:
-                            new_loop.close()
-
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        future = executor.submit(run_in_new_loop)
-                        result = future.result()
-
-                except RuntimeError:
-                    # No running loop, use asyncio.run normally
-                    result = asyncio.run(start_mcp_server(mode_type, resolved_config))
+                result = asyncio.run(start_mcp_server(mode_type, resolved_config))
             except Exception as e:
                 logger.error(f"FATAL: Failed to start MCP server: {e}", exc_info=True)
                 logger.error("=== MCP SERVER STARTUP FAILED ===")

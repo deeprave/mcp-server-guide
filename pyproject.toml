@@ -59,8 +59,10 @@ namespace_packages = true
 
 [dependency-groups]
 dev = [
+    "build>=1.3.0",
     "coverage>=7.10.7",
     "deptry>=0.23.1",
+    "hatchling>=1.27.0",
     "mypy>=1.18.2",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",

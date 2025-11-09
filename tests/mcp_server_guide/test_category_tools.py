@@ -40,7 +40,7 @@ def mock_session():
         mock_config_manager = Mock()
         mock_config_manager.docroot = LazyPath(".")
         session_instance.config_manager = Mock(return_value=mock_config_manager)
-        session_instance.save_session = AsyncMock()
+        session_instance.safe_save_session = AsyncMock()
         yield session_instance
 
 

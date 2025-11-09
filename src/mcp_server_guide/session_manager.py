@@ -205,6 +205,15 @@ class SessionManager:
         # Save using config manager with project name as key
         self._config_manager.save_config(project_name, project_config)
 
+    async def safe_save_session(self) -> None:
+        """Auto-save session state with error handling that won't propagate exceptions."""
+        try:
+            await self.save_session()
+            logger.debug("Auto-saved session")
+        except Exception as e:
+            logger.warning(f"Auto-save failed: {e}")
+            # Don't raise - operations should succeed even if save fails
+
     async def get_or_create_project_config(self, project: str) -> ProjectConfig:
         """Get project config and auto-save if project was newly created."""
 

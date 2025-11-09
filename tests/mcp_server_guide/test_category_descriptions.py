@@ -26,7 +26,7 @@ def mock_session():
         session_instance.session_state.get_project_config = Mock(return_value=test_config)
         session_instance.session_state.set_project_config = Mock()
         session_instance.get_or_create_project_config = AsyncMock(return_value=test_config)
-        session_instance.save_session = AsyncMock()
+        session_instance.safe_save_session = AsyncMock()
         yield session_instance
 
 

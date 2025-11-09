@@ -40,7 +40,7 @@ def mock_session():
             pass
 
         session_instance.get_or_create_project_config = mock_get_config
-        session_instance.save_session = mock_save_session
+        session_instance.safe_save_session = mock_save_session
         session_instance.get_project_name.return_value = "test-project"
 
         yield session_instance, config

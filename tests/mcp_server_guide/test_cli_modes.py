@@ -5,10 +5,14 @@ from click.testing import CliRunner
 from mcp_server_guide.main import main
 
 
-@pytest.mark.asyncio
-async def test_default_mode_is_stdio():
+def test_default_mode_is_stdio():
     """Test that default mode is stdio when no mode specified."""
-    command = await main()
+    import asyncio
+
+    async def get_command():
+        return await main()
+
+    command = asyncio.run(get_command())
     runner = CliRunner()
 
     # Mock the actual server startup to avoid hanging
@@ -23,10 +27,14 @@ async def test_default_mode_is_stdio():
     # stdio mode produces no output (correct MCP behavior)
 
 
-@pytest.mark.asyncio
-async def test_explicit_stdio_mode():
+def test_explicit_stdio_mode():
     """Test explicit stdio mode argument."""
-    command = await main()
+    import asyncio
+
+    async def get_command():
+        return await main()
+
+    command = asyncio.run(get_command())
     runner = CliRunner()
 
     with pytest.MonkeyPatch().context() as m:

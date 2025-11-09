@@ -79,4 +79,4 @@ class GetCollectionContentOperation(BaseOperation):
     name: str
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
-        return await get_collection_content(name=self.name)
+        return await get_collection_content(self.name)

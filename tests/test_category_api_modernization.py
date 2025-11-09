@@ -46,7 +46,7 @@ async def mock_session():
             return None
 
         session_instance.get_or_create_project_config = mock_get_config_func
-        session_instance.save_session = mock_save_func
+        session_instance.safe_save_session = mock_save_func
         session_instance.get_project_name.return_value = "test-project"
 
         # Set up session_state with project_config

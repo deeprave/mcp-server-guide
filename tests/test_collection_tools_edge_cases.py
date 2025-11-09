@@ -65,7 +65,7 @@ class TestCollectionToolsEdgeCases:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
 
             result = await add_collection("new", categories=["cat1"], description="Test collection")
             assert result["success"]
@@ -86,7 +86,7 @@ class TestCollectionToolsEdgeCases:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
 
             result = await add_collection("new", categories=["cat1"])
             assert result["success"]
@@ -127,7 +127,7 @@ class TestCollectionToolsEdgeCases:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
 
             result = await update_collection("test")  # No description provided
             assert result["success"]
@@ -149,7 +149,7 @@ class TestCollectionToolsEdgeCases:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
 
             result = await add_to_collection("test", categories=["cat1"])  # Already exists
             assert not result["success"]  # Should fail for duplicates
@@ -176,7 +176,7 @@ class TestCollectionToolsEdgeCases:
             async def mock_save():
                 pass
 
-            mock_session.save_session = mock_save
+            mock_session.safe_save_session = mock_save
 
             result = await remove_from_collection("test", categories=["cat1", "cat2"])
             assert result["success"]

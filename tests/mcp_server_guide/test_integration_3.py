@@ -18,7 +18,7 @@ async def test_search_content_with_matches():
 
     with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
 
-        def side_effect(category, project):
+        def side_effect(category):
             return mock_results.get(category, {"success": False})
 
         mock_get.side_effect = side_effect
@@ -42,7 +42,7 @@ async def test_search_content_no_matches():
 
     with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
 
-        def side_effect(category, project):
+        def side_effect(category):
             return mock_results.get(category, {"success": False})
 
         mock_get.side_effect = side_effect
@@ -84,7 +84,7 @@ async def test_category_content_directory_not_exists():
             mock_config_manager.docroot = LazyPath(temp_dir)
             mock_session.return_value.config_manager = Mock(return_value=mock_config_manager)
 
-            result = await get_category_content("test", "test-project")
+            result = await get_category_content("test")
 
             assert result["success"] is False
             assert "does not exist" in result["error"]

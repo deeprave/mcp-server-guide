@@ -10,6 +10,7 @@ from ..tools.category_tools import (
     list_categories,
     add_to_category,
     remove_from_category,
+    get_category_content,
 )
 
 
@@ -73,3 +74,13 @@ class RemoveFromCategoryOperation(BaseOperation):
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
         return await remove_from_category(name=self.name, patterns=self.patterns)
+
+
+class CategoryGetContentOperation(BaseOperation):
+    """Get content from a category."""
+
+    name: str
+    file: Optional[str] = None
+
+    async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
+        return await get_category_content(name=self.name, file=self.file)

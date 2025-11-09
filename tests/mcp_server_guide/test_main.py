@@ -91,9 +91,14 @@ async def test_main_cli_invalid_option():
     assert result.exit_code != 0
 
 
-async def test_main_cli_with_all_options():
+def test_main_cli_with_all_options():
     """Test main CLI with all options."""
-    command = await main()
+    import asyncio
+
+    async def get_command():
+        return await main()
+
+    command = asyncio.run(get_command())
     runner = CliRunner()
 
     with patch("mcp_server_guide.main.start_mcp_server") as mock_start:

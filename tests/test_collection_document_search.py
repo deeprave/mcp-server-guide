@@ -29,7 +29,7 @@ class TestCollectionDocumentSearch:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock(side_effect=ValueError("Save error"))
+            mock_session.safe_save_session = AsyncMock(side_effect=ValueError("Save error"))
 
             result = await update_collection("test", description="new desc")
             assert not result["success"]
@@ -51,7 +51,7 @@ class TestCollectionDocumentSearch:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock(side_effect=ValueError("Save error"))
+            mock_session.safe_save_session = AsyncMock(side_effect=ValueError("Save error"))
 
             result = await add_to_collection("test", categories=["cat2"])  # Use different category
             assert not result["success"]
@@ -73,7 +73,7 @@ class TestCollectionDocumentSearch:
             mock_sm.return_value = mock_session
             mock_session.get_project_name.return_value = "test"
             mock_session.get_or_create_project_config = AsyncMock(return_value=config)
-            mock_session.save_session = AsyncMock(side_effect=ValueError("Save error"))
+            mock_session.safe_save_session = AsyncMock(side_effect=ValueError("Save error"))
 
             result = await remove_from_collection("test", categories=["cat1"])
             assert not result["success"]

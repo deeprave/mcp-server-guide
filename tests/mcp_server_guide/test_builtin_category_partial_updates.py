@@ -30,6 +30,12 @@ def mock_session():
 
         mock_session.save_project_config = async_save_config
 
+        # Make safe_save_session async
+        async def async_safe_save():
+            return None
+
+        mock_session.safe_save_session = async_safe_save
+
         yield mock_session
 
 

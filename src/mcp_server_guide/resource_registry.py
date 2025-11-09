@@ -35,7 +35,7 @@ async def _register_category_resources(server: FastMCP, config: "ProjectConfig")
         @server.resource(f"guide://category/{cat_name}", name=cat_name, description=desc, mime_type="text/markdown")
         async def read_category() -> str:
             """Get content for a specific category."""
-            result = await get_category_content(cat_name, None)
+            result = await get_category_content(cat_name)
             if result.get("success"):
                 return str(result.get("content", ""))
             raise ValueError(f"Failed to load category '{cat_name}': {result.get('error', 'Unknown error')}")
@@ -50,7 +50,7 @@ async def _register_category_resources(server: FastMCP, config: "ProjectConfig")
         @server.resource(f"guide://collection/{coll_name}", name=coll_name, description=desc, mime_type="text/markdown")
         async def read_collection() -> str:
             try:
-                result = await get_collection_content(coll_name, None)
+                result = await get_collection_content(coll_name)
                 if result.get("success"):
                     return str(result.get("content", ""))
                 else:

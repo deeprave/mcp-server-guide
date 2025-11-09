@@ -73,6 +73,12 @@ class TestGenericCategoryAccess:
 
             mock_session.save_project_config = async_save_config
 
+            # Make safe_save_session async
+            async def async_safe_save():
+                return None
+
+            mock_session.safe_save_session = async_safe_save
+
             result = await remove_category("guide")
 
             # Should succeed - no builtin protection
@@ -102,6 +108,12 @@ class TestGenericCategoryAccess:
                 return None
 
             mock_session.save_project_config = async_save_config
+
+            # Make safe_save_session async
+            async def async_safe_save():
+                return None
+
+            mock_session.safe_save_session = async_safe_save
 
             result = await add_category("guide", "guide/", ["*.md"])
 

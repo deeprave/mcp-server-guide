@@ -49,11 +49,11 @@ async def test_server_integration_with_session_paths():
                 guide_result = await get_category_content("guide", "integration-project")
                 assert isinstance(guide_result, dict)
 
-                lang_result = await get_category_content("lang", "integration-project")
+                lang_result = await get_category_content("lang")
                 assert isinstance(lang_result, dict)
 
                 # Test HTTP category
-                context_result = await get_category_content("context", "integration-project")
+                context_result = await get_category_content("context")
                 assert isinstance(context_result, dict)
                 assert context_result.get("is_http") is True
                 assert context_result.get("url") == "https://example.com/context.md"
