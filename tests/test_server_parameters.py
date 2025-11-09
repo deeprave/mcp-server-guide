@@ -22,9 +22,10 @@ class TestServerParameters:
         assert server.docroot == "/test/path"
         assert server.config_file == "/test/config.json"
 
-    def test_create_server_passes_parameters(self):
+    @pytest.mark.asyncio
+    async def test_create_server_passes_parameters(self):
         """Test that create_server passes parameters to GuideMCP."""
-        server = create_server(
+        server = await create_server(
             name="test-server", project="test-project", docroot="/test/path", config_file="/test/config.json"
         )
 

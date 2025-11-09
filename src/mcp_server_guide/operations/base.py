@@ -37,11 +37,13 @@ async def execute_json_operation(entity_type: str, data: Dict[str, Any]) -> Dict
         return {"success": False, "error": str(e)}
     except (AttributeError, KeyError) as e:
         from ..logging_config import get_logger
+
         logger = get_logger()
         logger.error(f"Configuration error in execute_json_operation: {e}", exc_info=True)
         return {"success": False, "error": "Configuration error - check server setup"}
     except Exception as e:
         from ..logging_config import get_logger
+
         logger = get_logger()
         logger.exception(f"Unexpected error in execute_json_operation: {e}")
         return {"success": False, "error": f"Operation failed: {str(e)}"}

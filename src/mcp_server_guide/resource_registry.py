@@ -4,15 +4,16 @@ from typing import TYPE_CHECKING, Callable, Awaitable
 
 from mcp.server.fastmcp import FastMCP
 
-from .help_system import format_guide_help
 from .logging_config import get_logger
 from .models.collection import Collection
 from .models.category import Category
 from .tools.category_tools import get_category_content
 from .tools.collection_tools import get_collection_content
+from .help_system import format_guide_help
 
 if TYPE_CHECKING:
     from .project_config import ProjectConfig
+
 
 logger = get_logger()
 
@@ -60,13 +61,18 @@ async def _register_category_resources(server: FastMCP, config: "ProjectConfig")
 
         return read_collection
 
+    resource_count = 0
     for category_name, category_config in config.categories.items():
         make_category_reader(category_name, category_config)
-        logger.info(f"Registered resource: guide://category/{category_name}")
+        logger.debug(f"Registered resource: guide://category/{category_name}")
+        resource_count += 1
 
     for collection_name, collection_config in config.collections.items():
         make_collection_reader(collection_name, collection_config)
-        logger.info(f"Registered resource: guide://collection/{collection_name}")
+        logger.debug(f"Registered resource: guide://collection/{collection_name}")
+        resource_count += 1
+
+    logger.info(f"Registered {resource_count} resources")
 
 
 async def _register_help_resource(server: FastMCP) -> None:
@@ -75,4 +81,5 @@ async def _register_help_resource(server: FastMCP) -> None:
     @server.resource("guide://help", name="help", description="MCP Server Guide Help", mime_type="text/markdown")
     async def read_help() -> str:
         """Get comprehensive help content for the guide system."""
-        return await format_guide_help()
+        result = await format_guide_help()
+        return str(result)

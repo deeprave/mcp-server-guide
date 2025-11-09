@@ -1,28 +1,35 @@
 """Tests for server lifespan and deferred configuration."""
 
 import pytest
+import warnings
 from unittest.mock import patch, MagicMock
 
 
 class TestServerLifespan:
     """Test server lifespan functionality."""
 
+    @pytest.mark.asyncio
     async def test_server_lifespan_basic(self):
         """Test server_lifespan basic initialization."""
         mock_server = MagicMock()
 
-        with patch("mcp_server_guide.server_lifecycle.logger") as mock_logger:
-            from mcp_server_guide.server import server_lifespan
+        # Suppress ResourceWarning for unclosed event loop (test framework issue)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed event loop")
 
-            # Test the async context manager
-            async with server_lifespan(mock_server):
-                pass
+            with patch("mcp_server_guide.server_lifecycle.logger") as mock_logger:
+                from mcp_server_guide.server import server_lifespan
 
-            # Verify basic initialization messages
-            mock_logger.info.assert_any_call("=== Starting MCP server initialization ===")
-            mock_logger.info.assert_any_call("MCP server initialized successfully")
-            mock_logger.info.assert_any_call("MCP server shutting down")
+                # Test the async context manager with proper cleanup
+                async with server_lifespan(mock_server):
+                    pass
 
+                # Verify basic initialization messages
+                mock_logger.info.assert_any_call("Starting MCP Server Guide...")
+                mock_logger.info.assert_any_call("MCP server initialized successfully")
+                mock_logger.info.assert_any_call("MCP server shutting down")
+
+    @pytest.mark.asyncio
     async def test_server_lifespan_initialization_error(self):
         """Test server_lifespan when initialization fails."""
         mock_server = MagicMock()

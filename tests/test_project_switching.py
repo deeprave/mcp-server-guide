@@ -23,14 +23,15 @@ async def test_switch_to_new_project_creates_builtin_categories(isolated_config_
     config = session.session_state.get_project_config()
     categories = config.categories
 
-    # Should have the 3 built-in categories
-    assert len(categories) == 3, f"Should have 3 builtin categories, got {len(categories)}"
+    # Should have the 4 built-in categories
+    assert len(categories) == 4, f"Should have 4 default categories, got {len(categories)}"
     assert "guide" in categories
     assert "lang" in categories
     assert "context" in categories
+    assert "prompt" in categories
 
     # Check that default categories are created for new projects
-    default_categories = ["guide", "lang", "context"]  # These are just defaults
+    default_categories = ["guide", "lang", "context", "prompt"]  # These are just defaults
     for name in default_categories:
         assert name in categories
 
@@ -41,10 +42,10 @@ async def test_builtin_categories_structure(isolated_config_file):
     session_manager._set_config_filename(isolated_config_file)
 
     # Get builtin categories from SessionManager
-    builtin_cats = SessionManager.builtin_categories()
+    builtin_cats = SessionManager.default_categories()
 
     # Verify default categories created with correct defaults
-    default_categories = {"guide", "lang", "context"}
+    default_categories = {"guide", "lang", "context", "prompt"}
     assert set(builtin_cats.keys()) == default_categories
 
     for name, cat_config in builtin_cats.items():

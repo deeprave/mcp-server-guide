@@ -66,81 +66,62 @@ class FlushingFileHandler(logging.FileHandler):
 
 
 def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_json: bool = False) -> logging.Logger:
-    """Setup logging configuration.
+    """Setup logging configuration with Rich compatibility for FastMCP."""
+    # Get root logger for FastMCP compatibility
+    root_logger = logging.getLogger()
 
-    Args:
-        level: Logging level (DEBUG, INFO, WARN, ERROR, OFF)
-        log_file: Path to log file (empty for no file logging)
-        log_console: Enable console logging to stderr
-        log_json: Enable JSON structured logging to file (console remains text format)
-
-    Returns:
-        Configured logger instance
-    """
-    global _logging_initialized
-
-    # Get or create logger
-    logger = logging.getLogger(logger_name())
-
-    # Clear any existing handlers and close them properly
-    for handler in logger.handlers[:]:
+    # Clear existing handlers
+    for handler in root_logger.handlers[:]:
         handler.close()
-        logger.removeHandler(handler)
+        root_logger.removeHandler(handler)
 
     # Handle OFF level
     if level.upper() == "OFF":
-        logger.setLevel(logging.CRITICAL + 1)  # Disable all logging
-        return logger
+        root_logger.setLevel(logging.CRITICAL + 1)
+        return logging.getLogger(logger_name())
 
-    # Set logging level
+    # Set level
     numeric_level = getattr(logging, level.upper(), logging.INFO)
-    logger.setLevel(numeric_level)
+    root_logger.setLevel(numeric_level)
 
-    # Create formatters
-    text_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-    json_formatter = JSONFormatter()
-
-    # Add a file handler if specified
+    # Add file handler to ROOT logger if specified
     if log_file:
         try:
             file_handler = FlushingFileHandler(log_file)
             file_handler.setLevel(numeric_level)
-            # Use JSON formatter for file if requested, otherwise text
-            file_handler.setFormatter(json_formatter if log_json else text_formatter)
-            logger.addHandler(file_handler)
+            formatter = (
+                JSONFormatter()
+                if log_json
+                else logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            )
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
+        except (OSError, IOError):
+            pass  # Fail silently for now
 
-        except (OSError, IOError) as e:
-            # If file logging fails, fall back to console
-            if log_console:
-                fallback_handler = logging.StreamHandler(sys.stderr)
-                fallback_handler.setLevel(numeric_level)
-                fallback_handler.setFormatter(text_formatter)
-                logger.addHandler(fallback_handler)
-                logger.error(f"Failed to setup file logging: {e}")
-            return logger
-
-    # Add console handler if enabled (always uses text format)
+    # Add Rich console handler for FastMCP compatibility
     if log_console:
-        stderr_handler: logging.Handler
-        # Try to use RichHandler if available (matching FastMCP's behavior)
         try:
             from rich.console import Console
             from rich.logging import RichHandler
 
-            stderr_handler = RichHandler(
-                console=Console(stderr=True),
-                rich_tracebacks=True,
-                log_time_format="%Y-%m-%d %H:%M:%S",  # Use ISO format instead of default
+            console_handler = RichHandler(
+                console=Console(stderr=True), rich_tracebacks=True, log_time_format="%Y-%m-%d %H:%M:%S"
             )
+            console_handler.setLevel(numeric_level)
+            root_logger.addHandler(console_handler)
         except ImportError:
-            # Fall back to standard StreamHandler if Rich not available
-            stderr_handler = logging.StreamHandler(sys.stderr)
-            stderr_handler.setFormatter(text_formatter)
+            # Fallback to standard handler
+            fallback_handler = logging.StreamHandler(sys.stderr)
+            formatter = logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+            )
+            fallback_handler.setFormatter(formatter)
+            fallback_handler.setLevel(numeric_level)
+            root_logger.addHandler(fallback_handler)
 
-        stderr_handler.setLevel(numeric_level)
-        logger.addHandler(stderr_handler)
-
-    return logger
+    # Return named logger that propagates to configured root
+    return logging.getLogger(logger_name())
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
@@ -148,3 +129,49 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     if not name:  # Handles None and empty string
         name = logger_name()
     return logging.getLogger(name)
+
+
+def setup_consolidated_logging(
+    mode: str,
+    config_source: Optional[Dict[str, Any]] = None,
+    cli_overrides: Optional[Dict[str, Any]] = None,
+    prevent_fastmcp_override: bool = True,
+) -> None:
+    """Consolidated logging setup for all scenarios.
+
+    Args:
+        mode: Server mode (stdio, etc.)
+        config_source: Configuration dict (None for early setup)
+        cli_overrides: CLI argument overrides
+        prevent_fastmcp_override: Whether to prevent FastMCP logging override
+    """
+    cli_overrides = cli_overrides or {}
+
+    # Determine source priority: CLI overrides > config > defaults
+    if config_source:
+        # Final setup - use config with CLI overrides
+        log_level = cli_overrides.get("log_level") or config_source.get("log_level", "OFF")
+        log_file = cli_overrides.get("log_file") or config_source.get("log_file", "")
+        log_console = cli_overrides.get("log_console")
+        if log_console is None:
+            log_console = config_source.get("log_console", True)
+        log_json = cli_overrides.get("log_json")
+        if log_json is None:
+            log_json = config_source.get("log_json", False)
+    else:
+        # Early setup - use CLI args with defaults
+        log_level = cli_overrides.get("log_level", "INFO")
+        log_file = cli_overrides.get("log_file", "")
+        log_console = cli_overrides.get("log_console", True)
+        log_json = cli_overrides.get("log_json", False)
+
+    # Apply stdio mode logic (shared between both scenarios)
+    if mode == "stdio" and "log_console" not in cli_overrides:
+        log_console = False
+
+    # Force console if file logging (only for early setup and not explicitly disabled)
+    if log_file and config_source is None and "log_console" not in cli_overrides:
+        log_console = True
+
+    # Setup logging - use main setup_logging function
+    setup_logging(log_level or "INFO", log_file or "", bool(log_console), bool(log_json))

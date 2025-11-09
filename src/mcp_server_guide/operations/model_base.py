@@ -29,6 +29,7 @@ class BaseModelOperations(BaseModel):
 
 _discovered_models: list[Type[BaseModelOperations]] | None = None
 
+
 def discover_models() -> list[Type[BaseModelOperations]]:
     """Discover all model classes that define operations."""
     global _discovered_models
@@ -47,6 +48,7 @@ def discover_models() -> list[Type[BaseModelOperations]]:
             except ImportError as e:
                 # Log specific import issues for debugging
                 import logging
+
                 logging.getLogger(__name__).warning(f"Failed to import {module_name}: {e}")
 
     _discovered_models = BaseModelOperations.__subclasses__()

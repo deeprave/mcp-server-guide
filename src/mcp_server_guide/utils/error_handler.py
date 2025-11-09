@@ -5,7 +5,18 @@ from ..logging_config import get_logger
 
 logger = get_logger()
 
-def handle_operation_error(operation_name: str, error: Exception, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+
+class ErrorHandler:
+    """Simple error handler for CLI interface."""
+
+    def handle_invalid_command(self, command: str) -> str:
+        """Handle invalid command with helpful message."""
+        return f"Invalid command: '{command}'. Please check your syntax."
+
+
+def handle_operation_error(
+    operation_name: str, error: Exception, context: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """Standard error handling for all operations.
 
     Args:
@@ -33,3 +44,8 @@ def handle_operation_error(operation_name: str, error: Exception, context: Optio
     else:
         logger.exception(f"Unexpected error in {operation_name}{context_str}")
         return {"success": False, "error": f"Unexpected error: {str(error)}", "error_type": "unexpected"}
+
+
+def validate_command(*args: Any) -> bool:
+    """Simple command validation placeholder."""
+    return True

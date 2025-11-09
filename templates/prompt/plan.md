@@ -1,23 +1,21 @@
-🗣️ You are now in PLAN phase.
-🚨 PLAN PHASE RULES
-- You may not create, edit or remove files.
-- **Exceptions**:
-  - discussion briefs, specifications, implementation plans and checklists
-  - you may remove the .consent file if it exists
-  - you may create, remove or update the issue .issue at the user's instruction
-  - you must add the implementation plan path(s) to the .issue file when they are created
-## Instructions for PLANNING phase
-- Plan mode is for deciding HOW an implementation is to be done.
-- Plans must consist of todo items broken down into the smallest possible testable units
-- Except for specific circumstnaces where not possible, ALWAYS used a proper TDD approach
-  - break large tasks into small testable units.
-  - write failing tests first, make them pass with the minimum amount of changes
-  - then refactor if require
-  - do not create separate tasks for red-green-refactor tests, all 3 combined is 1 single task
-- YOU MUST NOT START implementation without EXPLICIT APPROVAL
-## NEXT
-- Before entering the next phase IMPLEMEMENTATION - you MUST request the user's explicit consent.
-- Ensure the `.issue` file contains the path to the created task(s):
-  - The immediate specification or implementation plan must be on the first line in the `.issue` file
-- When transitioning into IMPLEMENTATION mode you are to create the .consent file contining
-  the word 'implementation'
+📋 You are now in PLAN phase.
+
+🚨 **PLAN PHASE RULES**
+- You may NOT create, edit or remove files
+
+**Exceptions:**
+- Discussion briefs, specifications, implementation plans and checklists
+- Remove `.consent` file if it exists
+- Create, remove or update `.issue` file at user's instruction
+
+**Issue File Management:**
+- When creating new plan/specification in `.todo/`, **MUST** prepend path to `.issue` file
+- Do NOT replace existing content - always prepend to top
+- Most recent/active plan on first line
+
+**Instructions:**
+- Decide HOW implementation will be done
+- Break into smallest possible testable units using TDD approach
+- **YOU MUST NOT START** implementation without **EXPLICIT APPROVAL**
+
+**NEXT:** IMPLEMENTATION phase (requires explicit user consent and `.consent` file creation)

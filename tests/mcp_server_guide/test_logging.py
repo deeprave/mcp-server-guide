@@ -25,11 +25,11 @@ async def test_setup_logging_console_only():
     """Test logging setup with console output only."""
     setup_logging("INFO", "", True)
 
-    # Verify logger is configured
+    # Verify ROOT logger is configured (where handlers are now placed)
     import logging
 
-    logger = logging.getLogger("mcp-server-guide")
-    assert logger.level == logging.INFO
+    root_logger = logging.getLogger()
+    assert root_logger.level == logging.INFO
 
 
 async def test_setup_logging_off_level():
@@ -38,9 +38,9 @@ async def test_setup_logging_off_level():
 
     import logging
 
-    logger = logging.getLogger("mcp-server-guide")
+    root_logger = logging.getLogger()
     # OFF level should disable logging
-    assert logger.level >= logging.CRITICAL
+    assert root_logger.level >= logging.CRITICAL
 
 
 async def test_setup_logging_file_directory_creation():
@@ -60,22 +60,24 @@ async def test_setup_logging_all_levels():
 
         import logging
 
-        logger = logging.getLogger("mcp-server-guide")
+        root_logger = logging.getLogger()
         expected_level = getattr(logging, level)
-        assert logger.level == expected_level
+        assert root_logger.level == expected_level
 
 
 async def test_setup_logging_edge_cases():
     """Test logging setup edge cases to hit all branches."""
     # Test OFF level
     logger = setup_logging("OFF", "", False)
-    assert logger.level > logging.CRITICAL
+    root_logger = logging.getLogger()
+    assert root_logger.level > logging.CRITICAL
 
     # Test different log levels
     for level in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         logger = setup_logging(level, "", True)
+        root_logger = logging.getLogger()
         expected_level = getattr(logging, level)
-        assert logger.level == expected_level
+        assert root_logger.level == expected_level
 
     # Test with file logging
     logger = setup_logging("INFO", "/tmp/test.log", True)
@@ -92,8 +94,9 @@ async def test_setup_logging_file_error_handling():
     with patch("logging.FileHandler", side_effect=OSError("Permission denied")):
         logger = setup_logging("INFO", "/invalid/path/test.log", True)
         assert isinstance(logger, logging.Logger)
-        # Should have console handler as fallback
-        assert len(logger.handlers) > 0
+        # Should have console handler as fallback on ROOT logger
+        root_logger = logging.getLogger()
+        assert len(root_logger.handlers) > 0
 
     # Test file logging error without console fallback
     with patch("logging.FileHandler", side_effect=IOError("Disk full")):

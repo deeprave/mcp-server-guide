@@ -18,7 +18,8 @@ COLLECTION_NAME_REGEX = r"^[a-zA-Z](?:[\w-]*[a-zA-Z0-9])?$"
 
 def is_valid_collection_name(name: str) -> bool:
     """Validate collection name using the standard regex."""
-    return re.match(COLLECTION_NAME_REGEX, name) is not None
+    # Collection names must not start with '-' to avoid confusion with commands
+    return not name.startswith("-") and re.match(COLLECTION_NAME_REGEX, name) is not None
 
 
 def _create_collection(

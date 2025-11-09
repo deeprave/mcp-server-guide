@@ -25,7 +25,7 @@ class TestValidateDocumentIntegrity:
     @pytest.mark.asyncio
     async def test_validate_missing_metadata(self):
         """Test validation of file without metadata."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
             tmp.write("test content")
             tmp_path = Path(tmp.name)
 
@@ -52,7 +52,7 @@ class TestSyncDocumentMetadata:
     @pytest.mark.asyncio
     async def test_sync_missing_metadata(self):
         """Test syncing file without existing metadata."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
             tmp.write("test content for sync")
             tmp_path = Path(tmp.name)
 

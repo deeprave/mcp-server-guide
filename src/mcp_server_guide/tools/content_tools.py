@@ -106,21 +106,26 @@ def _extract_document_from_content(content: str, document: str) -> Optional[str]
     if current_header and current_section:
         sections.append((current_header, "\n".join(current_section)))
 
-    # Find matching section using normalized filename comparison
-    # Normalize the document name for comparison
-    document_normalized = document.strip().lower()
+    # Find matching section using extension fallback logic
+    from ..utils.file_extensions import get_extension_candidates
 
-    for filename, section_content in sections:
-        filename_normalized = filename.strip().lower()
-        filename_path = Path(filename_normalized)
+    # Get candidates with extension fallback
+    candidates = get_extension_candidates(document)
 
-        # Exact match, stem match, or document with extension match
-        if (
-            filename_normalized == document_normalized
-            or filename_path.stem == document_normalized
-            or (document_normalized + ".") in filename_normalized
-        ):
-            return section_content.strip()
+    for candidate in candidates:
+        candidate_normalized = candidate.strip().lower()
+
+        for filename, section_content in sections:
+            filename_normalized = filename.strip().lower()
+            filename_path = Path(filename_normalized)
+
+            # Exact match, stem match, or document with extension match
+            if (
+                filename_normalized == candidate_normalized
+                or filename_path.stem == candidate_normalized
+                or (candidate_normalized + ".") in filename_normalized
+            ):
+                return section_content.strip()
 
     return None
 

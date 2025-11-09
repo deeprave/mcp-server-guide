@@ -27,7 +27,8 @@ CATEGORY_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
 def _validate_category_name(name: str) -> bool:
     """Validate category name against allowed pattern."""
-    return bool(name and CATEGORY_NAME_PATTERN.match(name))
+    # Category names must not start with '-' to avoid confusion with commands
+    return bool(name and not name.startswith("-") and CATEGORY_NAME_PATTERN.match(name))
 
 
 async def _auto_save_session(session: "SessionManager") -> None:
@@ -462,9 +463,20 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
         return {"success": False, "error": f"Invalid category configuration: {e}"}
 
 
-async def get_category_content(name: str, project: Optional[str] = None) -> Dict[str, Any]:
-    """Get content from a category using glob patterns or HTTP URL."""
+async def get_category_content(name: str, project: Optional[str] = None, file: Optional[str] = None) -> Dict[str, Any]:
+    """Get content from a category using glob patterns or HTTP URL.
+
+    If file parameter is provided, returns content of specific document within the category.
+    If file is None, returns entire category content (existing behavior).
+    """
     from ..session_manager import SessionManager
+
+    # If no file parameter provided, check if name contains slash for document access
+    if file is None and "/" in name:
+        parts = name.split("/", 1)
+        if len(parts) == 2:
+            name = parts[0]  # category
+            file = parts[1]  # document
 
     session = SessionManager()
     if project is None:
@@ -478,6 +490,10 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
         return {"success": False, "error": f"Category '{name}' does not exist"}
 
     category = categories[name]
+
+    # If file parameter is provided, return specific document content
+    if file is not None:
+        return await _get_specific_document(category, file, session)
 
     # Check if this is a URL-based category (Category is always a Pydantic model)
     if category.url:
@@ -540,6 +556,40 @@ async def get_category_content(name: str, project: Optional[str] = None) -> Dict
         "search_dir": str(search_dir),
         "file_count": len(matched_files),
     }
+
+
+async def _get_specific_document(category: Any, file: str, session: Any) -> Dict[str, Any]:
+    """Get content of a specific document within a category."""
+    from pathlib import Path
+    from ..utils.file_extensions import try_file_with_extensions
+
+    # Get docroot from session manager's config manager
+    docroot = session.config_manager().docroot
+    base_path = docroot.resolve_sync() if docroot else Path(".")
+
+    # Check managed documents first (category/__docs__/document)
+    docs_dir = base_path / category.dir / "__docs__"
+    if docs_dir.exists():
+        found_path = try_file_with_extensions(docs_dir, file)
+        if found_path:
+            try:
+                content = found_path.read_text(encoding="utf-8")
+                return {"success": True, "content": content, "file": str(found_path)}
+            except Exception as e:
+                return {"success": False, "error": f"Error reading {found_path.name}: {e}"}
+
+    # Check category directory for direct files
+    category_dir = base_path / category.dir
+    if category_dir.exists():
+        found_path = try_file_with_extensions(category_dir, file)
+        if found_path:
+            try:
+                content = found_path.read_text(encoding="utf-8")
+                return {"success": True, "content": content, "file": str(found_path)}
+            except Exception as e:
+                return {"success": False, "error": f"Error reading {found_path.name}: {e}"}
+
+    return {"success": False, "error": f"Document '{file}' not found in category '{category.dir}'"}
 
 
 __all__ = [

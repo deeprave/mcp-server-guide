@@ -6,19 +6,15 @@ from typing import Optional, Dict, Any
 
 from mcp.server.fastmcp import FastMCP
 
-from .help_system import format_guide_help
 from .http.secure_client import SecureHTTPClient
 from .exceptions import NetworkError, SecurityError
 from .logging_config import get_logger
 from .services.speckit_manager import enable_speckit, is_speckit_enabled, update_speckit_config, get_speckit_config
-from .tools.category_tools import (
-    add_category,
-    get_category_content,
-    list_categories,
-    remove_category,
-    update_category,
-)
+
+# Category tools are now accessed through guide integration
 from .tools.content_tools import get_content
+
+logger = get_logger(__name__)
 
 
 async def execute_prompt_with_guide(
@@ -29,15 +25,24 @@ async def execute_prompt_with_guide(
     content: Optional[str] = None,
 ) -> str:
     """Execute prompt and use guide content if available, otherwise fallback to base response."""
+    logger.debug(f"""execute_prompt_with_guide called:
+      prompt: {prompt_name}
+    user_arg: {repr(user_arg)}
+    pre_text: {repr(pre_text)}
+     content: {repr(content)}""")
+
     guide_content = await get_content("prompt", prompt_name)
+    logger.debug(f"  guide_content length: {len(guide_content) if guide_content else 0}")
 
     # Choose primary content
     primary_content = guide_content or base_response
+
     # Add user arg if provided
     if pre_text:
         primary_content = f"{pre_text}\n{primary_content}"
+
     if user_arg:
-        primary_content = f"{primary_content}\n🎯 Focus: {user_arg}"
+        primary_content = f"{primary_content}\n\n**Focus**: {user_arg}\n\n"
 
     # Add additional content if provided and not empty/whitespace
     if content and content.strip():
@@ -48,6 +53,11 @@ async def execute_prompt_with_guide(
 
 async def status_prompt(arg: Optional[str] = None) -> str:
     """Show current mode status - client must check files."""
+    pre_text = None
+    if arg:
+        pre_text = f"""🎯 **Focus:**
+- {arg}"""
+
     base_response = """📋 **Status Check**
 - If `.consent` file exists
     → .consent contains 'check' → CHECK mode
@@ -57,15 +67,21 @@ async def status_prompt(arg: Optional[str] = None) -> str:
     → if `.issue` file exists and is non empty → PLAN mode
     → otherwise → DISCUSSION mode
 """
-    return await execute_prompt_with_guide("status", base_response, arg)
+    return await execute_prompt_with_guide("status", base_response, None, pre_text)
 
 
 async def discuss_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter discuss mode for ideation, concepts, and exploration."""
     pre_text = """☑️ **Required Actions:**
 - Remove `.consent` file (if it exists)
-- If `.issue` file exists, ask the user if they wish to remove it (and do so if confirmed)
-"""
+- If `.issue` file exists, ask the user if they wish to remove it (and do so if confirmed)"""
+
+    if arg:
+        pre_text += f"""
+
+🎯 **Focus:**
+- {arg}"""
+
     base_response = """💬 **Discussion Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Ideation and conceptual exploration
@@ -76,7 +92,7 @@ async def discuss_prompt(arg: Optional[str] = None, content: Optional[str] = Non
 📍 Next step will be PLANNING and task and specification creation
   - You will still not be able to make code changes"""
 
-    return await execute_prompt_with_guide("discuss", base_response, arg, pre_text, content)
+    return await execute_prompt_with_guide("discuss", base_response, None, pre_text, content)
 
 
 async def plan_prompt(arg: Optional[str] = None) -> str:
@@ -84,8 +100,14 @@ async def plan_prompt(arg: Optional[str] = None) -> str:
     pre_text = """☑️ **Required Actions:**
 - Remove `.consent` file (if it exists)
 - Create empty `.issue` file (if it doesn't already exist)
-- Add paths of documents created during planning to the `.issue` file
-"""
+- Add paths of documents created during planning to the `.issue` file"""
+
+    if arg:
+        pre_text += f"""
+
+🎯 **Focus:**
+- {arg}"""
+
     base_response = """✅ **Plan Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Concrete planning and specification creation
@@ -94,14 +116,20 @@ async def plan_prompt(arg: Optional[str] = None) -> str:
 
 🔄 **Next Step:** IMPLEMENTATION (requires user consent)"""
 
-    return await execute_prompt_with_guide("plan", base_response, arg, pre_text)
+    return await execute_prompt_with_guide("plan", base_response, None, pre_text)
 
 
 async def implement_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter implementation mode for code changes and implementation activities."""
     pre_text = """☑️ **Required Actions:**
-- Create `.consent` file with content: `implementation`
-"""
+- Create `.consent` file with content: `implementation`"""
+
+    if arg:
+        pre_text += f"""
+
+🎯 **Focus:**
+- {arg}"""
+
     base_response = """⚙️ **Implementation Mode Instructions**
 **Mode Capabilities:**
 📍 Current step: Implementation and code changes
@@ -111,13 +139,20 @@ async def implement_prompt(arg: Optional[str] = None, content: Optional[str] = N
 
 🔄 **Next Step:** CHECK when ready for verification (update .consent file content to 'check')"""
 
-    return await execute_prompt_with_guide("implement", base_response, arg, pre_text, content)
+    return await execute_prompt_with_guide("implement", base_response, None, pre_text, content)
 
 
 async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter check mode for verification and cleanup activities."""
+    logger.debug("check_prompt arg: '{repr(arg)}' content: '{repr(content)}'")
+
     pre_text = """☑️ **Required Actions:**
-- Update `.consent` file content to: `check`
+- Update `.consent` file content to: `check`"""
+
+    if arg:
+        pre_text += f"""
+🎯 **Focus:**
+- {arg}
 """
     base_response = """🔍 **Check Mode Instructions**
 **Mode Capabilities:**
@@ -133,7 +168,7 @@ async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None)
 
 🔄 **Next Step:** DISCUSSION - return to discussion mode (discuss/plan)"""
 
-    return await execute_prompt_with_guide("check", base_response, arg, pre_text, content)
+    return await execute_prompt_with_guide("check", base_response, None, pre_text, content)
 
 
 async def spec_prompt(arg: Optional[str] = None) -> str:
@@ -347,88 +382,66 @@ def register_prompts(mcp: FastMCP) -> None:
         return
     setattr(mcp, "_prompts_registered", True)
 
-    @mcp.prompt("status")
-    async def _status_prompt(arg: Optional[str] = None) -> str:
-        return await status_prompt(arg)
-
-    @mcp.prompt("plan")
-    async def _plan_prompt(arg: Optional[str] = None) -> str:
-        return await plan_prompt(arg)
-
-    @mcp.prompt("discuss")
-    async def _discuss_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
-        return await discuss_prompt(arg, content)
-
-    @mcp.prompt("implement")
-    async def _implement_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
-        return await implement_prompt(arg, content)
-
-    @mcp.prompt("check")
-    async def _check_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
-        return await check_prompt(arg, content)
-
     @mcp.prompt("spec")
     async def _spec_prompt(arg: Optional[str] = None) -> str:
         return await spec_prompt(arg)
 
-    @mcp.prompt("debug")
-    async def _debug_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
-        return f"arg: '{arg}'\ncontent: '{content}'\narg type: {type(arg)}\ncontent type: {type(content)}"
-
     @mcp.prompt("guide")
-    async def _guide_prompt(category: Optional[str] = None) -> str:
-        """Get comprehensive guide content or specific category content."""
-
-        if category:
-            result = await get_category_content(category, None)
-            if result.get("success"):
-                return str(result.get("content", ""))
-            else:
-                return f"Error: {result.get('error', 'Unknown error')}"
-        else:
-            return await format_guide_help()
-
-    @mcp.prompt("category")
-    async def _category_prompt(
-        action: str, name: str, dir: Optional[str] = None, patterns: Optional[str] = None
+    async def _guide_prompt(
+        arg1: Optional[str] = None,
+        arg2: Optional[str] = None,
+        arg3: Optional[str] = None,
+        arg4: Optional[str] = None,
+        arg5: Optional[str] = None,
+        arg6: Optional[str] = None,
+        arg7: Optional[str] = None,
+        arg8: Optional[str] = None,
+        arg9: Optional[str] = None,
+        arg10: Optional[str] = None,
+        arg11: Optional[str] = None,
+        arg12: Optional[str] = None,
+        arg13: Optional[str] = None,
+        arg14: Optional[str] = None,
+        arg15: Optional[str] = None,
+        arg16: Optional[str] = None,
     ) -> str:
-        """Manage categories with actions: add, update, remove, list, get."""
+        """Access guide content with category/document syntax.
 
-        if action == "add":
-            if not dir or not patterns:
-                return "Error: 'dir' and 'patterns' are required for adding a category"
+        Examples:
+        - @guide docs                    # Show docs category content
+        - @guide docs/readme             # Show specific document in docs category
+        - @guide my-collection           # Show collection content
+        """
+        from .guide_integration import GuidePromptHandler
 
-            patterns_list = [p.strip() for p in patterns.split(",")]
-            result = await add_category(name, dir, patterns_list)
+        handler = GuidePromptHandler()
 
-        elif action == "update":
-            result = await update_category(name, dir=dir, patterns=patterns.split(",") if patterns else None)
+        # Reconstruct args list from non-None parameters (MCP has pre-parsed strings)
+        args = [
+            arg
+            for arg in [
+                arg1,
+                arg2,
+                arg3,
+                arg4,
+                arg5,
+                arg6,
+                arg7,
+                arg8,
+                arg9,
+                arg10,
+                arg11,
+                arg12,
+                arg13,
+                arg14,
+                arg15,
+                arg16,
+            ]
+            if arg is not None
+        ]
 
-        elif action == "remove":
-            result = await remove_category(name)
-
-        elif action == "list":
-            result = await list_categories(verbose=True)
-
-        elif action == "get":
-            result = await get_category_content(name, None)
-
+        if args:
+            return await handler.handle_guide_request(args)
         else:
-            return f"Error: Unknown action '{action}'. Valid actions: add, update, remove, list, get"
-
-        if result.get("success"):
-            if action == "list":
-                categories = result.get("categories", {})
-                if categories:
-                    lines = ["Categories:"]
-                    for cat_name, cat_info in categories.items():
-                        lines.append(f"- {cat_name}: {cat_info.get('description', 'No description')}")
-                    return "\n".join(lines)
-                else:
-                    return "No categories found"
-            elif action == "get":
-                return str(result.get("content", ""))
-            else:
-                return str(result.get("message", "Operation completed successfully"))
-        else:
-            return f"Error: {result.get('error', 'Unknown error')}"
+            # No arguments - show help
+            return await handler.handle_guide_request([])

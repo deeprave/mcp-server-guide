@@ -138,18 +138,96 @@ content = await get_guide("context", "project-context")
 
 #### `@guide` Prompt
 
-Get comprehensive guide content or specific category content.
+Get comprehensive guide content, specific category content, or execute CLI commands for advanced operations.
 
-**Usage:**
+**Basic Usage:**
 
 ```
 @guide                    # Get help and overview of all available categories
 @guide category_name      # Get all content from a specific category
+@guide collection_name    # Get all content from a specific collection
+```
+
+## CLI Commands
+
+The `@guide` prompt supports a powerful CLI syntax for advanced operations:
+
+### Quick Reference
+
+| Short | Long        | Description                    |
+|-------|-------------|--------------------------------|
+| `-h`  | `--help`    | Show help (general or target-specific) |
+| `-T`  | `--content` | Inline text content           |
+| `-C`  | `--category`| Category target/argument       |
+| `-D`  | `--document`| Document target                |
+| `-M`  | `--collection`| Collection target            |
+| `-n`  | `--name`    | Name argument                  |
+| `-f`  | `--file`    | File path argument             |
+
+### Phase Commands
+
+Phase commands help manage development workflow transitions:
+
+```
+@guide -d "topic"         # Enter discussion phase with context
+@guide -p "task details"  # Enter planning phase with task context
+@guide -i "implementation notes" # Enter implementation phase
+@guide -c "check details" # Enter check/validation phase
+@guide -s                 # Show current project status
+@guide -q "search term"   # Search across all content
+```
+
+### CRUD Operations
+
+#### Category Operations
+```
+@guide -C -l                                           # List all categories
+@guide -C -a --name "docs" --dir "docs/"               # Add category
+@guide -C -r "old-category"                            # Remove category
+@guide -C -h                                           # Category help
+```
+
+#### Collection Operations
+```
+@guide -M -l                                           # List all collections
+@guide -M -a --name "backend" --categories "api,db"    # Add collection
+@guide -M -A "backend" --categories "auth"             # Add categories to collection
+@guide -M -h                                           # Collection help
+```
+
+#### Document Operations
+```
+@guide -D -l --category "docs"                         # List documents in category
+@guide -D -a "readme" --category "docs" --content "Hello" # Add document
+@guide -D -a --name "guide" --category "docs" --file "guide.md" # Add from file
+@guide -D -h                                           # Document help
+```
+
+### Concatenation Support
+
+Combine multiple short flags for concise commands:
+
+```
+@guide -DaT -n "readme" -C "docs" -T "Hello world"     # Add document (concatenated)
+@guide -Cal --name "api" --dir "api/"                  # Add category (concatenated)
+@guide -Ml                                             # List collections (concatenated)
+```
+
+### Target-Specific Help
+
+Get focused help for specific operations:
+
+```
+@guide -D -h              # Document operations help
+@guide -C -h              # Category operations help
+@guide -M -h              # Collection operations help
+@guide --document --help  # Same as -D -h
 ```
 
 **Parameters:**
 
 - `category` (optional): Name of the category to retrieve content from
+- CLI flags and arguments as documented above
 
 **Examples:**
 
@@ -160,6 +238,7 @@ Get comprehensive guide content or specific category content.
    ```
 
    Returns: Complete help system with available categories, collections, and usage instructions.
+
 2. **Get specific category content:**
 
    ```
@@ -179,6 +258,7 @@ Get comprehensive guide content or specific category content.
    ```
 
    Returns: All project-specific context and information.
+
 3. **Get custom category content:**
 
    ```
@@ -187,11 +267,21 @@ Get comprehensive guide content or specific category content.
 
    Returns: All content from your custom category.
 
+4. **CLI Operations Examples:**
+
+   ```
+   @guide -C -l                                    # List all categories
+   @guide -D -a "readme" -C "docs" -T "# README"  # Add document with content
+   @guide -M -a "backend" --categories "api,db"   # Create collection
+   @guide -DaT -n "guide" -C "docs" -T "content"  # Concatenated form
+   ```
+
 **Error Handling:**
 
 - If category doesn't exist: Returns error message with details
 - If category is empty: Returns empty content
 - If no category specified: Returns comprehensive help
+- CLI validation errors: Returns specific guidance and examples
 
 ### Resources
 

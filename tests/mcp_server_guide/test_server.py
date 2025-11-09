@@ -96,7 +96,7 @@ async def test_server_tool_integration():
 
     # Create server instance
     config = {"docroot": ".", "project": "test"}
-    server = create_server_with_config(config)
+    server = await create_server_with_config(config)
 
     # Test that tools are registered with the server
     tools_list = await server.list_tools()
@@ -136,10 +136,10 @@ async def test_server_session_functions():
 async def test_create_server_functions():
     """Test server creation functions."""
     # Test create_server
-    server_instance = server.create_server()
+    server_instance = await server.create_server()
     assert server_instance is not None
 
     # Test create_server_with_config
     config = {"docroot": "/test", "project": "test"}
-    server_instance = server.create_server_with_config(config)
+    server_instance = await server.create_server_with_config(config)
     assert server_instance is not None

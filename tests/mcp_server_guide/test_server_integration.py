@@ -11,12 +11,12 @@ async def test_server_uses_hybrid_file_access():
     """Test that server uses hybrid file access system."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create server with cache directory
-        server = create_server(docroot=".", cache_dir=temp_dir)
+        server = await create_server(docroot=".", cache_dir=temp_dir)
 
         # Server should have file accessor with cache
-        assert hasattr(server, "ext")
-        assert hasattr(server.ext, "file_accessor")
-        assert server.ext.file_accessor.cache is not None
+        assert hasattr(server, "extensions")
+        assert hasattr(server.extensions, "file_accessor")
+        assert server.extensions.file_accessor.cache is not None
 
 
 async def test_server_integration_with_session_paths():
@@ -25,7 +25,7 @@ async def test_server_integration_with_session_paths():
     from mcp_server_guide.models.category import Category
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        server = create_server(cache_dir=temp_dir)
+        server = await create_server(cache_dir=temp_dir)
 
         try:
             session = SessionManager()
@@ -41,7 +41,7 @@ async def test_server_integration_with_session_paths():
             )
             session.session_state.project_config = config
 
-            with patch.object(server, "_session_manager", session):
+            with patch.object(server.extensions, "_session_manager", session):
                 # Test that category content can be retrieved
                 from mcp_server_guide.tools.category_tools import get_category_content
 

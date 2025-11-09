@@ -15,9 +15,12 @@ async def test_complete_workflow_with_defaults():
         mock_contextvar.get = Mock(return_value={})
 
         runner = CliRunner()
-        command = main()
+        command = await main()
 
-        with patch("mcp_server_guide.main.start_mcp_server", lambda mode, config: "Started"):
+        async def mock_start_server(mode, config):
+            return "Started"
+
+        with patch("mcp_server_guide.main.start_mcp_server", side_effect=mock_start_server):
             result = runner.invoke(command, [])
 
         assert result.exit_code == 0
@@ -31,9 +34,12 @@ async def test_complete_workflow_with_cli_args():
         mock_contextvar.get = Mock(return_value={})
 
         runner = CliRunner()
-        command = main()
+        command = await main()
 
-        with patch("mcp_server_guide.main.start_mcp_server", lambda mode, config: "Started"):
+        async def mock_start_server(mode, config):
+            return "Started"
+
+        with patch("mcp_server_guide.main.start_mcp_server", side_effect=mock_start_server):
             result = runner.invoke(
                 command,
                 [

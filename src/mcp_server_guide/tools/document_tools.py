@@ -21,10 +21,30 @@ def _write_document_content(doc_path: Path, content: str) -> None:
 
 
 WINDOWS_RESERVED = {
-    'con', 'prn', 'aux', 'nul',
-    'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
-    'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9'
+    "con",
+    "prn",
+    "aux",
+    "nul",
+    "lpt1",
+    "lpt2",
+    "lpt3",
+    "lpt4",
+    "lpt5",
+    "lpt6",
+    "lpt7",
+    "lpt8",
+    "lpt9",
+    "com1",
+    "com2",
+    "com3",
+    "com4",
+    "com5",
+    "com6",
+    "com7",
+    "com8",
+    "com9",
 }
+
 
 def _validate_document_name(name: str) -> bool:
     """Validate document name for security and filesystem compatibility.
@@ -48,7 +68,7 @@ def _validate_document_name(name: str) -> bool:
 
     # Normalize unicode to prevent combining character attacks
     try:
-        normalized = name.encode('utf-8').decode('utf-8')
+        normalized = name.encode("utf-8").decode("utf-8")
         if normalized != name:
             return False
     except UnicodeError:
@@ -63,7 +83,7 @@ def _validate_document_name(name: str) -> bool:
         return False
 
     # Check base name without extension against reserved names
-    base_name = name.split('.')[0].lower()
+    base_name = name.split(".")[0].lower()
     if base_name in WINDOWS_RESERVED:
         return False
 

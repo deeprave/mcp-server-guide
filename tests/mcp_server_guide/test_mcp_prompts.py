@@ -14,22 +14,15 @@ class TestMCPPrompts:
         """Create a server instance for testing."""
         session_manager = SessionManager()
         session_manager._set_config_filename(isolated_config_file)
-        return create_server(config_file=str(isolated_config_file))
+        return await create_server(config_file=str(isolated_config_file))
 
     async def test_list_prompts_returns_expected_prompts(self, server):
         """Test that list_prompts handler returns our defined prompts."""
         prompts = await server.list_prompts()
-        assert len(prompts) == 9  # Updated to include spec prompt
+        assert len(prompts) == 2  # Updated: spec and guide only
 
         prompt_names = [p.name for p in prompts]
         assert "guide" in prompt_names
-        assert "category" in prompt_names
-        assert "discuss" in prompt_names
-        assert "plan" in prompt_names
-        assert "status" in prompt_names
-        assert "implement" in prompt_names
-        assert "check" in prompt_names
-        assert "debug" in prompt_names
         assert "spec" in prompt_names
 
     async def test_get_prompt_with_unknown_name_raises_error(self, server):
@@ -46,28 +39,27 @@ class TestMCPPrompts:
 
     async def test_guide_prompt_with_category_argument(self, server):
         """Test guide prompt with category argument."""
-        result = await server.get_prompt("guide", {"category": "lang"})
+        result = await server.get_prompt("guide", {"arg1": "lang"})
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
 
-    async def test_category_prompt_with_new_action(self, server):
-        """Test category prompt with new action."""
+    async def test_guide_prompt_category_add_functionality(self, server):
+        """Test guide prompt with category add functionality (replaces category prompt)."""
         result = await server.get_prompt(
-            "category", {"action": "new", "name": "test-category", "dir": "test/", "patterns": "*.md,*.txt"}
+            "guide",
+            {"arg1": "-C", "arg2": "-a", "arg3": "--name", "arg4": "test-category", "arg5": "--dir", "arg6": "test/"},
         )
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
 
-    async def test_category_prompt_with_edit_action(self, server):
-        """Test category prompt with edit action."""
-        result = await server.get_prompt(
-            "category", {"action": "edit", "name": "test-category", "patterns": "*.md,*.txt"}
-        )
+    async def test_guide_prompt_category_list_functionality(self, server):
+        """Test guide prompt with category list functionality (replaces category prompt)."""
+        result = await server.get_prompt("guide", {"arg1": "-C", "arg2": "-l"})
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
 
-    async def test_category_prompt_with_del_action(self, server):
-        """Test category prompt with del action."""
-        result = await server.get_prompt("category", {"action": "del", "name": "test-category"})
+    async def test_guide_prompt_category_remove_functionality(self, server):
+        """Test guide prompt with category remove functionality (replaces category prompt)."""
+        result = await server.get_prompt("guide", {"arg1": "-C", "arg2": "-r", "arg3": "test-category"})
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0

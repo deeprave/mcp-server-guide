@@ -6,7 +6,6 @@ from ..operations.model_base import BaseModelOperations
 from ..operations.operation_base import BaseOperation
 
 
-
 class ContentModel(BaseModelOperations):
     """Model representing content with its operations."""
 

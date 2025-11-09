@@ -1,6 +1,9 @@
 """Main CLI entry point for MCP server."""
 
+import logging
 import os
+import sys
+import asyncio
 from typing import Any, Dict, cast
 import click
 import contextlib
@@ -9,14 +12,24 @@ from .config import Config
 from .logging_config import get_logger
 from .path_resolver import LazyPath
 
-logger = get_logger()
+# Logger will be initialized after logging setup
+logger = None
+
+
+def _get_safe_logger() -> logging.Logger:
+    """Get logger safely, handling case where global logger is not yet initialized."""
+    global logger
+    if logger is None:
+        return get_logger()
+    return logger
+
 
 # Thread-safe storage for CLI configuration using contextvars
 _deferred_builtin_config: ContextVar[Dict[str, Any]] = ContextVar("deferred_builtin_config", default={})
 
 
 def resolve_config_path(config_path: str | None) -> LazyPath | None:
-    """Resolve config file path with client-relative defaults.
+    """Resolve server config file path with environment variable and user path expansion.
 
     Args:
         config_path: Config file path
@@ -102,55 +115,6 @@ def resolve_config_file_path(kwargs: Dict[str, Any]) -> LazyPath | None:
     return resolve_config_path(config_file_path)
 
 
-def setup_early_logging(mode: str, **kwargs: Any) -> None:
-    """Setup early logging before configuration resolution.
-
-    Args:
-        mode: Server mode (stdio, etc.)
-        **kwargs: CLI arguments containing logging options
-    """
-    from .logging_config import setup_logging
-
-    # Get basic logging config from CLI args for early setup
-    early_log_level = kwargs.get("log_level", "INFO")
-    early_log_file = kwargs.get("log_file", "")
-    early_log_console = kwargs.get("log_console", True)
-    early_log_json = kwargs.get("log_json", False)
-
-    # For stdio mode, disable console logging by default unless explicitly enabled
-    if mode == "stdio" and "log_console" not in kwargs:
-        early_log_console = False
-
-    # Force file logging for debugging if log_file is specified
-    if early_log_file:
-        early_log_console = True  # Also enable console for debugging
-
-    setup_logging(early_log_level or "INFO", early_log_file or "", bool(early_log_console), bool(early_log_json))
-
-
-def setup_final_logging(resolved_config: Dict[str, Any], mode_type: str, **kwargs: Any) -> None:
-    """Setup final logging with resolved configuration.
-
-    Args:
-        resolved_config: Resolved configuration dictionary
-        mode_type: Server mode type
-        **kwargs: CLI arguments for override detection
-    """
-    from .logging_config import setup_logging
-
-    # Re-setup logging with final configuration (in case it changed)
-    log_level = resolved_config.get("log_level", "OFF")
-    log_file = resolved_config.get("log_file", "")
-    log_console = resolved_config.get("log_console", True)
-    log_json = resolved_config.get("log_json", False)
-
-    # For stdio mode, disable console logging by default unless explicitly enabled
-    if mode_type == "stdio" and "log_console" not in kwargs:
-        log_console = False
-
-    setup_logging(log_level or "INFO", log_file or "", bool(log_console), bool(log_json))
-
-
 class CustomHelpFormatter(click.HelpFormatter):
     """Custom help formatter with no wrapping and footnotes."""
 
@@ -195,55 +159,104 @@ def validate_mode(mode: str) -> tuple[str, str]:
         tuple: (mode_type, mode_config)
         - stdio: ("stdio", "")
     """
-    logger.debug(f"Validating mode: {mode}")
+    safe_logger = _get_safe_logger()
+    safe_logger.debug(f"Validating mode: {mode}")
 
     if mode == "stdio":
-        logger.debug("Using stdio mode")
+        safe_logger.debug("Using stdio mode")
         return ("stdio", "")
 
-    logger.warning(f"Invalid mode specified: {mode}")
-    logger.error(f"Program exiting due to invalid mode: {mode}")
+    safe_logger.warning(f"Invalid mode specified: {mode}")
+    safe_logger.error(f"Program exiting due to invalid mode: {mode}")
     raise click.BadParameter(f"Invalid mode: {mode}. Use 'stdio'")
 
 
-def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
+async def start_mcp_server(mode: str, config: Dict[str, Any]) -> str:
     """Start MCP server in specified mode."""
-    from .server import get_current_server_sync, set_current_config
+    from .server import get_current_server, set_current_config
 
-    logger.debug("Starting MCP server configuration")
-    logger.debug(f"Mode: {mode}")
-    logger.debug(f"Config keys: {list(config.keys())}")
+    safe_logger = _get_safe_logger()
+    safe_logger.debug("Starting MCP server configuration in {mode} mode")
+    safe_logger.debug(f"Config keys: {list(config.keys())}")
 
     # Set config for lazy server creation
     set_current_config(config)
 
     if mode == "stdio":
-        logger.info("Starting MCP server in stdio mode")
+        safe_logger.info("Starting MCP server in stdio mode")
         # Start MCP server in stdio mode
         try:
-            server = get_current_server_sync()
+            server = await get_current_server()
             if server is not None:
-                server.run()
-                logger.info("MCP server shutdown normally (exit code 0)")
+                await server.run_stdio_async()
+                safe_logger.info("MCP server shutdown normally (exit code 0)")
             else:
-                logger.error("Failed to create server instance")
+                safe_logger.error("Failed to create server instance")
                 return "Failed to create server instance"
         except (BrokenPipeError, KeyboardInterrupt):
-            logger.debug("MCP server shutdown (pipe closed or interrupted)")
-            logger.info("MCP server shutdown due to interruption (exit code 0)")
+            safe_logger.debug("MCP server shutdown (pipe closed or interrupted)")
+            safe_logger.info("MCP server shutdown due to interruption (exit code 0)")
         except Exception as e:
-            logger.error(f"FATAL: MCP server crashed during runtime: {e}", exc_info=True)
+            safe_logger.error(f"FATAL: MCP server crashed during runtime: {e}", exc_info=True)
             # Force flush before re-raising
-            for handler in logger.handlers:
+            for handler in safe_logger.handlers:
                 handler.flush()
             raise
         return "MCP server started in stdio mode"
     else:
-        logger.error(f"Program exiting due to unsupported mode: {mode}")
+        safe_logger.error(f"Program exiting due to unsupported mode: {mode}")
         raise ValueError(f"Unsupported mode: {mode}")
 
 
-def main() -> click.Command:
+def parse_cli_arguments() -> Dict[str, Any]:
+    """Parse CLI arguments and return configuration dictionary.
+
+    This function only handles CLI parsing and returns the parsed configuration.
+    It does NOT start the server - that's handled separately.
+
+    For now, this is a simplified version that demonstrates the architectural separation.
+    The full Click option integration will be added in the next phase.
+    """
+    import sys
+
+    # Simple argument parsing for demonstration
+    # This will be enhanced with full Click integration
+    config = {
+        "mode": "stdio",
+        "docroot": ".",
+        "project": None,
+        "log_level": "INFO",
+        "log_console": True,
+        "log_file": "",
+        "log_json": False,
+    }
+
+    # Handle --help and --version
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("MCP Server Guide - Help will be implemented with full Click integration")
+        sys.exit(0)
+
+    if "--version" in sys.argv:
+        from .naming import MCP_GUIDE_VERSION, mcp_name
+
+        print(f"{mcp_name()} {MCP_GUIDE_VERSION}")
+        sys.exit(0)
+
+    # Parse basic arguments (simplified for architectural demonstration)
+    for i, arg in enumerate(sys.argv[1:], 1):
+        if arg == "--docroot" and i < len(sys.argv) - 1:
+            config["docroot"] = sys.argv[i + 1]
+        elif arg == "--project" and i < len(sys.argv) - 1:
+            config["project"] = sys.argv[i + 1]
+        elif arg == "--log-level" and i < len(sys.argv) - 1:
+            config["log_level"] = sys.argv[i + 1]
+        elif arg == "--log-file" and i < len(sys.argv) - 1:
+            config["log_file"] = sys.argv[i + 1]
+
+    return config
+
+
+async def main() -> click.Command:
     """Main CLI entry point for MCP server."""
     config = Config()
 
@@ -271,30 +284,16 @@ def main() -> click.Command:
 
         try:
             # Setup early logging FIRST - before any other operations
-            from .logging_config import setup_logging
+            from .logging_config import setup_consolidated_logging
 
-            # Get basic logging config from CLI args for early setup
-            early_log_level = kwargs.get("log_level", "INFO")
-            early_log_file = kwargs.get("log_file", "")
-            early_log_console = kwargs.get("log_console", True)
-            early_log_json = kwargs.get("log_json", False)
+            setup_consolidated_logging(mode, config_source=None, cli_overrides=kwargs)
 
-            # For stdio mode, disable console logging by default unless explicitly enabled
-            if mode == "stdio" and "log_console" not in kwargs:
-                early_log_console = False
-
-            # Force file logging for debugging if log_file is specified
-            if early_log_file:
-                early_log_console = True  # Also enable console for debugging
-
-            setup_logging(
-                early_log_level or "INFO", early_log_file or "", bool(early_log_console), bool(early_log_json)
-            )
+            # Initialize logger after logging setup
+            global logger
+            logger = get_logger()
 
             logger.info("=== MCP Server Initialization Starting ===")
-            logger.info(
-                f"Early logging setup: level={early_log_level}, file={early_log_file}, console={early_log_console}"
-            )
+            logger.debug(f"Early logging setup: {kwargs}")
             logger.debug(f"CLI arguments: mode={mode}, kwargs={kwargs}")
 
             # Force flush after initial messages
@@ -331,20 +330,10 @@ def main() -> click.Command:
             if mode_config:
                 resolved_config["mode_config"] = mode_config
 
-            # Re-setup logging with final configuration (in case it changed)
-            log_level = resolved_config.get("log_level", "OFF")
-            log_file = resolved_config.get("log_file", "")
-            log_console = resolved_config.get("log_console", True)
-            log_json = resolved_config.get("log_json", False)
+            # Setup final logging with resolved configuration
+            from .logging_config import setup_consolidated_logging
 
-            # For stdio mode, disable console logging by default unless explicitly enabled
-            if mode_type == "stdio" and "log_console" not in kwargs:
-                log_console = False
-
-            setup_logging(log_level or "INFO", log_file or "", bool(log_console), bool(log_json))
-
-            # Log startup information
-            logger.info(f"MCP server starting up in {mode_type} mode")
+            setup_consolidated_logging(mode_type, config_source=resolved_config, cli_overrides=kwargs)
 
             # Log resolved configuration as single JSON block
             import json
@@ -358,7 +347,29 @@ def main() -> click.Command:
             # Start MCP server
             logger.debug("Starting MCP server")
             try:
-                result = start_mcp_server(mode_type, resolved_config)
+                # Handle async server startup with proper event loop detection
+                try:
+                    # Check if we're already in an async context (e.g., during testing)
+                    asyncio.get_running_loop()
+                    # We're in an async context, we need to run in a new thread
+                    import concurrent.futures
+
+                    def run_in_new_loop() -> str:
+                        # Create a new event loop in this thread
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        try:
+                            return new_loop.run_until_complete(start_mcp_server(mode_type, resolved_config))
+                        finally:
+                            new_loop.close()
+
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(run_in_new_loop)
+                        result = future.result()
+
+                except RuntimeError:
+                    # No running loop, use asyncio.run normally
+                    result = asyncio.run(start_mcp_server(mode_type, resolved_config))
             except Exception as e:
                 logger.error(f"FATAL: Failed to start MCP server: {e}", exc_info=True)
                 logger.error("=== MCP SERVER STARTUP FAILED ===")
@@ -383,12 +394,13 @@ def main() -> click.Command:
 
             try:
                 # Try to log with the configured logger
-                logger.error(f"FATAL: CLI execution failed: {e}", exc_info=True)
-                logger.error("=== FULL TRACEBACK ===")
-                logger.error(traceback.format_exc())
+                safe_logger = _get_safe_logger()
+                safe_logger.error(f"FATAL: CLI execution failed: {e}", exc_info=True)
+                safe_logger.error("=== FULL TRACEBACK ===")
+                safe_logger.error(traceback.format_exc())
 
                 # Force flush all handlers
-                for handler in logger.handlers:
+                for handler in safe_logger.handlers:
                     handler.flush()
             except Exception:
                 # If logging fails, write directly to stderr
@@ -488,11 +500,11 @@ def main() -> click.Command:
     return cast(click.Command, cli_main)
 
 
-def cli_main() -> None:
-    """Console script entry point."""
+async def cli_main_async() -> None:
+    """Console script entry point - async version."""
     try:
-        command = main()
-        command()
+        command = await main()
+        command()  # Click commands are not awaitable
     except Exception as e:
         # Last resort error handling - try to log if possible
         try:
@@ -512,3 +524,53 @@ def cli_main() -> None:
             traceback.print_exc(file=sys.stderr)
             sys.stderr.flush()
         raise
+
+
+def cli_main_new() -> None:
+    """New clean CLI entry point - parse CLI then start server."""
+    try:
+        # Phase 1: Parse CLI arguments (sync, returns config)
+        config_dict = parse_cli_arguments()
+
+        # Phase 2: Start server with parsed config (async, clean context)
+        asyncio.run(start_server_with_config(config_dict))
+
+    except KeyboardInterrupt:
+        print("\nServer interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        sys.exit(1)
+
+
+async def start_server_with_config(config_dict: Dict[str, Any]) -> None:
+    """Start server in clean async context with parsed configuration."""
+    # Extract mode from config
+    mode = config_dict.get("mode", "stdio")
+
+    # Setup logging with CLI arguments
+    from .logging_config import setup_consolidated_logging
+
+    setup_consolidated_logging(mode, config_source=None, cli_overrides=config_dict)
+
+    # Resolve configuration using existing logic
+    from .config import Config
+
+    config = Config()
+    resolved_config = resolve_cli_config(config, **config_dict)
+
+    # Add config file path resolution
+    config_file_path = resolve_config_file_path(config_dict)
+    resolved_config["config_filename"] = config_file_path
+
+    # Start the MCP server (this is already async)
+    result = await start_mcp_server(mode, resolved_config)
+
+    # Only echo result if we're not in stdio mode (to avoid breaking protocol)
+    if mode != "stdio":
+        print(result)
+
+
+def cli_main() -> None:
+    """Console script entry point - sync wrapper."""
+    asyncio.run(cli_main_async())

@@ -13,7 +13,8 @@ class TestPromptAdditionalContext:
         result = await check_prompt("analyze this code")
 
         assert "🔍 **Check Mode Instructions**" in result
-        assert "🎯 Focus: analyze this code" in result
+        assert "🎯 **Focus:**" in result
+        assert "analyze this code" in result
 
     @pytest.mark.asyncio
     async def test_check_prompt_with_instruction_and_content(self):
@@ -30,7 +31,8 @@ def broken_function():
         result = await check_prompt(instruction, additional_content)
 
         assert "🔍 **Check Mode Instructions**" in result
-        assert "🎯 Focus: analyze these suggestions" in result
+        assert "🎯 **Focus:**" in result
+        assert "analyze these suggestions" in result
         assert "src/example.py:10" in result
         assert "suggestion: Fix this bug" in result
 
@@ -47,7 +49,7 @@ Feature 3: Add tests
         result = await implement_prompt(instruction, additional_content)
 
         assert "⚙️ **Implementation Mode Instructions**" in result
-        assert "🎯 Focus: implement these features" in result
+        assert "🎯 **Focus:**" in result
         assert "Feature 1: Add validation" in result
         assert "Feature 2: Improve error handling" in result
 
@@ -69,7 +71,7 @@ Feature 3: Add tests
         result = await discuss_prompt(instruction, additional_content)
 
         assert "💬 **Discussion Mode Instructions**" in result
-        assert "🎯 Focus: review this design" in result
+        assert "🎯 **Focus:**" in result
         assert "## Architecture Overview" in result
         assert "## Questions" in result
 
@@ -79,7 +81,7 @@ Feature 3: Add tests
         result = await check_prompt("analyze code", "")
 
         assert "🔍 **Check Mode Instructions**" in result
-        assert "🎯 Focus: analyze code" in result
+        assert "🎯 **Focus:**\n- analyze code" in result
 
     @pytest.mark.asyncio
     async def test_prompt_with_whitespace_only_content(self):
@@ -87,4 +89,4 @@ Feature 3: Add tests
         result = await check_prompt("analyze code", "   \n\n   ")
 
         assert "🔍 **Check Mode Instructions**" in result
-        assert "🎯 Focus: analyze code" in result
+        assert "🎯 **Focus:**\n- analyze code" in result

@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-server-guide = "mcp_server_guide.main:cli_main"
+mcp-server-guide = "mcp_server_guide.main:cli_main_new"
 # check for vulnerabilities
 osvcheck = "osvcheck:main"
 
@@ -45,9 +45,6 @@ addopts = [
     "--cov=src/mcp_server_guide",
     "--cov-report=term-missing",
 ]
-filterwarnings = [
-    "ignore:coroutine 'LazyPath.resolve' was never awaited:RuntimeWarning",
-]
 
 [tool.ruff]
 src = ["src"]
@@ -56,8 +53,9 @@ line-length = 120
 
 [tool.mypy]
 python_version = "3.13"
-packages = ["src/mcp_server_guide"]
+mypy_path = "src"
 strict = true
+namespace_packages = true
 
 [dependency-groups]
 dev = [

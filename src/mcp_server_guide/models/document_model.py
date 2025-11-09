@@ -6,7 +6,6 @@ from ..operations.model_base import BaseModelOperations
 from ..operations.operation_base import BaseOperation
 
 
-
 class DocumentModel(BaseModelOperations):
     """Model representing a document with its operations."""
 

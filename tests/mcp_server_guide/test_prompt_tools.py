@@ -9,7 +9,7 @@ from mcp_server_guide.server import create_server_with_config
 async def server():
     """Create a server instance for testing."""
     config = {"docroot": ".", "project": "test"}
-    return create_server_with_config(config)
+    return await create_server_with_config(config)
 
 
 async def test_list_prompts_returns_expected_structure(server):
@@ -25,21 +25,15 @@ async def test_list_prompts_returns_expected_structure(server):
 
 
 async def test_list_prompts_includes_all_registered_prompts(server):
-    """Test that list_prompts includes all 6 registered prompts."""
+    """Test that list_prompts includes all 4 registered prompts."""
     result = await list_prompts()
 
     assert result["success"] is True
-    assert result["total_prompts"] == 9  # Updated to include spec prompt
+    assert result["total_prompts"] == 2  # Updated: spec and guide only
 
     prompt_names = {p["name"] for p in result["prompts"]}
     assert "guide" in prompt_names
-    assert "category" in prompt_names
-    assert "discuss" in prompt_names
-    assert "plan" in prompt_names
-    assert "status" in prompt_names
-    assert "implement" in prompt_names
-    assert "check" in prompt_names
-    assert "status" in prompt_names
+    assert "spec" in prompt_names
 
 
 async def test_list_prompts_includes_prompt_metadata(server):
@@ -58,26 +52,25 @@ async def test_list_prompts_includes_prompt_metadata(server):
 
 
 async def test_list_prompts_guide_has_category_argument(server):
-    """Test that the 'guide' prompt has a 'category' argument."""
+    """Test that the 'guide' prompt has a 'arg1' argument."""
     result = await list_prompts()
 
     guide_prompt = next((p for p in result["prompts"] if p["name"] == "guide"), None)
     assert guide_prompt is not None
 
     arg_names = {arg["name"] for arg in guide_prompt["arguments"]}
-    assert "category" in arg_names
+    assert "arg1" in arg_names
 
 
-async def test_list_prompts_category_has_required_arguments(server):
-    """Test that the 'category' prompt has required arguments."""
+async def test_list_prompts_guide_has_comprehensive_arguments(server):
+    """Test that the 'guide' prompt has comprehensive argument support."""
     result = await list_prompts()
 
-    category_prompt = next((p for p in result["prompts"] if p["name"] == "category"), None)
-    assert category_prompt is not None
+    guide_prompt = next((p for p in result["prompts"] if p["name"] == "guide"), None)
+    assert guide_prompt is not None
 
-    arg_names = {arg["name"] for arg in category_prompt["arguments"]}
-    assert "action" in arg_names
-    assert "name" in arg_names
+    # Guide prompt should have multiple argument slots for flexibility
+    assert len(guide_prompt["arguments"]) >= 16  # Has arg1 through arg16
 
 
 async def test_list_resources_returns_expected_structure():

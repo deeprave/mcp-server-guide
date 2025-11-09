@@ -15,7 +15,7 @@ def log_tool_usage(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             tool_name = func.__name__
-            logger.info(f"Tool called: {tool_name}")
+            logger.debug(f"Tool called: {tool_name}")
             try:
                 result = await func(*args, **kwargs)
                 logger.debug(f"Tool {tool_name} completed successfully")

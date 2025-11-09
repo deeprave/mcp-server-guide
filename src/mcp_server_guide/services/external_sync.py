@@ -19,6 +19,7 @@ logger = get_logger()
 CACHE_TTL = 300
 VALID_SOURCE_TYPES = {"manual", "external", "template", "generated"}
 
+
 def validate_existing_metadata(metadata: DocumentMetadata) -> bool:
     """Validate metadata fields are reasonable."""
     if not metadata.source_type or metadata.source_type not in VALID_SOURCE_TYPES:
@@ -27,11 +28,13 @@ def validate_existing_metadata(metadata: DocumentMetadata) -> bool:
         return False
     return True
 
+
 def create_metadata_with_checksum(metadata: DocumentMetadata) -> Dict[str, Any]:
     """Add checksum to metadata for integrity."""
     data = metadata.model_dump()
     checksum = hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
     return {**data, "_checksum": checksum}
+
 
 def verify_metadata_checksum(metadata_dict: Dict[str, Any]) -> bool:
     """Verify metadata checksum integrity."""
@@ -48,6 +51,7 @@ def verify_metadata_checksum(metadata_dict: Dict[str, Any]) -> bool:
 @dataclass
 class ChangesCache:
     """Thread-safe changes cache with expiration."""
+
     _cache: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _ttl: int = CACHE_TTL
@@ -125,7 +129,7 @@ async def sync_document_metadata(doc_path: Path) -> Dict[str, Any]:
                 existing_metadata.source_type = "external"
 
             if existing_metadata.content_hash and existing_metadata.content_hash != current_hash:
-                logger.info(f"Content hash mismatch for {doc_path} - external modification detected")
+                logger.warning(f"Content hash mismatch for {doc_path} - external modification detected")
 
             # Update hash and mime type
             updated_metadata = DocumentMetadata(
@@ -158,15 +162,18 @@ async def _cleanup_category_documents(category_dir: str) -> None:
                 # Check if document needs sync
                 validation_result = await validate_document_integrity(doc_path)
                 if not validation_result["success"]:
-                    logger.info(f"Syncing modified document: {doc_path}")
+                    logger.debug(f"Syncing modified document: {doc_path}")
                     await sync_document_metadata(doc_path)
 
                     # Log change in cache
                     cache_key = str(doc_path)
-                    await _cache.add_change(cache_key, {
-                        "action": "modified",
-                        "category": category_dir,
-                    })
+                    await _cache.add_change(
+                        cache_key,
+                        {
+                            "action": "modified",
+                            "category": category_dir,
+                        },
+                    )
 
     except Exception as e:
         logger.exception(f"Error during category cleanup for {category_dir}: {e}")
@@ -177,6 +184,7 @@ def schedule_cleanup_task(category_dir: str) -> None:
     task = asyncio.create_task(_cleanup_category_documents(category_dir))
     _cleanup_tasks.add(task)
     task.add_done_callback(lambda t: _cleanup_tasks.discard(t))
+
 
 async def cancel_all_cleanup_tasks() -> None:
     """Cancel all running cleanup tasks."""

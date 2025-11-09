@@ -8,7 +8,6 @@ Types  - mypy                     - ensure that full typing is correct and issue
 Format - ruff format              - format code to a known standard
 
 **REQUIRED**
- ALL tests must pass. NO EXCEPTIONS
+ ALL tests must pass without warnings. NO EXCEPTIONS
  ALL linting issues must pass. NO EXCEOPTIONS
  ALL type checks must be correct. NO EXCEPTIONS
-

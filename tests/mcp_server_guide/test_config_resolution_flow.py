@@ -110,7 +110,7 @@ class TestServerInitialization:
         """Test that server_lifespan initializes project from PWD."""
         from mcp_server_guide.server import server_lifespan, create_server
 
-        server = create_server()
+        server = await create_server()
         with patch.dict(os.environ, {"PWD": "/home/user/my-project"}):
             async with server_lifespan(server):
                 # After initialization, SessionManager should have project set
@@ -127,7 +127,7 @@ class TestServerInitialization:
         from mcp_server_guide.server import server_lifespan, create_server
         from mcp_server_guide.session_manager import SessionManager
 
-        server = create_server()
+        server = await create_server()
         # Reset session state
         session = SessionManager()
         session.session_state.project_name = None
@@ -145,7 +145,7 @@ class TestServerInitialization:
         from mcp_server_guide.project_config import ProjectConfig
         from unittest.mock import patch
 
-        server = create_server()
+        server = await create_server()
         with patch.dict(os.environ, {"PWD": "/home/user/test-project"}):
             with patch.object(
                 SessionManager, "get_or_create_project_config", new=AsyncMock(return_value=ProjectConfig(categories={}))

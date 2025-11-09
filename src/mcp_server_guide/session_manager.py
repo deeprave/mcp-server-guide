@@ -145,7 +145,8 @@ class SessionManager:
         from .project_config import ProjectConfig
 
         self._session_state.reset_project_config(project_name)
-        self._session_state.project_config = ProjectConfig(categories=self.builtin_categories())
+        categories = self.default_categories()
+        self._session_state.project_config = ProjectConfig(categories=categories)
 
     async def save_session(self) -> None:
         """Save session state to config file."""
@@ -255,8 +256,8 @@ class SessionManager:
         return self._session_state.get_project_config()
 
     @staticmethod
-    def builtin_categories() -> Dict[str, Any]:
-        """Create built-in categories with default values."""
+    def default_categories() -> Dict[str, Any]:
+        """Create default categories with default values."""
         return {
             "guide": Category(
                 url=None,
@@ -275,6 +276,12 @@ class SessionManager:
                 dir="context/",
                 patterns=["project-context"],
                 description="Project-specific guidelines",
+            ),
+            "prompt": Category(
+                url=None,
+                dir="prompt/",
+                patterns=[],
+                description="Prompt-related instructions",
             ),
         }
 

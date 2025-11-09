@@ -5,12 +5,12 @@ from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
 from .session_manager import SessionManager
 from .logging_config import get_logger
-from .error_handler import ErrorHandler
+from .utils.error_handler import ErrorHandler
 from .resource_registry import register_resources
 from .prompts import register_prompts
 
 logger = get_logger()
-error_handler = ErrorHandler(logger)
+error_handler = ErrorHandler()
 
 
 @asynccontextmanager
@@ -18,7 +18,6 @@ async def server_lifespan(server: FastMCP) -> Any:
     """Manage server lifecycle with proper startup and shutdown."""
     import os
 
-    logger.info("=== Starting MCP server initialization ===")
     logger.info("Starting MCP Server Guide...")
 
     # Validate PWD environment variable
@@ -63,19 +62,13 @@ async def server_lifespan(server: FastMCP) -> Any:
             raise RuntimeError(f"Server parameter application failed: {e}") from e
 
         config = await session_manager.get_or_create_project_config(project_name or "default")
-        logger.info(
-            f"Loaded configuration with {len(config.categories)} categories and {len(config.collections)} collections"
-        )
+        logger.info(f"Loaded configuration: {len(config.categories)} categories, {len(config.collections)} collections")
 
         await register_resources(server, config)
 
         register_prompts(server)
 
-        # Register tools with new signature
-        from .tool_registry import register_tools
-        from .tool_decoration import log_tool_usage
-
-        register_tools(server, log_tool_usage)
+        # Tools are already registered in create_server() - no need to register again here
 
         logger.info("MCP server initialized successfully")
         yield

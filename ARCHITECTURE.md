@@ -56,6 +56,40 @@ Configuration values are resolved in the following order (highest to lowest prio
 4. **Session Overrides** - Runtime session modifications
 5. **Defaults** - Built-in default values
 
+## **CLI Architecture**
+
+### **Command Parsing Flow**
+
+1. **Argument Normalization** - Convert short flags to long form, handle concatenation
+2. **Target Detection** - Identify first target flag (--document, --category, --collection)
+3. **Context Resolution** - Determine argument context based on target
+4. **Validation** - Validate command structure and required arguments
+5. **Dispatch** - Route to appropriate command handler
+
+### **Target-First Parsing**
+
+The CLI uses target-first parsing where the first target flag determines the context:
+
+```
+@guide --document -C "category" -a "name"
+       ^^^^^^^^^^ ^^
+       target     context argument (not target)
+```
+
+### **Concatenation Support**
+
+Short flags can be concatenated for concise commands:
+
+```
+-DaT  → --document --add --content
+-Cal  → --category --add --list
+```
+
+**Rules:**
+- Only single-dash flags can be concatenated
+- Arguments must be explicitly flagged in concatenated form
+- Target context applies to all flags in the concatenation
+
 ## **File Source Types**
 
 ### **Local Files (`local:`)**
@@ -159,10 +193,14 @@ Configuration values are resolved in the following order (highest to lowest prio
 ```
 src/mcp_server_-_guide/
 ├── __init__.py
+├── cli_parser.py           # CLI command parsing and validation
 ├── config.py              # CLI configuration
+├── error_handlers.py       # CLI validation and error handling
 ├── file_cache.py          # HTTP caching system
 ├── file_source.py         # File source abstraction
+├── help_system.py         # Target-specific help system
 ├── http_client.py         # HTTP client with conditional requests
+├── phase_handlers.py      # CLI command handlers
 ├── project_config.py      # Persistent configuration
 ├── server.py              # MCP server implementation
 ├── session.py             # Session path resolution

@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .server_extensions import ServerExtensions
 from .server_lifecycle import server_lifespan
-from .logging_config import get_logger, setup_logging
+from .logging_config import get_logger
 from .tool_decoration import log_tool_usage
 from .naming import mcp_name, MCP_GUIDE_VERSION
 from .file_cache import FileCache
@@ -37,7 +37,7 @@ class GuideMCP(FastMCP):
         if lifespan is not None:
             kwargs["lifespan"] = lifespan
         super().__init__(name, *args, **kwargs)
-        self.ext: ServerExtensions  # Will be assigned during server creation
+        self.extensions: ServerExtensions  # Will be assigned during server creation
         self.project = project
         self.docroot = docroot
         self.config_file = config_file
@@ -55,7 +55,7 @@ class GuideMCP(FastMCP):
         return list(self._resource_manager.list_resources())
 
 
-def create_server(
+async def create_server(
     name: Optional[str] = None,
     version: Optional[str] = None,
     docroot: Optional[str] = None,
@@ -64,15 +64,14 @@ def create_server(
     log_level: str = "INFO",
     **kwargs: Any,
 ) -> GuideMCP:
-    """Create and configure the MCP server."""
+    """Create and configure the MCP server (async version)."""
 
     # Use dynamic defaults
     actual_name = name or mcp_name()
     actual_version = version or MCP_GUIDE_VERSION
 
-    # Configure logging
-    if log_level:
-        setup_logging(log_level)
+    # Configure logging - handled by main.py setup_consolidated_logging
+    # Removed redundant setup_logging call that was overriding file logging
 
     # Create GuideMCP server
     server = GuideMCP(
@@ -91,7 +90,7 @@ def create_server(
     )
 
     # Single setattr to add all extensions
-    setattr(server, "ext", extensions)
+    server.extensions = extensions
 
     # Set as current server
     set_current_server(server)
@@ -99,20 +98,20 @@ def create_server(
     # Register prompts immediately for test compatibility
     register_prompts(server)
 
-    # Register tools using the server
-    register_tools(server, log_tool_usage)
+    # Register tools using the server with duplicate protection
+    await server.extensions.register_tools_once(server, lambda srv: register_tools(srv, log_tool_usage))
 
-    # Log server creation with actual version
+    # Log server creation with the actual version
     logger.info(f"Created MCP server: {actual_name} v{actual_version}")
 
     return server
 
 
-def create_server_with_config(config: Dict[str, Any]) -> GuideMCP:
-    """Create server with configuration dictionary."""
+async def create_server_with_config(config: Dict[str, Any]) -> GuideMCP:
+    """Create server with configuration dictionary (async version)."""
     if not isinstance(config, Mapping):
         raise TypeError("Config must be a mapping (e.g., dict)")
-    return create_server(**config)
+    return await create_server(**config)
 
 
 # Global server instance and config (singleton)
@@ -131,17 +130,14 @@ async def get_current_server() -> Optional[GuideMCP]:
     async with _server_lock:
         # Double-check pattern
         if _current_server is None and _current_config is not None:
-            _current_server = create_server_with_config(_current_config)
+            _current_server = await create_server_with_config(_current_config)
 
     return _current_server
 
 
 def get_current_server_sync() -> Optional[GuideMCP]:
     """Get the current server instance synchronously (for backward compatibility)."""
-    global _current_server, _current_config
-    if _current_server is None:
-        if _current_config is not None:
-            _current_server = create_server_with_config(_current_config)
+    global _current_server
     return _current_server
 
 

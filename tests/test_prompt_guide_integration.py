@@ -20,11 +20,11 @@ class TestPromptGuideIntegration:
     async def server(self):
         """Create a server instance for testing."""
         config = {"docroot": ".", "project": "test"}
-        return create_server_with_config(config)
+        return await create_server_with_config(config)
 
     @pytest.mark.asyncio
     async def test_discuss_prompt_works_with_or_without_guide(self, isolated_config_file, server):
-        """Test that @discuss works regardless of guide content availability."""
+        """Test that @guide -d works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
         session_manager._set_config_filename(isolated_config_file)
@@ -34,10 +34,10 @@ class TestPromptGuideIntegration:
         if consent_file.exists():
             consent_file.unlink()
 
-        # Act: Call @discuss prompt
-        result = await server.get_prompt("discuss", {})
+        # Act: Call @guide -d through guide prompt
+        result = await server.get_prompt("guide", {"arg1": "-d test topic"})
 
-        # Assert: Should work regardless of guide content
+        # Assert: Should work and provide discussion mode instructions
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
         assert isinstance(result.messages[0], PromptMessage)
@@ -50,7 +50,7 @@ class TestPromptGuideIntegration:
 
     @pytest.mark.asyncio
     async def test_implement_prompt_works_with_or_without_guide(self, isolated_config_file, server):
-        """Test that @implement works regardless of guide content availability."""
+        """Test that @guide -i works regardless of guide content availability."""
         # Arrange: Set up session manager with isolated config
         session_manager = SessionManager()
         session_manager._set_config_filename(isolated_config_file)
@@ -59,10 +59,10 @@ class TestPromptGuideIntegration:
         consent_file = Path.cwd() / ".consent"
         consent_file.write_text("implementation")
 
-        # Act: Call @implement prompt
-        result = await server.get_prompt("implement", {})
+        # Act: Call @guide -i through guide prompt
+        result = await server.get_prompt("guide", {"arg1": "-i test implementation"})
 
-        # Assert: Should work regardless of guide content
+        # Assert: Should work and provide implementation mode instructions
         assert isinstance(result, GetPromptResult)
         assert len(result.messages) > 0
         assert isinstance(result.messages[0], PromptMessage)
@@ -85,8 +85,8 @@ class TestPromptGuideIntegration:
         consent_file = Path.cwd() / ".consent"
         consent_file.write_text("check")
 
-        # Act: Call @check prompt
-        result = await server.get_prompt("check", {})
+        # Act: Call @guide -c through guide prompt
+        result = await server.get_prompt("guide", {"arg1": "-c test validation"})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -112,8 +112,8 @@ class TestPromptGuideIntegration:
         if consent_file.exists():
             consent_file.unlink()
 
-        # Act: Call @status prompt
-        result = await server.get_prompt("status", {})
+        # Act: Call @guide -s through guide prompt
+        result = await server.get_prompt("guide", {"arg1": "-s"})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -138,8 +138,8 @@ class TestPromptGuideIntegration:
         if consent_file.exists():
             consent_file.unlink()
 
-        # Act: Call @plan prompt
-        result = await server.get_prompt("plan", {})
+        # Act: Call @guide -p through guide prompt
+        result = await server.get_prompt("guide", {"arg1": "-p test planning"})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)
@@ -165,9 +165,9 @@ class TestPromptGuideIntegration:
         if consent_file.exists():
             consent_file.unlink()
 
-        # Act: Call @discuss prompt twice
-        result1 = await server.get_prompt("discuss", {})
-        result2 = await server.get_prompt("discuss", {})
+        # Act: Call @guide -d twice through guide prompt
+        result1 = await server.get_prompt("guide", {"arg1": "-d test"})
+        result2 = await server.get_prompt("guide", {"arg1": "-d test"})
 
         # Assert: Both calls should succeed (caching should work transparently)
         assert isinstance(result1, GetPromptResult)

@@ -114,7 +114,7 @@ class TestSyncDocumentMetadataErrors:
         from pathlib import Path
         import tempfile
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
             tmp.write("test content")
             tmp_path = Path(tmp.name)
 

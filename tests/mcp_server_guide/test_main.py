@@ -1,7 +1,7 @@
 """Tests for main module functionality."""
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch, AsyncMock
 from click.testing import CliRunner
 import click.exceptions
 from mcp_server_guide.main import main, validate_mode, start_mcp_server
@@ -20,6 +20,7 @@ async def test_validate_mode_invalid():
         validate_mode("invalid_mode")
 
 
+@pytest.mark.asyncio
 async def test_start_mcp_server_stdio():
     """Test start_mcp_server with stdio mode."""
     from mcp_server_guide.server import reset_server_state
@@ -30,13 +31,13 @@ async def test_start_mcp_server_stdio():
 
     # Test stdio mode with mocked server
     with patch("mcp_server_guide.server.create_server_with_config") as mock_create:
-        mock_server = Mock()
-        mock_server.run = Mock()
+        mock_server = AsyncMock()
+        mock_server.run_stdio_async = AsyncMock()
         mock_create.return_value = mock_server
 
-        result = start_mcp_server("stdio", config)
+        result = await start_mcp_server("stdio", config)
         assert "stdio mode" in result
-        mock_server.run.assert_called_once()
+        mock_server.run_stdio_async.assert_called_once()
 
 
 async def test_start_mcp_server_stdio_keyboard_interrupt():
@@ -48,10 +49,10 @@ async def test_start_mcp_server_stdio_keyboard_interrupt():
     config = {"docroot": ".", "project": "test"}
 
     with patch("mcp_server_guide.server.create_server_with_config") as mock_create:
-        mock_server = Mock()
-        mock_server.run = Mock(side_effect=KeyboardInterrupt())
+        mock_server = AsyncMock()
+        mock_server.run_stdio_async = AsyncMock(side_effect=KeyboardInterrupt())
         mock_create.return_value = mock_server
-        result = start_mcp_server("stdio", config)
+        result = await start_mcp_server("stdio", config)
         assert "stdio mode" in result
 
 
@@ -64,16 +65,16 @@ async def test_start_mcp_server_stdio_broken_pipe():
     config = {"docroot": ".", "project": "test"}
 
     with patch("mcp_server_guide.server.create_server_with_config") as mock_create:
-        mock_server = Mock()
-        mock_server.run = Mock(side_effect=BrokenPipeError())
+        mock_server = AsyncMock()
+        mock_server.run_stdio_async = AsyncMock(side_effect=BrokenPipeError())
         mock_create.return_value = mock_server
-        result = start_mcp_server("stdio", config)
+        result = await start_mcp_server("stdio", config)
         assert "stdio mode" in result
 
 
 async def test_main_cli_help():
     """Test main CLI help."""
-    command = main()
+    command = await main()
     runner = CliRunner()
 
     result = runner.invoke(command, ["--help"])
@@ -83,7 +84,7 @@ async def test_main_cli_help():
 
 async def test_main_cli_invalid_option():
     """Test main CLI with invalid option."""
-    command = main()
+    command = await main()
     runner = CliRunner()
 
     result = runner.invoke(command, ["--invalid-option"])
@@ -92,7 +93,7 @@ async def test_main_cli_invalid_option():
 
 async def test_main_cli_with_all_options():
     """Test main CLI with all options."""
-    command = main()
+    command = await main()
     runner = CliRunner()
 
     with patch("mcp_server_guide.main.start_mcp_server") as mock_start:
