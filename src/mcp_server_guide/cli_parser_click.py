@@ -304,6 +304,32 @@ def document_delete(ctx: click.Context, name: str) -> None:
     _set_result(ctx, Command(type="crud", target="document", operation="delete", data={"name": name}))
 
 
+def detect_help_request(args: List[str]) -> Optional[Command]:
+    """Detect help requests before Click processing to avoid exceptions."""
+    if not args or not all(isinstance(arg, str) for arg in args):
+        return None
+
+    # Pattern: [target] --help/-h
+    if len(args) == 2 and args[1] in ["--help", "-h"]:
+        target = args[0]
+        if target in ["category", "collection", "document"]:
+            return Command(type="help", target=target)
+
+    # Pattern: --help/-h (general help)
+    if len(args) == 1 and args[0] in ["--help", "-h"]:
+        return Command(type="help")
+
+    # Pattern: help [target]
+    if len(args) >= 1 and args[0] == "help":
+        help_target: Optional[str] = args[1] if len(args) > 1 else None
+        if help_target and help_target in ["category", "collection", "document"]:
+            return Command(type="help", target=help_target)
+        elif len(args) == 1:  # Just "help"
+            return Command(type="help")
+
+    return None
+
+
 def parse_command(args: List[str]) -> Command:
     """Parse command line arguments using Click-based parser."""
     # Validate input arguments
@@ -317,6 +343,11 @@ def parse_command(args: List[str]) -> Command:
     if not all(isinstance(arg, str) for arg in args):
         return Command(type="help")
 
+    # PRE-PARSE: Detect help requests before Click processing
+    help_command = detect_help_request(args)
+    if help_command:
+        return help_command
+
     # Handle legacy short form commands first
     if args[0] in ["-d", "-p", "-i", "-c", "-s"]:
         command_map = {"-d": "discuss", "-p": "plan", "-i": "implement", "-c": "check", "-s": "status"}
@@ -328,6 +359,7 @@ def parse_command(args: List[str]) -> Command:
     if (
         len(args) == 1
         and not args[0].startswith("-")
+        and args[0]  # Ensure not empty string
         and args[0]
         not in [
             "help",
@@ -360,20 +392,36 @@ def parse_command(args: List[str]) -> Command:
 
 def generate_cli_help() -> str:
     """Generate comprehensive CLI help from Click command structure."""
-    ctx = click.Context(guide)
-    return guide.get_help(ctx)
+    try:
+        ctx = click.Context(guide)
+        return guide.get_help(ctx)
+    except (SystemExit, click.exceptions.Exit):
+        # Catch Click exit exceptions that might cause server shutdown
+        return "CLI Help (Click exit handled safely)"
+    except click.ClickException as e:
+        return f"CLI Help (Click error handled safely): {e}"
+    except Exception as e:
+        return f"CLI Help (Error handled safely): {e}"
 
 
 def generate_context_help(target: Optional[str] = None, operation: Optional[str] = None) -> str:
     """Generate context-sensitive help for specific operations."""
-    if target == "category":
-        ctx = click.Context(category)
-        return category.get_help(ctx)
-    elif target == "collection":
-        ctx = click.Context(collection)
-        return collection.get_help(ctx)
-    elif target == "document":
-        ctx = click.Context(document)
-        return document.get_help(ctx)
-    else:
-        return generate_cli_help()
+    try:
+        if target == "category":
+            ctx = click.Context(category)
+            return category.get_help(ctx)
+        elif target == "collection":
+            ctx = click.Context(collection)
+            return collection.get_help(ctx)
+        elif target == "document":
+            ctx = click.Context(document)
+            return document.get_help(ctx)
+        else:
+            return generate_cli_help()
+    except (SystemExit, click.exceptions.Exit):
+        # Catch Click exit exceptions that might cause server shutdown
+        return f"Help for {target or 'general'} (Click exit handled safely)"
+    except click.ClickException as e:
+        return f"Help for {target or 'general'} (Click error handled safely): {e}"
+    except Exception as e:
+        return f"Help for {target or 'general'} (Error handled safely): {e}"

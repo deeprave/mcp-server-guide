@@ -1,6 +1,7 @@
 """Help system for MCP server."""
 
 from typing import Optional
+import click
 from .logging_config import get_logger
 
 logger = get_logger()
@@ -49,6 +50,9 @@ This server provides access to project documentation, categories, collections, a
         help_sections.append(f"```\n{cli_help}\n```")
     except (ImportError, AttributeError, TypeError) as e:
         help_sections.append(f"*Error generating CLI help: {e}*")
+    except (SystemExit, click.exceptions.Exit):
+        # Catch Click exit exceptions that might cause server shutdown
+        help_sections.append("*CLI help generation handled safely (Click exit caught)*")
     except Exception as e:
         # Fallback for unexpected errors
         help_sections.append(f"*Error generating CLI help: {e}*")
@@ -191,6 +195,10 @@ def generate_context_help(target: Optional[str] = None, operation: Optional[str]
     except (ImportError, AttributeError, TypeError, click.ClickException) as e:
         logger.error(f"Error generating context help: {e}")
         return f"Error generating help for {target or 'general'}: {e}"
+    except (SystemExit, click.exceptions.Exit) as e:
+        # Catch Click exit exceptions that might cause server shutdown
+        logger.warning(f"Click exit exception caught in context help generation: {e}")
+        return f"Help for {target or 'general'} (exit exception handled safely)"
     except Exception as e:
         # Fallback for unexpected errors
         logger.error(f"Unexpected error generating context help: {e}")

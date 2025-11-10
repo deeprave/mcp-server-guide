@@ -1,3 +1,4 @@
+
 📋 You are now in PLAN phase.
 
 🚨 **PLAN PHASE RULES**
