@@ -62,8 +62,9 @@ class GuidePromptHandler:
                     # Context-sensitive help
                     return generate_context_help(command.target)
                 else:
-                    # General help
-                    return await format_guide_help()
+                    # General help - use verbose flag from CLI parser, default to False for basic help
+                    verbose = command.data.get("verbose", False) if command.data else False
+                    return await format_guide_help(verbose)
             case "crud":
                 return f"CRUD operations not yet implemented. Target: {command.target}, Operation: {command.operation}, Data: {command.data}"
             case "content":

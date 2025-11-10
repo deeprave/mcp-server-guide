@@ -11,7 +11,7 @@ class TestComprehensiveHelpSystem:
     @pytest.mark.asyncio
     async def test_format_guide_help_comprehensive(self):
         """Test that comprehensive help includes all sections."""
-        help_content = await format_guide_help()
+        help_content = await format_guide_help(verbose=True)
 
         # Check for all major sections
         assert "# MCP Server Guide Help" in help_content
@@ -24,9 +24,24 @@ class TestComprehensiveHelpSystem:
         assert "## Troubleshooting" in help_content
 
     @pytest.mark.asyncio
+    async def test_format_guide_help_basic(self):
+        """Test that basic help shows only CLI usage."""
+        help_content = await format_guide_help(verbose=False)
+
+        # Check for basic CLI content
+        assert "Usage:  [OPTIONS] COMMAND [ARGS]..." in help_content
+        assert "MCP Server Guide - Project documentation and guidelines." in help_content
+        assert "Use --verbose or -v for more detailed information" in help_content
+
+        # Should NOT contain comprehensive sections
+        assert "# MCP Server Guide Help" not in help_content
+        assert "## For AI Agents" not in help_content
+        assert "## Available Prompts" not in help_content
+
+    @pytest.mark.asyncio
     async def test_format_guide_help_includes_cli_help(self):
-        """Test that help includes auto-generated CLI help."""
-        help_content = await format_guide_help()
+        """Test that comprehensive help includes auto-generated CLI help."""
+        help_content = await format_guide_help(verbose=True)
 
         # Should include Click-generated CLI help
         assert "Commands:" in help_content
@@ -64,8 +79,12 @@ class TestComprehensiveHelpSystem:
         """Test guide integration handles help commands."""
         handler = GuidePromptHandler()
 
-        # Test general help
+        # Test general help (basic)
         result = await handler.handle_guide_request(["--help"])
+        assert "Use --verbose or -v for more detailed information" in result
+
+        # Test verbose help (comprehensive)
+        result = await handler.handle_guide_request(["--help", "--verbose"])
         assert "MCP Server Guide Help" in result
 
         # Test context-sensitive help
@@ -75,16 +94,15 @@ class TestComprehensiveHelpSystem:
     @pytest.mark.asyncio
     async def test_ai_agent_guidance_included(self):
         """Test that AI agent guidance is included in help."""
-        help_content = await format_guide_help()
+        help_content = await format_guide_help(verbose=True)
 
         assert "When to use this MCP server:" in help_content
-        assert "How to interact effectively:" in help_content
         assert "CLI Interface:" in help_content
 
     @pytest.mark.asyncio
     async def test_troubleshooting_section_included(self):
         """Test that troubleshooting section is comprehensive."""
-        help_content = await format_guide_help()
+        help_content = await format_guide_help(verbose=True)
 
         assert "Common Issues" in help_content
         assert "Category not found" in help_content

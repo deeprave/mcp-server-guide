@@ -81,5 +81,5 @@ async def _register_help_resource(server: FastMCP) -> None:
     @server.resource("guide://help", name="help", description="MCP Server Guide Help", mime_type="text/markdown")
     async def read_help() -> str:
         """Get comprehensive help content for the guide system."""
-        result = await format_guide_help()
+        result = await format_guide_help(verbose=True)
         return str(result)

@@ -14,6 +14,7 @@ class Command:
     operation: Optional[str] = None
     category: Optional[str] = None
     data: Optional[Any] = None
+    semantic_intent: Optional[str] = None
 
 
 def _set_result(ctx: click.Context, command: Command) -> None:
@@ -37,10 +38,11 @@ def guide(ctx: click.Context) -> None:
 
 
 @guide.command()
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed help information")
 @click.pass_context
-def help(ctx: click.Context) -> None:
+def help(ctx: click.Context, verbose: bool) -> None:
     """Show help information."""
-    _set_result(ctx, Command(type="help"))
+    _set_result(ctx, Command(type="help", data={"verbose": verbose}))
 
 
 # Phase commands
@@ -309,23 +311,48 @@ def detect_help_request(args: List[str]) -> Optional[Command]:
     if not args or not all(isinstance(arg, str) for arg in args):
         return None
 
-    # Pattern: [target] --help/-h
-    if len(args) == 2 and args[1] in ["--help", "-h"]:
+    # Detect semantic intent from first word
+    semantic_intent = None
+    if args[0] == "show":
+        semantic_intent = "display"
+    elif args[0] == "get":
+        semantic_intent = "retrieve"
+
+    # Pattern: [target] --help/-h [--verbose/-v]
+    if len(args) >= 2 and args[1] in ["--help", "-h"]:
         target = args[0]
+        verbose = len(args) > 2 and args[2] in ["--verbose", "-v"]
         if target in ["category", "collection", "document"]:
-            return Command(type="help", target=target)
+            data = {"verbose": verbose}
+            return Command(type="help", target=target, semantic_intent=semantic_intent, data=data)
 
-    # Pattern: --help/-h (general help)
-    if len(args) == 1 and args[0] in ["--help", "-h"]:
-        return Command(type="help")
+    # Pattern: --help/-h [--verbose/-v] (general help)
+    if len(args) >= 1 and args[0] in ["--help", "-h"]:
+        verbose = len(args) > 1 and args[1] in ["--verbose", "-v"]
+        data = {"verbose": verbose}
+        return Command(type="help", semantic_intent=semantic_intent, data=data)
 
-    # Pattern: help [target]
-    if len(args) >= 1 and args[0] == "help":
-        help_target: Optional[str] = args[1] if len(args) > 1 else None
-        if help_target and help_target in ["category", "collection", "document"]:
-            return Command(type="help", target=help_target)
-        elif len(args) == 1:  # Just "help"
-            return Command(type="help")
+    # Pattern: help [target] [--verbose/-v] or show/get help [target] [--verbose/-v]
+    help_index = 0
+    if args[0] in ["show", "get"] and len(args) > 1 and args[1] == "help":
+        help_index = 1
+    elif args[0] == "help":
+        help_index = 0
+    else:
+        return None
+
+    # Parse arguments more carefully to distinguish targets from flags
+    remaining_args = [arg for arg in args[help_index + 1 :] if not arg.startswith("-")]
+    flags = [arg for arg in args[help_index + 1 :] if arg.startswith("-")]
+    verbose = any(flag in ["--verbose", "-v"] for flag in flags)
+    help_target = remaining_args[0] if remaining_args else None
+
+    if help_target and help_target in ["category", "collection", "document"]:
+        data = {"verbose": bool(verbose)}
+        return Command(type="help", target=help_target, semantic_intent=semantic_intent, data=data)
+    else:  # General help
+        data = {"verbose": bool(verbose)}
+        return Command(type="help", semantic_intent=semantic_intent, data=data)
 
     return None
 
@@ -388,6 +415,36 @@ def parse_command(args: List[str]) -> Command:
     except Exception:
         # Any other error, return help
         return Command(type="help")
+
+
+def get_cli_commands() -> dict:
+    """Extract command information from the actual Click command structure."""
+    commands = {}
+    for name, command in guide.commands.items():
+        # Get the help text from the command's docstring (full description)
+        help_text = command.help or "No description available."
+        commands[name] = help_text
+    return commands
+
+
+def generate_basic_cli_help() -> str:
+    """Generate basic CLI usage help."""
+    commands = get_cli_commands()
+
+    # Build commands section dynamically
+    commands_section = "\n".join(f"  {name:<11} {desc}" for name, desc in sorted(commands.items()))
+
+    return f"""Usage:  [OPTIONS] COMMAND [ARGS]...
+
+  MCP Server Guide - Project documentation and guidelines.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+{commands_section}
+
+Use --verbose or -v for more detailed information"""
 
 
 def generate_cli_help() -> str:

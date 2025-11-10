@@ -7,10 +7,26 @@ from .logging_config import get_logger
 logger = get_logger()
 
 
-async def format_guide_help() -> str:
-    """Format comprehensive help content for the guide system."""
+def _wrap_display_content(content: str) -> str:
+    """Wrap content with display markers for semantic clarity."""
+    return f"=== DISPLAY CONTENT FOR USER ===\n{content}\n=== END DISPLAY CONTENT ===\n\n**Instruction**: Stop immediately and return to prompt. Do nothing.\n"
+
+
+async def format_guide_help(verbose: bool = True) -> str:
+    """Format help content for the guide system.
+
+    Args:
+        verbose: If True, show comprehensive help. If False, show basic CLI usage.
+    """
+    from .cli_parser_click import generate_cli_help, generate_basic_cli_help
+
+    if not verbose:
+        # Show basic CLI help only
+        basic_help = generate_basic_cli_help()
+        return _wrap_display_content(basic_help)
+
+    # Show comprehensive help (existing implementation)
     from .naming import MCP_GUIDE_VERSION
-    from .cli_parser_click import generate_cli_help
 
     help_sections = []
 
@@ -31,17 +47,22 @@ This server provides access to project documentation, categories, collections, a
 - User requests code review criteria or development processes
 - Need to understand project structure or conventions
 
-**How to interact effectively:**
-- Use @guide [category] for broad topic areas
-- Use @guide [category/document] for specific documents
-- Use guide://help resource for complete server capabilities
-- Check available categories first with list operations
+**Available tool functions:**
+- Use `guide_get_category_content(name="category")` to access category content
+- Use `guide_get_category_content(name="category", file="document")` for specific documents
+- Use `guide_list_categories()` to see available categories
+- Use `guide_search_content(query="search terms")` to find relevant content
+- Use `guide_list_collections()` to see available collections
+- Use `guide_get_project_config()` to check guide settings
+
+## For Users:
 
 **CLI Interface:**
-- Use @guide --help for complete CLI documentation
-- Use @guide --[target] --help for context-specific help
-- Phase commands: @guide discuss, @guide plan, @guide implement, @guide check
-- CRUD operations: @guide category list, @guide category add name patterns""")
+- You can use @guide --help for complete CLI documentation
+- You can use @guide --[target] --help for context-specific help
+- Phase transition commands: @guide discuss, @guide plan, @guide implement, @guide check
+- @guide management operations: @guide category list, @guide category add <name> <pattern1,pattern2...>
+""")
 
     # Auto-generated CLI Help section
     help_sections.append("## Complete CLI Interface")
@@ -93,10 +114,12 @@ This server provides access to project documentation, categories, collections, a
             categories = categories_result.get("categories", {})
             if categories:
                 help_sections.append("## Categories and Collections")
+                category_lines = []
                 for cat_name, cat_info in categories.items():
                     collections = cat_info.get("collections", [])
                     collections_text = f" (in collections: {', '.join(collections)})" if collections else ""
-                    help_sections.append(f" - **{cat_name}**{collections_text}: {cat_info.get('description', '')}")
+                    category_lines.append(f" - **{cat_name}**{collections_text}: {cat_info.get('description', '')}")
+                help_sections.append("\n".join(category_lines))
             else:
                 help_sections.append("## Categories and Collections")
                 help_sections.append(" *No categories available*")
@@ -111,8 +134,7 @@ This server provides access to project documentation, categories, collections, a
         help_sections.append("## Categories and Collections")
         help_sections.append(f" *Error loading categories: {e}*")
 
-    # Resources section
-    help_sections.append("""## Available Resources
+    help_sections.extend(("""## Available Resources
 
 Access project content through these guide:// resources:
 
@@ -130,29 +152,18 @@ guide://category/coding-standards
 # Access collection content
 guide://collection/backend-docs
 guide://collection/frontend-guides
-```""")
+```
 
-    # Context-Sensitive Help section
-    help_sections.append("""## Context-Sensitive Help
+## Context-Sensitive Help
 
-Get targeted help for specific operations:
+You can get general or targeted help for specific operations:
 
 ```bash
-# General help
-@guide --help
+@guide --help                                  # General help
+@guide category|collection|document --help     # Target-specific help
+```
 
-# Target-specific help
-@guide category --help
-@guide collection --help
-@guide document --help
-
-# Operation-specific help
-@guide category add --help
-@guide collection list --help
-```""")
-
-    # Troubleshooting section
-    help_sections.append("""## Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -166,23 +177,18 @@ Get targeted help for specific operations:
 - Use `@guide category list --verbose` for detailed info
 
 **"Permission denied"**
-- Verify file permissions in project directories
+- Verify file permissions in your project directories
 - Check if paths are accessible to the MCP server
 
 ### Debug Commands
 
 ```bash
-# List all available categories
-@guide category list --verbose
-
-# Check specific category content
-@guide [category-name]
-
-# View server status
-@guide status
-```""")
-
-    return "\n\n".join(help_sections)
+@guide category list --verbose           # List all available categories
+@guide [category-name]                   # Check specific category content
+@guide status                            # View your phase status
+```
+""",))
+    return _wrap_display_content("\n\n".join(help_sections))
 
 
 def generate_context_help(target: Optional[str] = None, operation: Optional[str] = None) -> str:
@@ -190,16 +196,23 @@ def generate_context_help(target: Optional[str] = None, operation: Optional[str]
     from .cli_parser_click import generate_context_help as click_context_help
     import click
 
+    def log_error(msg: str, e: Exception, target: Optional[str] = None) -> str:
+        logger.error(f"{msg}{e}")
+        error_content = f"Error generating help for {target or 'general'}: {e}"
+        return _wrap_display_content(error_content)
+
     try:
-        return click_context_help(target, operation)
+        help_content = click_context_help(target, operation)
+        return _wrap_display_content(help_content)
     except (ImportError, AttributeError, TypeError, click.ClickException) as e:
-        logger.error(f"Error generating context help: {e}")
-        return f"Error generating help for {target or 'general'}: {e}"
+        return log_error('Error generating context help: ', e, target)
     except (SystemExit, click.exceptions.Exit) as e:
         # Catch Click exit exceptions that might cause server shutdown
         logger.warning(f"Click exit exception caught in context help generation: {e}")
-        return f"Help for {target or 'general'} (exit exception handled safely)"
+        exit_content = f"Help for {target or 'general'} (exit exception handled safely)"
+        return _wrap_display_content(exit_content)
     except Exception as e:
-        # Fallback for unexpected errors
-        logger.error(f"Unexpected error generating context help: {e}")
-        return f"Error generating help for {target or 'general'}: {e}"
+        return log_error('Unexpected error generating context help: ', e, target)
+
+
+

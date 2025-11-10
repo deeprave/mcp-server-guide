@@ -3,7 +3,7 @@
 This document details the production of a review artifact.
 
 When the review has concluded, create a code review file in a markdown file with the format described below.
-Place this file together with the implementation plan that describes the changes you are reviewing, appending `-review` to the filename.
+Place this file together with the implementation plan that describes the changes you are reviewing, appending `-review` to (or replacing `-plan` in) the file name.
 If there is no specific plan associated with the changes, then use `code-review` as a generic name, overwriting any existing file with that name.
 
 --- BEGIN CODE REVIEW FORMAT ---

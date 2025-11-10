@@ -72,11 +72,11 @@ def test_cli_parser_parses_help_flag():
     """Test CLI parser parses help flag correctly."""
     command = parse_command(["-h"])
     assert command.type == "help"
-    assert command.data is None
+    assert command.data == {"verbose": False}
 
     command = parse_command(["--help"])
     assert command.type == "help"
-    assert command.data is None
+    assert command.data == {"verbose": False}
 
 
 def test_cli_parser_help_with_context():
