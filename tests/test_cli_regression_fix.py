@@ -36,5 +36,5 @@ class TestCLIRegressionFix:
         args = ["-x", "unknown flag"]
         result = await handler.handle_guide_request(args)
 
-        # Should contain error message
-        assert "Error" in result or "Unknown" in result
+        # Should return help for unknown flags (graceful fallback)
+        assert "MCP Server Guide Help" in result

@@ -1,17 +1,19 @@
-# Project Context
+# Project Context Instructions
+
+These are instructions related to context specific to this project.
 
 **Project:** Generic
 **Approach:** Minimalist, YAGNI*
 **Issue Management**: None
-**GitHub MCP Username:** deeprave
 
 ## Workflow
 
 - **CRITICAL:** Pause after creating implementation plan for user review
 - Working directory: `.todo`
-- Implementation plan: `<issue-id>-plan.md` containing the task checklist
+- Implementation plan: `<issue-id-or-summary>-plan.md` containing the task checklist
 - Update plan as work progresses after phase completion
 - ALWAYS ASK FOR USER REVIEW BEFORE IMPLEMENTATION
+- ALWAYS ASK THE USER IF QUESTIONS ARISE RELATED TO ARCHITECTURE
 
 ## Testing & Quality
 

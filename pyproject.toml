@@ -1,7 +1,7 @@
 [project]
 name = "mcp-server-guide"
-version = "0.5.0"
-description = "MCP server for guidelines, project rules"
+version = "0.9.0"
+description = "MCP server for handling guidelines, project rules and controlled development"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 requires-python = ">=3.13"
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-server-guide = "mcp_server_guide.main:cli_main_new"
+mcp-server-guide = "mcp_server_guide.main:cli_main"
 # check for vulnerabilities
 osvcheck = "osvcheck:main"
 

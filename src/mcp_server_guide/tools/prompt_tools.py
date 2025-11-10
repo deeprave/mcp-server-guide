@@ -12,9 +12,9 @@ async def list_prompts() -> Dict[str, Any]:
         - prompts: List of prompt metadata dicts
         - total_prompts: int count of prompts
     """
-    from ..server import get_current_server_sync
+    from ..server import get_current_server
 
-    server = get_current_server_sync()
+    server = await get_current_server()
     if server is None:
         return {"success": False, "error": "No server instance available", "prompts": [], "total_prompts": 0}
 
@@ -55,9 +55,9 @@ async def list_resources() -> Dict[str, Any]:
         - total_resources: int count of resources
     """
     try:
-        from ..server import get_current_server_sync
+        from ..server import get_current_server
 
-        server = get_current_server_sync()
+        server = await get_current_server()
         if server is None:
             return {"success": False, "error": "No server instance available", "resources": [], "total_resources": 0}
 

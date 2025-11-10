@@ -9,7 +9,14 @@ from mcp_server_guide.server import create_server_with_config
 async def server():
     """Create a server instance for testing."""
     config = {"docroot": ".", "project": "test"}
-    return await create_server_with_config(config)
+    server = await create_server_with_config(config)
+
+    # Register prompts for testing
+    from mcp_server_guide.prompts import register_prompts
+
+    register_prompts(server)
+
+    return server
 
 
 async def test_list_prompts_returns_expected_structure(server):

@@ -19,8 +19,8 @@ class TestGuidePromptIntegration:
             # Test document access
             result = await handler.handle_guide_request(["docs/readme"])
 
-            # Should call get_category_content with file parameter
-            mock_get.assert_called_once_with("docs", file="readme")
+            # Should call get_category_content with combined path
+            mock_get.assert_called_once_with("docs/readme")
             assert result == "Document content"
 
     @pytest.mark.asyncio
@@ -34,8 +34,8 @@ class TestGuidePromptIntegration:
             # Test category access
             result = await handler.handle_guide_request(["docs"])
 
-            # Should call get_category_content with file=None parameter
-            mock_get.assert_called_once_with("docs", file=None)
+            # Should call get_category_content with category name only
+            mock_get.assert_called_once_with("docs")
             assert result == "Category content"
 
     @pytest.mark.asyncio
@@ -52,7 +52,7 @@ class TestGuidePromptIntegration:
                 result = await handler.handle_guide_request(["my-collection"])
 
                 # Should try category first, then collection
-                mock_get_cat.assert_called_once_with("my-collection", file=None)
+                mock_get_cat.assert_called_once_with("my-collection")
                 mock_get_col.assert_called_once_with("my-collection")
                 assert result == "Collection content"
 
@@ -70,7 +70,7 @@ class TestGuidePromptIntegration:
                 result = await handler.handle_guide_request(["nonexistent"])
 
                 # Should return category error
-                assert "Error: Category not found" in result
+                assert "Category or collection 'nonexistent' not found." in result
 
     @pytest.mark.asyncio
     async def test_guide_prompt_no_args(self):

@@ -9,8 +9,6 @@ from mcp_server_guide.config import Config
 
 def test_complete_workflow_with_defaults():
     """Test complete workflow using default values."""
-    import asyncio
-
     # Mock the ContextVar to avoid the dict.set() error
     with patch("mcp_server_guide.main._deferred_builtin_config") as mock_contextvar:
         mock_contextvar.set = Mock()
@@ -18,10 +16,7 @@ def test_complete_workflow_with_defaults():
 
         runner = CliRunner()
 
-        async def get_command():
-            return await main()
-
-        command = asyncio.run(get_command())
+        command = main()  # main() is now sync
 
         async def mock_start_server(mode, config):
             return "Started"
@@ -34,8 +29,6 @@ def test_complete_workflow_with_defaults():
 
 def test_complete_workflow_with_cli_args():
     """Test complete workflow with CLI arguments."""
-    import asyncio
-
     # Mock the ContextVar to avoid the dict.set() error
     with patch("mcp_server_guide.main._deferred_builtin_config") as mock_contextvar:
         mock_contextvar.set = Mock()
@@ -43,10 +36,7 @@ def test_complete_workflow_with_cli_args():
 
         runner = CliRunner()
 
-        async def get_command():
-            return await main()
-
-        command = asyncio.run(get_command())
+        command = main()  # main() is now sync
 
         async def mock_start_server(mode, config):
             return "Started"

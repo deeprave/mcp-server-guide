@@ -1,23 +1,25 @@
-# Project Context
+# Project Context Instructions
+
+These are instructions related to context specific to this project.
 
 **Project:** Repostats (replicates gstats structure)
 **Approach:** Minimalist, YAGNI
 **YouTrack MCP:** RS project
-**GitHub MCP Username:** deeprave
 
 ## Architecture
 - Loosely coupled modules with clear API boundaries
 - Shared structures defined **outside** modules
-- Module APIs via dedicated "api" sub-modules only
-- **No direct imports** of non-public interfaces
+- Encapsulate: module APIs via dedicated "api" sub-modules only
+- **No direct imports** of non-public interfaces between modules
 - EXCEPTIONS: Common code and bin-only modules
 
 ## Workflow
 - **CRITICAL:** Pause after creating implementation plan for user review
 - Working directory: `.todo`
-- Implementation plan: `<issue-id>-plan.md` containing the task checklist
+- Implementation plan: `<issue-id-or-summary>-plan.md` containing the task checklist
 - Update plan as work progresses after phase completion
 - ALWAYS ASK FOR USER REVIEW BEFORE IMPLEMENTATION
+- ALWAYS ASK THE USER IF QUESTIONS ARISE RELATED TO ARCHITECTURE
 
 ## Testing & Quality
 - **ALL TESTS MUST PASS** at start and end of every phase

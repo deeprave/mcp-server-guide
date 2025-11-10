@@ -7,12 +7,7 @@ from mcp_server_guide.main import main
 
 def test_default_mode_is_stdio():
     """Test that default mode is stdio when no mode specified."""
-    import asyncio
-
-    async def get_command():
-        return await main()
-
-    command = asyncio.run(get_command())
+    command = main()  # main() is now sync
     runner = CliRunner()
 
     # Mock the actual server startup to avoid hanging
@@ -29,12 +24,7 @@ def test_default_mode_is_stdio():
 
 def test_explicit_stdio_mode():
     """Test explicit stdio mode argument."""
-    import asyncio
-
-    async def get_command():
-        return await main()
-
-    command = asyncio.run(get_command())
+    command = main()  # main() is now sync
     runner = CliRunner()
 
     with pytest.MonkeyPatch().context() as m:
@@ -52,10 +42,10 @@ def test_explicit_stdio_mode():
 @pytest.mark.asyncio
 async def test_invalid_mode_shows_error():
     """Test that invalid mode shows helpful error."""
-    command = await main()
-    runner = CliRunner()
+    command = main()  # main() is now sync and returns Click command
 
-    result = runner.invoke(command, ["invalid-mode"])
+    # Test the command directly since CliRunner doesn't handle async commands
+    import click
 
-    assert result.exit_code != 0
-    assert "Invalid mode" in result.output or "Usage:" in result.output
+    with pytest.raises(click.Abort):
+        command.callback(mode="invalid-mode")

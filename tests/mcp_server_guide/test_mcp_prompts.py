@@ -14,7 +14,14 @@ class TestMCPPrompts:
         """Create a server instance for testing."""
         session_manager = SessionManager()
         session_manager._set_config_filename(isolated_config_file)
-        return await create_server(config_file=str(isolated_config_file))
+        server = await create_server(config_file=str(isolated_config_file))
+
+        # Register prompts for testing
+        from mcp_server_guide.prompts import register_prompts
+
+        register_prompts(server)
+
+        return server
 
     async def test_list_prompts_returns_expected_prompts(self, server):
         """Test that list_prompts handler returns our defined prompts."""

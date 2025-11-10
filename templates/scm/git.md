@@ -32,9 +32,8 @@
 **IMPORTANT**
 - As all commits are signed, do not do a git commit directly.
   Instead, prepare the commit message, and ask me to do so
-- Do not checkout files from the git repository to revert changes that you have made.
-  Wht is in git may not be as up to date as you would like.
-- When you come to a logical place where a feature or sub-feature has been completed,   ask the user whether they wish to commit.
+- **NEVER** `checkout` or `restore` files from git to revert recent changes that you have made. What is in git may not be up to date as other changes that have been made, and these commands also risk overwriting other files as a side-effect, destroying many hours of development work.
+- When you come to a logical place where a feature or sub-feature has been completed, ask the user whether they wish to commit.
 - Before commit, all the relevant checks must be done in preparation:
   - All tests must be passing
   - All lint and type checking must be passing

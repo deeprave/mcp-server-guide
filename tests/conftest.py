@@ -4,6 +4,7 @@ import tempfile
 import os
 import shutil
 import atexit
+import asyncio
 from pathlib import Path
 from typing import Generator, Union
 import pytest
@@ -13,6 +14,14 @@ from mcp_server_guide.session_manager import SessionManager
 
 # Global session temp directory
 _session_temp_dir: Path | None = None
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for the test session."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture

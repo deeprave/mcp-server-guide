@@ -72,9 +72,9 @@ async def test_start_mcp_server_stdio_broken_pipe():
         assert "stdio mode" in result
 
 
-async def test_main_cli_help():
+def test_main_cli_help():
     """Test main CLI help."""
-    command = await main()
+    command = main()  # main() is now sync
     runner = CliRunner()
 
     result = runner.invoke(command, ["--help"])
@@ -82,9 +82,9 @@ async def test_main_cli_help():
     assert "Usage" in result.output
 
 
-async def test_main_cli_invalid_option():
+def test_main_cli_invalid_option():
     """Test main CLI with invalid option."""
-    command = await main()
+    command = main()  # main() is now sync
     runner = CliRunner()
 
     result = runner.invoke(command, ["--invalid-option"])
@@ -93,28 +93,13 @@ async def test_main_cli_invalid_option():
 
 def test_main_cli_with_all_options():
     """Test main CLI with all options."""
-    import asyncio
-
-    async def get_command():
-        return await main()
-
-    command = asyncio.run(get_command())
+    command = main()  # main() is now sync
     runner = CliRunner()
 
-    with patch("mcp_server_guide.main.start_mcp_server") as mock_start:
-        mock_start.return_value = "Started"
-        result = runner.invoke(
-            command,
-            [
-                "--docroot",
-                "/custom",
-                "--log-level",
-                "INFO",
-                "--log-file",
-                "/tmp/test.log",
-                "--log-console",
-            ],
-        )
+    # Test that the command can be invoked with various options
+    result = runner.invoke(
+        command, ["stdio", "--docroot", "/custom", "--log-level", "INFO", "--log-file", "/tmp/test.log"]
+    )
 
-        assert result.exit_code == 0
-        mock_start.assert_called_once()
+    # The command should return config, not execute server
+    assert result.exit_code == 0

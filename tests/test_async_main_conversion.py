@@ -1,31 +1,17 @@
 """Tests for async main conversion."""
 
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from mcp_server_guide.main import main, cli_main_async
+from unittest.mock import AsyncMock, patch
+from mcp_server_guide.main import main
 
 
-@pytest.mark.asyncio
-async def test_main_returns_click_command():
+def test_main_returns_click_command():
     """Test that main() returns a Click command object."""
-    command = await main()
+    command = main()  # main() is now sync
 
     # Should return a Click command
     assert hasattr(command, "__call__")
     assert hasattr(command, "name")
-
-
-@pytest.mark.asyncio
-async def test_cli_main_async_entry_point():
-    """Test that cli_main can be called asynchronously."""
-    with patch("mcp_server_guide.main.main") as mock_main:
-        mock_command = MagicMock()
-        mock_main.return_value = mock_command
-
-        # Should be able to call without error
-        await cli_main_async()
-
-        mock_main.assert_called_once()
 
 
 @pytest.mark.asyncio

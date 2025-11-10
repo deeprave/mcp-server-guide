@@ -1,22 +1,24 @@
-# Generate a commit message
+# Instructions for commit message generation
 
-Provide a complete but concise description to summarise based on the changes cached for commit. Use markdown format (dashes, not bullets)
+You are tasked with providing a complete but concise description to summarise based on the changes cached for commit.
+Use markdown format (dashes, not bullets and subheadings as appropriate)
 
-- **Title/Subject Line**
+- Provide a title/subject line
   - Length: Try to keep it under 50 characters (72 max)
   - Format: Use imperative mood ("Add feature" not "Added feature" or "Adds feature")
-  - Capitalization: Capitalize the first letter
+  - Capitalisation: Capitalise the first letter
   - No period: Don't end with a period
-  - Be specific: Describe what the change does, not how or why
+  - Be specific: Describe concisely what the change does, not how or why
 
-- **Body (Optional but Recommended)**
-  - Line length: Wrap at 72 characters
-  - Blank line: Always separate subject from body with a blank line
-  - Content: Explain the what and why, not the how
+- Optionally (but recommended) provide a body
+  - Blank line: Always separate title/subject from body with a blank line
   - Use bullet points: For multiple changes or details
+  - Line length: Wrap at 72 characters
+  - Content: Explain the what and why, not the how
   - Reference issues: Include ticket numbers, issue references
-  - Level of Detail
-    - Small changes: Subject line only is often sufficient
-    - Medium changes: Add a brief body explaining context
-    - Large changes: Detailed body with motivation, approach, and any breaking changes
-    - Bug fixes: Include what was broken and how it's fixed
+
+- Level of Detail
+  - Small changes: Subject line only is often enough
+  - Medium changes: Add a brief body explaining context
+  - Large changes: Detailed body with motivation, approach, and any breaking changes
+  - Bug fixes: Include what was broken and how it was fixed

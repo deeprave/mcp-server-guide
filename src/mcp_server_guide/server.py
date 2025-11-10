@@ -14,7 +14,6 @@ from .naming import mcp_name, MCP_GUIDE_VERSION
 from .file_cache import FileCache
 from .file_source import FileAccessor
 from .session_manager import SessionManager
-from .prompts import register_prompts
 from .tool_registry import register_tools
 
 logger = get_logger()
@@ -54,6 +53,27 @@ class GuideMCP(FastMCP):
         """Get list of registered resources from this server instance."""
         return list(self._resource_manager.list_resources())
 
+    async def cleanup(self) -> None:
+        """Clean up server resources."""
+        try:
+            # Clean up extensions if they have cleanup methods
+            if hasattr(self.extensions, "_session_manager") and hasattr(self.extensions._session_manager, "cleanup"):
+                await self.extensions._session_manager.cleanup()
+
+            if hasattr(self.extensions, "file_accessor") and hasattr(self.extensions.file_accessor, "cleanup"):
+                await self.extensions.file_accessor.cleanup()
+
+        except Exception as e:
+            logger.error(f"Error during server cleanup: {e}")
+
+    async def __aenter__(self) -> "GuideMCP":
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Async context manager exit with cleanup."""
+        await self.cleanup()
+
 
 async def create_server(
     name: Optional[str] = None,
@@ -78,7 +98,7 @@ async def create_server(
         name=actual_name, project=project, docroot=docroot, config_file=config_file, lifespan=server_lifespan
     )
 
-    # Create file accessor for compatibility with tests
+    # Create file accessor
     cache_dir = kwargs.get("cache_dir")
     cache = FileCache(cache_dir) if cache_dir else FileCache()
     file_accessor = FileAccessor(cache=cache)
@@ -94,9 +114,6 @@ async def create_server(
 
     # Set as current server
     set_current_server(server)
-
-    # Register prompts immediately for test compatibility
-    register_prompts(server)
 
     # Register tools using the server with duplicate protection
     await server.extensions.register_tools_once(server, lambda srv: register_tools(srv, log_tool_usage))
@@ -135,12 +152,6 @@ async def get_current_server() -> Optional[GuideMCP]:
     return _current_server
 
 
-def get_current_server_sync() -> Optional[GuideMCP]:
-    """Get the current server instance synchronously (for backward compatibility)."""
-    global _current_server
-    return _current_server
-
-
 def set_current_server(server: GuideMCP) -> None:
     """Set the current server instance."""
     global _current_server
@@ -151,11 +162,6 @@ def set_current_config(config: Dict[str, Any]) -> None:
     """Set the current config for lazy server creation."""
     global _current_config
     _current_config = config
-
-
-def get_mcp() -> Optional[GuideMCP]:
-    """Get the current MCP server instance for backward compatibility."""
-    return get_current_server_sync()
 
 
 def reset_server_state() -> None:

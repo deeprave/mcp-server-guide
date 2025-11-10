@@ -1,32 +1,32 @@
-"""Guide prompt integration with sophisticated CLI parsing support."""
+"""Guide prompt integration with Click-based CLI parsing support."""
 
 from typing import List
 from .logging_config import get_logger
 from .utils.error_handler import ErrorHandler
 from .tools.category_tools import get_category_content
 from .tools.collection_tools import get_collection_content
-from .cli_parser import parse_command, Command
+from .cli_parser_click import parse_command, Command
 
 logger = get_logger(__name__)
 
 
 class GuidePromptHandler:
-    """Guide prompt handler with sophisticated CLI parsing support."""
+    """Guide prompt handler with Click-based CLI parsing support."""
 
     def __init__(self) -> None:
         self.error_handler = ErrorHandler()
 
     async def handle_guide_request(self, args: List[str]) -> str:
-        """Handle guide prompt request with sophisticated CLI parsing."""
+        """Handle guide prompt request with Click-based CLI parsing."""
         if not args:
             return "Guide: Provide a category name, collection name, or category/document path.\nExample: @guide docs/readme"
 
-        # Parse command using sophisticated CLI parser
+        # Parse command using Click-based CLI parser
         command = parse_command(args)
 
         # Import all handlers
         from .prompts import implement_prompt, plan_prompt, discuss_prompt, check_prompt, status_prompt
-        from .help_system import format_guide_help
+        from .help_system import format_guide_help, generate_context_help
 
         # Direct dispatch with match
         match command.type:
@@ -42,8 +42,28 @@ class GuidePromptHandler:
                 return await status_prompt(command.data)
             case "search":
                 return f"Search functionality not yet implemented. Query: {command.data}"
+            case "category_access":
+                # Handle category access
+                if command.category:
+                    result = await get_category_content(command.category)
+                    if result.get("success"):
+                        return str(result.get("content", ""))
+                    else:
+                        # Try collection fallback
+                        collection_result = await get_collection_content(command.category)
+                        if collection_result.get("success"):
+                            return str(collection_result.get("content", ""))
+                        else:
+                            return f"Category or collection '{command.category}' not found."
+                else:
+                    return "No category specified."
             case "help":
-                return await format_guide_help()
+                if command.target:
+                    # Context-sensitive help
+                    return generate_context_help(command.target)
+                else:
+                    # General help
+                    return await format_guide_help()
             case "crud":
                 return f"CRUD operations not yet implemented. Target: {command.target}, Operation: {command.operation}, Data: {command.data}"
             case "content":

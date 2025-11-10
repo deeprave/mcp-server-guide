@@ -28,3 +28,21 @@ class ServerExtensions:
             registration_func(server)
 
             self._tools_registered = True
+
+    async def cleanup(self) -> None:
+        """Clean up extension resources."""
+        try:
+            # Clean up session manager if it has cleanup method
+            if hasattr(self._session_manager, "cleanup"):
+                await self._session_manager.cleanup()
+
+            # Clean up file accessor if it has cleanup method
+            if hasattr(self.file_accessor, "cleanup"):
+                await self.file_accessor.cleanup()
+
+        except Exception as e:
+            # Import logger here to avoid circular imports
+            from .logging_config import get_logger
+
+            logger = get_logger()
+            logger.error(f"Error during extensions cleanup: {e}")

@@ -6,7 +6,6 @@ import sys
 import asyncio
 from typing import Any, Dict, cast
 import click
-import contextlib
 from contextvars import ContextVar
 from .config import Config
 from .logging_config import get_logger
@@ -19,9 +18,7 @@ logger = None
 def _get_safe_logger() -> logging.Logger:
     """Get logger safely, handling case where global logger is not yet initialized."""
     global logger
-    if logger is None:
-        return get_logger()
-    return logger
+    return get_logger() if logger is None else logger
 
 
 # Thread-safe storage for CLI configuration using contextvars
@@ -213,50 +210,59 @@ def parse_cli_arguments() -> Dict[str, Any]:
 
     This function only handles CLI parsing and returns the parsed configuration.
     It does NOT start the server - that's handled separately.
-
-    For now, this is a simplified version that demonstrates the architectural separation.
-    The full Click option integration will be added in the next phase.
     """
     import sys
+    from click.testing import CliRunner
 
-    # Simple argument parsing for demonstration
-    # This will be enhanced with full Click integration
-    config = {
-        "mode": "stdio",
-        "docroot": ".",
-        "project": None,
-        "log_level": "INFO",
-        "log_console": True,
-        "log_file": "",
-        "log_json": False,
-    }
+    # Get the Click command
+    command = main()
 
-    # Handle --help and --version
-    if "--help" in sys.argv or "-h" in sys.argv:
-        print("MCP Server Guide - Help will be implemented with full Click integration")
-        sys.exit(0)
+    # Use CliRunner to parse arguments
+    runner = CliRunner()
 
-    if "--version" in sys.argv:
-        from .naming import MCP_GUIDE_VERSION, mcp_name
+    # Parse sys.argv (skip script name)
+    args = sys.argv[1:] if len(sys.argv) > 1 else []
 
-        print(f"{mcp_name()} {MCP_GUIDE_VERSION}")
-        sys.exit(0)
+    # Invoke the command to get config
+    result = runner.invoke(command, args, catch_exceptions=False, standalone_mode=False)
 
-    # Parse basic arguments (simplified for architectural demonstration)
-    for i, arg in enumerate(sys.argv[1:], 1):
-        if arg == "--docroot" and i < len(sys.argv) - 1:
-            config["docroot"] = sys.argv[i + 1]
-        elif arg == "--project" and i < len(sys.argv) - 1:
-            config["project"] = sys.argv[i + 1]
-        elif arg == "--log-level" and i < len(sys.argv) - 1:
-            config["log_level"] = sys.argv[i + 1]
-        elif arg == "--log-file" and i < len(sys.argv) - 1:
-            config["log_file"] = sys.argv[i + 1]
-
-    return config
+    # The command should return the config dict
+    return result.return_value or {}
 
 
-async def main() -> click.Command:
+async def start_server_with_config(config_dict: Dict[str, Any]) -> None:
+    """Start server in clean async context with parsed configuration."""
+    # Extract mode from config
+    mode = config_dict.get("mode", "stdio")
+
+    # Setup logging with CLI arguments
+    from .logging_config import setup_consolidated_logging
+
+    setup_consolidated_logging(mode, config_source=config_dict, cli_overrides=config_dict)
+
+    # Initialize logger after logging setup
+    global logger
+    logger = get_logger()
+
+    logger.info("=== MCP Server Initialization Starting ===")
+    logger.debug(f"Starting server with config: {config_dict}")
+
+    # Store built-in categories config for deferred async processing
+    logger.debug("Storing built-in categories config for async processing")
+    _deferred_builtin_config.set(config_dict.copy())
+
+    # Start MCP server (async call)
+    logger.debug("Starting MCP server")
+    try:
+        result = await start_mcp_server(mode, config_dict)
+        logger.info(f"MCP server started successfully: {result}")
+    except Exception as e:
+        logger.error(f"FATAL: Failed to start MCP server: {e}", exc_info=True)
+        logger.error("=== MCP SERVER STARTUP FAILED ===")
+        raise
+
+
+def main() -> click.Command:
     """Main CLI entry point for MCP server."""
     config = Config()
 
@@ -270,125 +276,42 @@ async def main() -> click.Command:
 
     @click.command(cls=CustomCommand)
     @click.argument("mode", required=False, default="stdio")
-    def cli_main(mode: str, **kwargs: Any) -> None:
-        """MCP server with configurable paths.
+    def cli_main(mode: str, **kwargs: Any) -> Dict[str, Any]:
+        """MCP server with configurable paths - CONFIGURATION ONLY.
 
         MODE: Server mode - 'stdio' (default)
+
+        Returns: Configuration dictionary
         """
         # Handle version flag first
         if kwargs.get("version"):
             from .naming import MCP_GUIDE_VERSION, mcp_name
 
             click.echo(f"{mcp_name()} {MCP_GUIDE_VERSION}")
-            return
+            return {}
 
+        # Validate and parse mode
         try:
-            # Setup early logging FIRST - before any other operations
-            from .logging_config import setup_consolidated_logging
+            mode_type, mode_config = validate_mode(mode)
+        except click.BadParameter as e:
+            click.echo(f"Error: {e}", err=True)
+            raise click.Abort()
 
-            setup_consolidated_logging(mode, config_source=None, cli_overrides=kwargs)
+        # Resolve configuration from CLI args, env vars, and defaults
+        resolved_config = resolve_cli_config(config, **kwargs)
 
-            # Initialize logger after logging setup
-            global logger
-            logger = get_logger()
+        # Resolve config file path from CLI kwargs
+        config_file_path = resolve_config_file_path(kwargs)
 
-            logger.info("=== MCP Server Initialization Starting ===")
-            logger.debug(f"Early logging setup: {kwargs}")
-            logger.debug(f"CLI arguments: mode={mode}, kwargs={kwargs}")
+        # Add config file path to resolved config
+        resolved_config["config_filename"] = config_file_path
 
-            # Force flush after initial messages
-            for handler in logger.handlers:
-                handler.flush()
+        # Add mode config to resolved config
+        resolved_config["mode"] = mode_type
+        if mode_config:
+            resolved_config["mode_config"] = mode_config
 
-            # Validate and parse mode
-            try:
-                mode_type, mode_config = validate_mode(mode)
-                logger.debug(f"Mode validation successful: {mode_type}, {mode_config}")
-            except click.BadParameter as e:
-                logger.error(f"CLI validation failed: {e}")
-                click.echo(f"Error: {e}", err=True)
-                raise click.Abort()
-
-            # Resolve configuration from CLI args, env vars, and defaults
-            logger.debug("Starting configuration resolution")
-            resolved_config = resolve_cli_config(config, **kwargs)
-
-            # Resolve config file path from CLI kwargs (not from resolved_config)
-            config_file_path = resolve_config_file_path(kwargs)
-
-            # Add config file path to resolved config
-            resolved_config["config_filename"] = config_file_path
-
-            try:
-                pass  # Config resolution now handled by resolve_cli_config()
-            except Exception as e:
-                logger.error(f"FATAL: Configuration option resolution failed: {e}", exc_info=True)
-                raise
-
-            # Add mode config to resolved config
-            resolved_config["mode"] = mode_type
-            if mode_config:
-                resolved_config["mode_config"] = mode_config
-
-            # Setup final logging with resolved configuration
-            from .logging_config import setup_consolidated_logging
-
-            setup_consolidated_logging(mode_type, config_source=resolved_config, cli_overrides=kwargs)
-
-            # Log resolved configuration as single JSON block
-            import json
-
-            logger.debug(f"Resolved configuration: {json.dumps(resolved_config, indent=2, default=str)}")
-
-            # Store built-in categories config for deferred async processing
-            logger.debug("Storing built-in categories config for async processing")
-            _deferred_builtin_config.set(resolved_config.copy())
-
-            # Start MCP server
-            logger.debug("Starting MCP server")
-            try:
-                result = asyncio.run(start_mcp_server(mode_type, resolved_config))
-            except Exception as e:
-                logger.error(f"FATAL: Failed to start MCP server: {e}", exc_info=True)
-                logger.error("=== MCP SERVER STARTUP FAILED ===")
-                logger.error("Check the error details above for the root cause")
-                # Force flush all handlers before re-raising
-                for handler in logger.handlers:
-                    handler.flush()
-                raise
-
-            # Only echo result if we're not in stdio mode (to avoid breaking protocol)
-            if mode_type != "stdio":
-                with contextlib.suppress(OSError):
-                    click.echo(result)
-
-        except (KeyboardInterrupt, SystemExit):
-            # Re-raise these immediately without logging
-            raise
-        except Exception as e:
-            # Comprehensive error handling with stderr logging
-            import sys
-            import traceback
-
-            try:
-                # Try to log with the configured logger
-                safe_logger = _get_safe_logger()
-                safe_logger.error(f"FATAL: CLI execution failed: {e}", exc_info=True)
-                safe_logger.error("=== FULL TRACEBACK ===")
-                safe_logger.error(traceback.format_exc())
-
-                # Force flush all handlers
-                for handler in safe_logger.handlers:
-                    handler.flush()
-            except Exception:
-                # If logging fails, write directly to stderr
-                print(f"FATAL ERROR: {e}", file=sys.stderr)
-                print("=== FULL TRACEBACK ===", file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                sys.stderr.flush()
-
-            # Re-raise the exception
-            raise
+        return resolved_config
 
     # Group options by category for better organization using the 'group' attribute
     from collections import defaultdict
@@ -478,33 +401,7 @@ async def main() -> click.Command:
     return cast(click.Command, cli_main)
 
 
-async def cli_main_async() -> None:
-    """Console script entry point - async version."""
-    try:
-        command = await main()
-        command()  # Click commands are not awaitable
-    except Exception as e:
-        # Last resort error handling - try to log if possible
-        try:
-            logger = get_logger()
-            logger.error(f"UNHANDLED EXCEPTION in CLI main: {e}", exc_info=True)
-            logger.error("=== MCP SERVER CRASHED DURING STARTUP ===")
-            # Force flush
-            for handler in logger.handlers:
-                handler.flush()
-        except Exception:
-            # If logging fails, print to stderr as last resort
-            import sys
-            import traceback
-
-            print(f"FATAL ERROR: {e}", file=sys.stderr)
-            print("=== FULL TRACEBACK ===", file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
-            sys.stderr.flush()
-        raise
-
-
-def cli_main_new() -> None:
+def cli_main() -> None:
     """New clean CLI entry point - parse CLI then start server."""
     try:
         # Phase 1: Parse CLI arguments (sync, returns config)
@@ -519,36 +416,3 @@ def cli_main_new() -> None:
     except Exception as e:
         print(f"Fatal error: {e}")
         sys.exit(1)
-
-
-async def start_server_with_config(config_dict: Dict[str, Any]) -> None:
-    """Start server in clean async context with parsed configuration."""
-    # Extract mode from config
-    mode = config_dict.get("mode", "stdio")
-
-    # Setup logging with CLI arguments
-    from .logging_config import setup_consolidated_logging
-
-    setup_consolidated_logging(mode, config_source=None, cli_overrides=config_dict)
-
-    # Resolve configuration using existing logic
-    from .config import Config
-
-    config = Config()
-    resolved_config = resolve_cli_config(config, **config_dict)
-
-    # Add config file path resolution
-    config_file_path = resolve_config_file_path(config_dict)
-    resolved_config["config_filename"] = config_file_path
-
-    # Start the MCP server (this is already async)
-    result = await start_mcp_server(mode, resolved_config)
-
-    # Only echo result if we're not in stdio mode (to avoid breaking protocol)
-    if mode != "stdio":
-        print(result)
-
-
-def cli_main() -> None:
-    """Console script entry point - sync wrapper."""
-    asyncio.run(cli_main_async())
