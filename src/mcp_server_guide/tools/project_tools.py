@@ -1,6 +1,9 @@
 """Project management tools."""
 
 from typing import Dict, Any, Optional
+from ..logging_config import get_logger
+
+logger = get_logger()
 
 
 async def get_current_project() -> Optional[str]:
@@ -8,7 +11,9 @@ async def get_current_project() -> Optional[str]:
     from ..session_manager import SessionManager
 
     session = SessionManager()
-    return session.get_project_name()
+    result = session.get_project_name()
+    logger.debug(f"get_project_name returned type: {type(result)}, value: {result}")
+    return result
 
 
 async def switch_project(name: str) -> Dict[str, Any]:

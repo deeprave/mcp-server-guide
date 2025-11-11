@@ -19,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 mcp-server-guide = "mcp_server_guide.main:cli_main"
+mcp-server-guide-install = "mcp_install:main"
 # check for vulnerabilities
 osvcheck = "osvcheck:main"
 
@@ -34,6 +35,17 @@ package = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_guide"]
+# Include templates as package data
+include = ["templates/**/*"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"templates" = "templates"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/mcp_server_guide",
+    "templates",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

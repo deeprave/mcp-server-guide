@@ -134,7 +134,9 @@ This server provides access to project documentation, categories, collections, a
         help_sections.append("## Categories and Collections")
         help_sections.append(f" *Error loading categories: {e}*")
 
-    help_sections.extend(("""## Available Resources
+    help_sections.extend(
+        (
+            """## Available Resources
 
 Access project content through these guide:// resources:
 
@@ -187,7 +189,9 @@ You can get general or targeted help for specific operations:
 @guide [category-name]                   # Check specific category content
 @guide status                            # View your phase status
 ```
-""",))
+""",
+        )
+    )
     return _wrap_display_content("\n\n".join(help_sections))
 
 
@@ -205,14 +209,11 @@ def generate_context_help(target: Optional[str] = None, operation: Optional[str]
         help_content = click_context_help(target, operation)
         return _wrap_display_content(help_content)
     except (ImportError, AttributeError, TypeError, click.ClickException) as e:
-        return log_error('Error generating context help: ', e, target)
+        return log_error("Error generating context help: ", e, target)
     except (SystemExit, click.exceptions.Exit) as e:
         # Catch Click exit exceptions that might cause server shutdown
         logger.warning(f"Click exit exception caught in context help generation: {e}")
         exit_content = f"Help for {target or 'general'} (exit exception handled safely)"
         return _wrap_display_content(exit_content)
     except Exception as e:
-        return log_error('Unexpected error generating context help: ', e, target)
-
-
-
+        return log_error("Unexpected error generating context help: ", e, target)

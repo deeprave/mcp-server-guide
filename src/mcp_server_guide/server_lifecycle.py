@@ -16,13 +16,11 @@ error_handler = ErrorHandler()
 @asynccontextmanager
 async def server_lifespan(server: FastMCP) -> Any:
     """Manage server lifecycle with proper startup and shutdown."""
-    import os
 
     logger.info("Starting MCP Server Guide...")
 
-    # Validate PWD environment variable
-    if not os.environ.get("PWD"):
-        raise ValueError("PWD environment variable not set")
+    # Project name resolution is deferred to SessionManager when tools are called
+    # This allows proper access to client context for list_roots functionality
 
     try:
         session_manager = SessionManager()
@@ -43,9 +41,8 @@ async def server_lifespan(server: FastMCP) -> Any:
                     await session_manager.switch_project(project)
                     project_name = project
                 else:
-                    # Extract project name from PWD as fallback
-                    pwd = os.environ.get("PWD", "")
-                    project_name = os.path.basename(pwd) if pwd else "default"
+                    # No explicit project - will be resolved from context when tools are called
+                    project_name = None
 
                 # 3. Set docroot last (part of main config, not project config)
                 if docroot:
@@ -54,17 +51,20 @@ async def server_lifespan(server: FastMCP) -> Any:
                     # Set docroot at config manager level since it's part of main config
                     session_manager._config_manager._docroot = LazyPath(docroot)
             else:
-                # Extract project name from PWD
-                pwd = os.environ.get("PWD", "")
-                project_name = os.path.basename(pwd) if pwd else "default"
+                # No explicit project - will be resolved when tools are called
+                project_name = None
         except Exception as e:
             logger.error(f"Failed to apply server parameters: {e}")
             raise RuntimeError(f"Server parameter application failed: {e}") from e
 
-        config = await session_manager.get_or_create_project_config(project_name or "default")
-        logger.info(f"Loaded configuration: {len(config.categories)} categories, {len(config.collections)} collections")
-
-        await register_resources(server, config)
+        # Project configuration loading happens when first tool is called
+        # Only register resources if explicit project was provided
+        if project_name:
+            config = await session_manager.get_or_create_project_config(project_name)
+            logger.info(
+                f"Loaded configuration: {len(config.categories)} categories, {len(config.collections)} collections"
+            )
+            await register_resources(server, config)
 
         register_prompts(server)
 

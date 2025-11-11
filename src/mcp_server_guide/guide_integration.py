@@ -1,6 +1,9 @@
 """Guide prompt integration with Click-based CLI parsing support."""
 
-from typing import List
+from typing import List, Optional
+
+from mcp.server.fastmcp import Context
+
 from .logging_config import get_logger
 from .utils.error_handler import ErrorHandler
 from .tools.category_tools import get_category_content
@@ -16,8 +19,19 @@ class GuidePromptHandler:
     def __init__(self) -> None:
         self.error_handler = ErrorHandler()
 
-    async def handle_guide_request(self, args: List[str]) -> str:
+    async def handle_guide_request(self, args: List[str], ctx: Optional[Context] = None) -> str:
         """Handle guide prompt request with Click-based CLI parsing."""
+        # Set up context project name in session manager if context is available
+        if ctx:
+            try:
+                from .session_manager import SessionManager
+
+                session_manager = SessionManager()
+                await session_manager.ensure_context_project_loaded(ctx)
+                logger.debug("Context project name set up from guide prompt")
+            except Exception as e:
+                logger.debug(f"Failed to set up context project name from guide prompt: {e}")
+
         if not args:
             return "Guide: Provide a category name, collection name, or category/document path.\nExample: @guide docs/readme"
 

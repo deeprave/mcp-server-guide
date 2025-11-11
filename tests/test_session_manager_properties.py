@@ -37,5 +37,5 @@ def test_session_manager_pwd_required_not_set():
     # Mock environment without PWD
     with patch.dict(os.environ, {}, clear=True):
         # Should raise ValueError when PWD is not set
-        with pytest.raises(ValueError, match="PWD environment variable not set"):
+        with pytest.raises(ValueError, match="Cannot determine project name"):
             session_manager.get_project_name()

@@ -223,7 +223,18 @@ def parse_cli_arguments() -> Dict[str, Any]:
     # Parse sys.argv (skip script name)
     args = sys.argv[1:] if len(sys.argv) > 1 else []
 
-    # Invoke the command to get config
+    # Check if this is a help request - let Click handle it normally
+    if "--help" in args or "-h" in args or (len(args) == 1 and args[0] == "help"):
+        # For help requests, invoke with standalone_mode=True to allow normal exit
+        try:
+            result = runner.invoke(command, args, catch_exceptions=False, standalone_mode=True)
+            # This should not return for help - Click should exit
+            sys.exit(result.exit_code)
+        except SystemExit:
+            # Re-raise SystemExit to allow normal help exit
+            raise
+
+    # For non-help requests, use standalone_mode=False to get config
     result = runner.invoke(command, args, catch_exceptions=False, standalone_mode=False)
 
     # The command should return the config dict

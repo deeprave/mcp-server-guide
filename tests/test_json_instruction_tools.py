@@ -120,9 +120,9 @@ class TestJSONInstructionTools:
         """Test guide_config with get_current_project action."""
         data = {"action": "get_current_project"}
 
-        with patch("src.mcp_server_guide.operations.config_ops.get_current_project") as mock_get:
-            mock_get.return_value = "test_project"
-
+        with patch(
+            "src.mcp_server_guide.operations.config_ops.get_current_project", new=AsyncMock(return_value="test_project")
+        ):
             result = await guide_config(data)
 
             assert result["success"] is True

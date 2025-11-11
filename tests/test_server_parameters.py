@@ -192,7 +192,7 @@ class TestServerParameters:
 
     @pytest.mark.asyncio
     async def test_server_lifecycle_fallback_to_pwd(self):
-        """Test that server lifecycle falls back to PWD when no project specified."""
+        """Test that server lifecycle defers project loading when no project specified."""
         from mcp_server_guide.server_lifecycle import server_lifespan
 
         server = GuideMCP(name="test-server")  # No project specified
@@ -200,13 +200,6 @@ class TestServerParameters:
         with patch.dict(os.environ, {"PWD": "/test/project/path"}):
             with patch("mcp_server_guide.server_lifecycle.SessionManager") as mock_sm_class:
                 mock_sm = AsyncMock()
-
-                async def mock_get_config5(project=None):
-                    from mcp_server_guide.project_config import ProjectConfig
-
-                    return ProjectConfig(categories={}, collections={})
-
-                mock_sm.get_or_create_project_config = AsyncMock(side_effect=mock_get_config5)
                 mock_sm_class.return_value = mock_sm
 
                 # Mock other dependencies
@@ -218,5 +211,5 @@ class TestServerParameters:
                     async with server_lifespan(server):
                         pass
 
-                # Verify PWD basename was used as project name
-                mock_sm.get_or_create_project_config.assert_called_once_with("path")
+                # Verify project loading was deferred (not called during startup)
+                mock_sm.get_or_create_project_config.assert_not_called()

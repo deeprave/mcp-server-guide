@@ -22,6 +22,7 @@
     "@Fetch/*",
     "@YouTrack/*",
     "@Atlassian/*",
+    "@WebSearch/*",
     "@Trello/*"
   ],
   "hooks": {

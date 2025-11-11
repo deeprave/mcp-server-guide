@@ -2,7 +2,9 @@
 
 import asyncio
 import os
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import Dict, Any, Optional
+
+from mcp.server.fastmcp import Context
 from pathlib import Path
 
 from .path_resolver import LazyPath
@@ -11,9 +13,7 @@ from .models.collection import Collection
 from .models.category import Category
 from .session import SessionState
 from .logging_config import get_logger
-
-if TYPE_CHECKING:
-    from .models.speckit_config import SpecKitConfig
+from .models.speckit_config import SpecKitConfig
 
 
 logger = get_logger()
@@ -29,6 +29,8 @@ class SessionManager:
     _config_manager: "ProjectConfigManager"
     _project_locks: Dict[str, asyncio.Lock]
     _locks_lock: asyncio.Lock
+    _context_lock: asyncio.Lock
+    _context_project_name: Optional[str]
 
     def __new__(cls) -> "SessionManager":
         # Check global instance first
@@ -39,8 +41,69 @@ class SessionManager:
             _session_manager_instance._config_manager = ProjectConfigManager()
             _session_manager_instance._project_locks = {}
             _session_manager_instance._locks_lock = asyncio.Lock()
+            _session_manager_instance._context_lock = asyncio.Lock()
+            _session_manager_instance._context_project_name = None  # Resolved from client context
             logger.debug("Session manager initialized")
         return _session_manager_instance
+
+    async def ensure_context_project_loaded(self, ctx: Optional["Context[Any, Any]"] = None) -> None:
+        """Ensure project is loaded from context, handling project switches.
+
+        Args:
+            ctx: Optional FastMCP context for getting project roots
+        """
+        if ctx is None:
+            return
+
+        async with self._context_lock:
+            try:
+                # Get project roots from client context
+                roots = await ctx.session.list_roots()
+
+                if not roots:
+                    logger.debug("No project roots available from client context")
+                    return
+
+                # Extract project name from first root directory
+                from pathlib import Path
+                from urllib.parse import urlparse
+
+                first_root = roots[0]
+                if first_root.uri.startswith("file://"):
+                    try:
+                        parsed = urlparse(first_root.uri)
+                        project_path = Path(parsed.path)
+                        current_context_name = project_path.name
+                    except (ValueError, OSError) as e:
+                        logger.warning(f"Failed to parse root URI {first_root.uri}: {e}")
+                        return
+                    logger.debug(f"Extracted project name '{current_context_name}' from context root '{project_path}'")
+                else:
+                    logger.warning(f"Unsupported root URI scheme: {first_root.uri}")
+                    return
+
+                # If _context_project_name is None, set it for the first time
+                if self._context_project_name is None:
+                    self._context_project_name = current_context_name
+                    logger.debug(f"Set initial context project name: '{self._context_project_name}'")
+
+                    # Switch to this project if it's different from current session
+                    if self._session_state.project_name != current_context_name:
+                        await self.switch_project(current_context_name)
+                        logger.debug(f"Switched to context project: '{current_context_name}'")
+
+                # Handle project switching if context project changes
+                elif self._context_project_name != current_context_name:
+                    logger.info(
+                        f"Context project changed from '{self._context_project_name}' to '{current_context_name}'"
+                    )
+                    self._context_project_name = current_context_name
+                    await self.switch_project(current_context_name)
+                    logger.debug(f"Switched to new context project: '{current_context_name}'")
+
+            except (ValueError, AttributeError, OSError) as e:
+                logger.error(f"Failed to ensure context project loaded: {e}")
+                # Continue with existing session state - don't fail the operation
 
     @classmethod
     def clear(cls) -> None:
@@ -118,26 +181,84 @@ class SessionManager:
         """Set configuration value for current project."""
         self._session_state.set_project_config(key, value)
 
+    async def ensure_project_loaded(
+        self, ctx: Optional["Context[Any, Any]"] = None, server: Any = None
+    ) -> "ProjectConfig":
+        """Ensure project is loaded, loading it if necessary.
+
+        This handles deferred project loading after MCP handshake.
+
+        Args:
+            ctx: Optional FastMCP context for getting project roots
+            server: Optional server instance for resource registration
+
+        Returns:
+            The loaded project configuration
+
+        Raises:
+            ValueError: If project name cannot be determined
+        """
+        # If we already have a loaded project config, return it
+        if self._session_state.project_config:
+            return self._session_state.project_config
+
+        # First, ensure context project is loaded and handle switches
+        await self.ensure_context_project_loaded(ctx)
+
+        # Check if server has deferred project name
+        deferred_project = getattr(server, "_deferred_project", None) if server else None
+
+        if deferred_project:
+            # Use explicit project name
+            project_name = deferred_project
+            logger.debug(f"Using deferred explicit project: '{project_name}'")
+        else:
+            # Resolve project name using session state, context, or PWD
+            project_name = self.get_project_name()
+
+        # Load the project configuration
+        config = await self.get_or_create_project_config(project_name)
+
+        # Register resources if server provided and not already registered
+        if server and not getattr(server, "_resources_registered", False):
+            from .resource_registry import register_resources
+
+            await register_resources(server, config)
+            server._resources_registered = True
+            logger.debug("Resources registered after deferred project loading")
+
+        return config
+
     def get_project_name(self) -> str:
         """Get the current project name.
 
+        Returns project name from session state, context resolution, or PWD fallback.
+
         Raises:
-            ValueError: If PWD environment variable is not set
+            ValueError: If no project name can be determined
         """
-        # If project_name is set, return it
+        # If project_name is set in session state, return it
         if self._session_state.project_name:
+            logger.debug(f"Returning session state project_name: {self._session_state.project_name}")
             return self._session_state.project_name
 
-        # Use PWD environment variable - REQUIRED
+        # Try context-resolved project name (set by ensure_context_project_loaded)
+        if self._context_project_name:
+            logger.debug(f"Using context-resolved project: '{self._context_project_name}'")
+            return self._context_project_name
+
+        # Fallback to PWD environment variable
         from pathlib import Path
 
         pwd = os.getenv("PWD")
         if not pwd:
-            logger.error("PWD environment variable is not set - MCP server cannot function")
-            raise ValueError("PWD environment variable not set. MCP server requires PWD to determine project context.")
+            logger.error("No project name available from session, context, or PWD environment variable")
+            raise ValueError(
+                "Cannot determine project name: no session state, context resolution, or PWD environment variable available"
+            )
 
         project_name = Path(pwd).name
-        logger.debug(f"Using PWD basename as project: '{project_name}' (from {pwd})")
+        logger.debug(f"Using PWD fallback for project: '{project_name}' (from {pwd})")
         return project_name
 
     def reset_project_config(self, project_name: Optional[str] = None) -> None:
@@ -225,10 +346,10 @@ class SessionManager:
 
         # Use project-specific lock for atomic operations
         async with project_lock:
-            # Check if project exists BEFORE calling get_project_config
+            # Check if project is already current BEFORE calling get_project_config
             # (since get_project_config creates the project if it doesn't exist)
             project_is_current = self._session_state.project_name == project
-            logger.debug(f"Project '{project}' existed: {project_is_current}")
+            logger.debug(f"Project '{project}' is already current: {project_is_current}")
 
             if project_is_current:
                 logger.debug(f"Project '{project}' is already current")
@@ -354,3 +475,9 @@ async def switch_project(project_name: str) -> Dict[str, Any]:
     await session_manager.switch_project(project_name)
 
     return {"success": True, "message": f"Switched to project {project_name}"}
+
+
+# Export singleton instance getter for backward compatibility
+def session_manager() -> SessionManager:
+    """Get the singleton SessionManager instance."""
+    return SessionManager()

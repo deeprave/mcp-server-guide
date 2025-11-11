@@ -4,7 +4,7 @@ import json
 import re
 from typing import Optional, Dict, Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 
 from .http.secure_client import SecureHTTPClient
 from .exceptions import NetworkError, SecurityError
@@ -144,7 +144,7 @@ async def implement_prompt(arg: Optional[str] = None, content: Optional[str] = N
 
 async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
     """Enter check mode for verification and cleanup activities."""
-    logger.debug("check_prompt arg: '{repr(arg)}' content: '{repr(content)}'")
+    logger.debug(f"check_prompt arg: '{repr(arg)}' content: '{repr(content)}'")
 
     pre_text = """☑️ **Required Actions:**
 - Update `.consent` file content to: `check`"""
@@ -171,8 +171,19 @@ async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None)
     return await execute_prompt_with_guide("check", base_response, None, pre_text, content)
 
 
-async def spec_prompt(arg: Optional[str] = None) -> str:
+async def spec_prompt(arg: Optional[str] = None, ctx: Optional[Context] = None) -> str:
     """Handle spec init/upgrade commands with feature gating."""
+    # Set up context project name in session manager if context is available
+    if ctx:
+        try:
+            from .session_manager import SessionManager
+
+            session_manager = SessionManager()
+            await session_manager.ensure_context_project_loaded(ctx)
+            logger.debug("Context project name set up from spec prompt")
+        except Exception as e:
+            logger.debug(f"Failed to set up context project name from spec prompt: {e}")
+
     # Check if SpecKit is enabled
     enabled = is_speckit_enabled()
 
@@ -383,8 +394,8 @@ def register_prompts(mcp: FastMCP) -> None:
     setattr(mcp, "_prompts_registered", True)
 
     @mcp.prompt("spec")
-    async def _spec_prompt(arg: Optional[str] = None) -> str:
-        return await spec_prompt(arg)
+    async def _spec_prompt(arg: Optional[str] = None, ctx: Optional[Context] = None) -> str:
+        return await spec_prompt(arg, ctx)
 
     @mcp.prompt("guide")
     async def _guide_prompt(
@@ -404,6 +415,7 @@ def register_prompts(mcp: FastMCP) -> None:
         arg14: Optional[str] = None,
         arg15: Optional[str] = None,
         arg16: Optional[str] = None,
+        ctx: Optional[Context] = None,
     ) -> str:
         """Access guide content with category/document syntax.
 
@@ -441,7 +453,7 @@ def register_prompts(mcp: FastMCP) -> None:
         ]
 
         if args:
-            return await handler.handle_guide_request(args)
+            return await handler.handle_guide_request(args, ctx)
         else:
             # No arguments - show help
-            return await handler.handle_guide_request([])
+            return await handler.handle_guide_request([], ctx)

@@ -1,8 +1,7 @@
 """Tests for configuration resolution flow from CLI to server initialization."""
 
 import os
-import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 from mcp_server_guide.main import resolve_config_file_path, resolve_config_path
 from mcp_server_guide.path_resolver import LazyPath
 
@@ -104,52 +103,3 @@ class TestConfigResolutionFlow:
 
 class TestServerInitialization:
     """Test server initialization with project setup."""
-
-    @pytest.mark.asyncio
-    async def test_server_lifespan_initializes_project_from_pwd(self):
-        """Test that server_lifespan initializes project from PWD."""
-        from mcp_server_guide.server import server_lifespan, create_server
-
-        server = await create_server()
-        with patch.dict(os.environ, {"PWD": "/home/user/my-project"}):
-            async with server_lifespan(server):
-                # After initialization, SessionManager should have project set
-                from mcp_server_guide.session_manager import SessionManager
-
-                session = SessionManager()
-                project_name = session.get_project_name()
-
-                assert project_name == "my-project"
-
-    @pytest.mark.asyncio
-    async def test_server_lifespan_raises_on_missing_pwd(self):
-        """Test that server_lifespan raises ValueError if PWD not set."""
-        from mcp_server_guide.server import server_lifespan, create_server
-        from mcp_server_guide.session_manager import SessionManager
-
-        server = await create_server()
-        # Reset session state
-        session = SessionManager()
-        session.session_state.project_name = None
-
-        with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(ValueError, match="PWD environment variable not set"):
-                async with server_lifespan(server):
-                    pass  # Should not reach here
-
-    @pytest.mark.asyncio
-    async def test_server_lifespan_calls_get_or_create_project_config(self):
-        """Test that server_lifespan calls get_or_create_project_config."""
-        from mcp_server_guide.server import server_lifespan, create_server
-        from mcp_server_guide.session_manager import SessionManager
-        from mcp_server_guide.project_config import ProjectConfig
-        from unittest.mock import patch
-
-        server = await create_server()
-        with patch.dict(os.environ, {"PWD": "/home/user/test-project"}):
-            with patch.object(
-                SessionManager, "get_or_create_project_config", new=AsyncMock(return_value=ProjectConfig(categories={}))
-            ) as mock_get_or_create:
-                async with server_lifespan(server):
-                    # Should have called get_or_create_project_config with project name
-                    mock_get_or_create.assert_called_once_with("test-project")

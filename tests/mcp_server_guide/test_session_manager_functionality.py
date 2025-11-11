@@ -20,7 +20,7 @@ class TestSessionManagerCore:
         session_manager.session_state.project_name = None
 
         with patch.dict("os.environ", {}, clear=True):
-            with pytest.raises(ValueError, match="PWD environment variable not set"):
+            with pytest.raises(ValueError, match="Cannot determine project name"):
                 session_manager.get_project_name()
 
     async def test_get_current_project_safe_with_valid_project(self):
@@ -50,7 +50,7 @@ class TestSessionManagerCore:
         # Test with no PWD - should raise ValueError
         session_manager.session_state.project_name = None
         with patch.dict("os.environ", {}, clear=True):
-            with pytest.raises(ValueError, match="PWD environment variable not set"):
+            with pytest.raises(ValueError, match="Cannot determine project name"):
                 session_manager.get_project_name()
 
     async def test_set_current_project(self):

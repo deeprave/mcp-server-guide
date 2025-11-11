@@ -44,7 +44,7 @@ async def test_get_current_project_raises_when_pwd_not_available():
 
     # Remove PWD from environment - should raise ValueError
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValueError, match="PWD environment variable not set"):
+        with pytest.raises(ValueError, match="Cannot determine project name"):
             session_manager.get_project_name()
 
 

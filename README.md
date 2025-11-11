@@ -39,6 +39,8 @@ These are all regular categories that can be customized, removed or renamed like
 
 ## Installation
 
+### From Source
+
 ```bash
 # Install from source
 git clone <repository-url>
@@ -46,6 +48,35 @@ cd mcp-server-guide
 uv sync
 uv run pip install -e .
 ```
+
+### From PyPI
+
+```bash
+# Install from PyPI
+pip install mcp-server-guide
+```
+
+### Installing Templates
+
+After installing the package, you need to install the templates to a location of your choice. The package includes a dedicated installation script for this purpose:
+
+```bash
+# Install templates to the default location (~/.local/share/mcp-server-guide/templates)
+mcp-server-guide-install
+
+# Install templates to a custom location
+mcp-server-guide-install --templates-dir /path/to/your/templates
+
+# Enable verbose output for more detailed installation logs
+mcp-server-guide-install -v
+```
+
+The installation script will:
+1. Copy all template files to the specified directory
+2. Create a configuration file at `~/.config/mcp-server-guide/config.yaml` (if it doesn't exist)
+3. Set the `docroot` parameter in the config file to point to the templates directory
+
+This ensures that when you run the mcp-server-guide command, it will automatically find and use the installed templates.
 
 ## Usage
 

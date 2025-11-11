@@ -5,7 +5,7 @@ from typing import Dict, List, Type, Any
 from .model_base import BaseModelOperations, discover_models
 
 
-def _extract_schema_info(operations: Dict[str, Type], model_class: Type[BaseModelOperations]) -> List[str]:
+def _extract_schema_info(operations: Dict[str, Type[Any]], model_class: Type[BaseModelOperations]) -> List[str]:
     """Extract schema information for actions."""
     schema_lines = []
     for action, operation_class in operations.items():

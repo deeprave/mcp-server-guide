@@ -8,7 +8,9 @@ import asyncio
 from pathlib import Path
 from typing import Generator, Union
 import pytest
+from unittest.mock import Mock
 
+from mcp.server.fastmcp import Context
 from mcp_server_guide.session_manager import SessionManager
 
 
@@ -168,3 +170,29 @@ def session_temp_dir() -> Path:
     """Provide access to session temp directory."""
     global _session_temp_dir
     return _session_temp_dir
+
+
+@pytest.fixture
+def mock_context():
+    """Create a mock MCP Context for testing."""
+    if Context is None:
+        pytest.skip("MCP Context not available for testing")
+
+    ctx = Mock(spec=Context)
+    ctx.session = Mock()
+
+    # Default mock root pointing to current test directory
+    mock_root = Mock()
+    mock_root.uri = f"file://{Path.cwd()}"
+    ctx.session.list_roots.return_value = [mock_root]
+
+    return ctx
+
+
+@pytest.fixture
+def mock_context_with_project(mock_context):
+    """Create a mock MCP Context with a specific project setup."""
+    mock_root = Mock()
+    mock_root.uri = "file:///home/user/test-project"
+    mock_context.session.list_roots.return_value = [mock_root]
+    return mock_context

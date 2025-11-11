@@ -29,7 +29,7 @@ async def execute_json_operation(entity_type: str, data: Dict[str, Any]) -> Dict
         project = session_manager.get_project_name()
         config = await session_manager.get_or_create_project_config(project)
 
-        return await operation.execute(config)  # type: ignore[no-any-return]
+        return await operation.execute(config)
 
     except ValidationError as e:
         return {"success": False, "error": f"Validation failed: {str(e)}"}

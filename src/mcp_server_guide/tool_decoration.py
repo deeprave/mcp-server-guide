@@ -9,13 +9,14 @@ logger = get_logger()
 
 
 def log_tool_usage(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator to log tool usage."""
+    """Decorator to log tool usage and handle deferred project loading."""
     if inspect.iscoroutinefunction(func):
 
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             tool_name = func.__name__
             logger.debug(f"Tool called: {tool_name}")
+
             try:
                 result = await func(*args, **kwargs)
                 logger.debug(f"Tool {tool_name} completed successfully")

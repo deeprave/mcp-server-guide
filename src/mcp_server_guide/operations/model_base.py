@@ -24,7 +24,7 @@ class BaseModelOperations(BaseModel):
         if action not in operations:
             raise ValueError(f"Unknown action '{action}' for {cls.__name__}")
 
-        return operations[action]  # type: ignore[return-value]
+        return operations[action]
 
 
 _discovered_models: list[Type[BaseModelOperations]] | None = None

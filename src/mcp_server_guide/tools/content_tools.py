@@ -3,6 +3,7 @@
 import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+
 from ..logging_config import get_logger
 from ..document_cache import CategoryDocumentCache
 from .category_tools import get_category_content

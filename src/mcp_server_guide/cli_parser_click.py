@@ -49,7 +49,7 @@ def help(ctx: click.Context, verbose: bool) -> None:
 @guide.command()
 @click.argument("text", nargs=-1)
 @click.pass_context
-def discuss(ctx: click.Context, text: tuple) -> None:
+def discuss(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start discussion phase with optional text."""
     _set_result(ctx, Command(type="discuss", data=" ".join(text) if text else None))
 
@@ -57,7 +57,7 @@ def discuss(ctx: click.Context, text: tuple) -> None:
 @guide.command()
 @click.argument("text", nargs=-1)
 @click.pass_context
-def plan(ctx: click.Context, text: tuple) -> None:
+def plan(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start planning phase with optional text."""
     _set_result(ctx, Command(type="plan", data=" ".join(text) if text else None))
 
@@ -65,7 +65,7 @@ def plan(ctx: click.Context, text: tuple) -> None:
 @guide.command()
 @click.argument("text", nargs=-1)
 @click.pass_context
-def implement(ctx: click.Context, text: tuple) -> None:
+def implement(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start implementation phase with optional text."""
     _set_result(ctx, Command(type="implement", data=" ".join(text) if text else None))
 
@@ -73,7 +73,7 @@ def implement(ctx: click.Context, text: tuple) -> None:
 @guide.command()
 @click.argument("text", nargs=-1)
 @click.pass_context
-def check(ctx: click.Context, text: tuple) -> None:
+def check(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start check phase with optional text."""
     _set_result(ctx, Command(type="check", data=" ".join(text) if text else None))
 
@@ -81,7 +81,7 @@ def check(ctx: click.Context, text: tuple) -> None:
 @guide.command()
 @click.argument("text", nargs=-1)
 @click.pass_context
-def status(ctx: click.Context, text: tuple) -> None:
+def status(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Show status with optional text."""
     _set_result(ctx, Command(type="status", data=" ".join(text) if text else None))
 
@@ -89,7 +89,7 @@ def status(ctx: click.Context, text: tuple) -> None:
 @guide.command()
 @click.argument("query", nargs=-1)
 @click.pass_context
-def search(ctx: click.Context, query: tuple) -> None:
+def search(ctx: click.Context, query: tuple[str, ...]) -> None:
     """Search with query."""
     _set_result(ctx, Command(type="search", data=" ".join(query) if query else None))
 
@@ -114,7 +114,7 @@ def category_list(ctx: click.Context, verbose: bool) -> None:
 @click.argument("patterns", nargs=-1, required=True)
 @click.option("--description", "-d", help="Category description")
 @click.pass_context
-def category_add(ctx: click.Context, name: str, patterns: tuple, description: Optional[str]) -> None:
+def category_add(ctx: click.Context, name: str, patterns: tuple[str, ...], description: Optional[str]) -> None:
     """Add a new category with patterns."""
     _set_result(
         ctx,
@@ -154,7 +154,7 @@ def category_update(ctx: click.Context, name: str, description: Optional[str], p
 @click.argument("name")
 @click.argument("patterns", nargs=-1, required=True)
 @click.pass_context
-def category_add_to(ctx: click.Context, name: str, patterns: tuple) -> None:
+def category_add_to(ctx: click.Context, name: str, patterns: tuple[str, ...]) -> None:
     """Add patterns to existing category."""
     _set_result(
         ctx,
@@ -166,7 +166,7 @@ def category_add_to(ctx: click.Context, name: str, patterns: tuple) -> None:
 @click.argument("name")
 @click.argument("patterns", nargs=-1, required=True)
 @click.pass_context
-def category_remove_from(ctx: click.Context, name: str, patterns: tuple) -> None:
+def category_remove_from(ctx: click.Context, name: str, patterns: tuple[str, ...]) -> None:
     """Remove patterns from existing category."""
     _set_result(
         ctx,
@@ -196,7 +196,7 @@ def collection_list(ctx: click.Context, verbose: bool) -> None:
 @click.argument("categories", nargs=-1, required=True)
 @click.option("--description", "-d", help="Collection description")
 @click.pass_context
-def collection_add(ctx: click.Context, name: str, categories: tuple, description: Optional[str]) -> None:
+def collection_add(ctx: click.Context, name: str, categories: tuple[str, ...], description: Optional[str]) -> None:
     """Add a new collection with categories."""
     _set_result(
         ctx,
@@ -233,7 +233,7 @@ def collection_update(ctx: click.Context, name: str, description: Optional[str])
 @click.argument("name")
 @click.argument("categories", nargs=-1, required=True)
 @click.pass_context
-def collection_add_to(ctx: click.Context, name: str, categories: tuple) -> None:
+def collection_add_to(ctx: click.Context, name: str, categories: tuple[str, ...]) -> None:
     """Add categories to existing collection."""
     _set_result(
         ctx,
@@ -247,7 +247,7 @@ def collection_add_to(ctx: click.Context, name: str, categories: tuple) -> None:
 @click.argument("name")
 @click.argument("categories", nargs=-1, required=True)
 @click.pass_context
-def collection_remove_from(ctx: click.Context, name: str, categories: tuple) -> None:
+def collection_remove_from(ctx: click.Context, name: str, categories: tuple[str, ...]) -> None:
     """Remove categories from existing collection."""
     _set_result(
         ctx,
@@ -417,7 +417,7 @@ def parse_command(args: List[str]) -> Command:
         return Command(type="help")
 
 
-def get_cli_commands() -> dict:
+def get_cli_commands() -> dict[str, Any]:
     """Extract command information from the actual Click command structure."""
     commands = {}
     for name, command in guide.commands.items():
