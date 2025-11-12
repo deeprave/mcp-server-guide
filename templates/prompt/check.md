@@ -1,3 +1,4 @@
+**Instruction**: You have consent to transition to CHECK mode.
 
 🔍 You are now in CHECK phase
 

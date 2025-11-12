@@ -1,8 +1,6 @@
-
 📈 **Phase Status Check**
 
-**Phase Status:**
-- `.consent` exists → contains 'check' → **CHECK** else **IMPLEMENTATION**
-- No `.consent` → `.issue` exists and not empty → **PLANNING** else **DISCUSSION**
+- `.consent` exists? → contains `check`? → **CHECK** else **IMPLEMENTATION**
+- No `.consent`? → non-empty `.issue` exists? → **PLANNING** else **DISCUSSION**
 
-Display phase status and return to the prompt.
+Display the phase status and return to the prompt.

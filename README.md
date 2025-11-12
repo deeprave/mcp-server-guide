@@ -37,6 +37,49 @@ Documents are organized using a **unified categories system**. The following thr
 
 These are all regular categories that can be customized, removed or renamed like any other category through the configuration system. However the `prompt` category is special in that this category is checked for a file that corresponds to a `@guide --action` otherwise it will use the built-in ones.
 
+## Docker Usage
+
+The MCP Server Guide is available as Docker containers for both development and production use.
+
+### Quick Start
+
+```bash
+# Build and run development container
+docker compose up mcp-server-guide-dev
+
+# Build and run production container
+docker compose up mcp-server-guide-prod
+
+# Or build manually
+docker build -f Dockerfile.dev -t mcp-server-guide:dev .
+docker build -f Dockerfile.prod -t mcp-server-guide:prod .
+```
+
+### Container Details
+
+- **Base Image**: `python:3.14-alpine3.22`
+- **User**: Non-root user `mcp`
+- **Working Directory**: `/home/mcp/mcp-server-guide`
+- **Communication**: stdio (MCP protocol)
+
+### Environment Variables
+
+- `MCP_LOG_LEVEL`: Set log level (default: `info` for prod, `debug` for dev)
+
+### Development vs Production
+
+- **Development** (`Dockerfile.dev`): Includes all dev tools (pytest, mypy, ruff, etc.)
+- **Production** (`Dockerfile.prod`): Multi-stage build with minimal runtime footprint
+
+### Volume Mounting (Development)
+
+Uncomment the volume mount in `compose.yaml` for live development:
+
+```yaml
+volumes:
+  - .:/home/mcp/mcp-server-guide
+```
+
 ## Installation
 
 ### From Source

@@ -1,3 +1,4 @@
+**Instruction**: You have consent to transition to DICUSSION mode.
 
 🗣️ You are now in DISCUSSION phase.
 

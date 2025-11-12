@@ -1,7 +1,10 @@
 """Logging configuration for MCP server."""
 
+import contextlib
 import json
 import logging
+import os
+import shutil
 import sys
 from typing import Any, Dict, Optional
 from .naming import logger_name
@@ -84,9 +87,9 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     root_logger.setLevel(numeric_level)
 
-    # Add file handler to ROOT logger if specified
+    # Add the file handler to ROOT logger if specified
     if log_file:
-        try:
+        with contextlib.suppress(OSError, IOError):
             file_handler = FlushingFileHandler(log_file)
             file_handler.setLevel(numeric_level)
             formatter = (
@@ -96,18 +99,15 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_
             )
             file_handler.setFormatter(formatter)
             root_logger.addHandler(file_handler)
-        except (OSError, IOError):
-            pass  # Fail silently for now
-
     # Add Rich console handler for FastMCP compatibility
     if log_console:
         try:
             from rich.console import Console
             from rich.logging import RichHandler
 
-            console_handler = RichHandler(
-                console=Console(stderr=True), rich_tracebacks=True, log_time_format="%Y-%m-%d %H:%M:%S"
-            )
+            term_width = int(os.environ.get("TERM_WIDTH", shutil.get_terminal_size().columns))
+            console = Console(stderr=True, width=term_width - 10)  # 10 chars narrower than terminal
+            console_handler = RichHandler(console=console, rich_tracebacks=True, log_time_format="%Y-%m-%d %H:%M:%S")
             console_handler.setLevel(numeric_level)
             root_logger.addHandler(console_handler)
         except ImportError:
@@ -120,7 +120,7 @@ def setup_logging(level: str, log_file: str = "", log_console: bool = True, log_
             fallback_handler.setLevel(numeric_level)
             root_logger.addHandler(fallback_handler)
 
-    # Return named logger that propagates to configured root
+    # Return the named logger that propagates to the configured root
     return logging.getLogger(logger_name())
 
 

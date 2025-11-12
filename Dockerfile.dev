@@ -1,0 +1,31 @@
+FROM python:3.14-alpine3.22
+
+# Install system dependencies required for Python packages
+RUN apk add --no-cache gcc libffi-dev musl-dev yaml-dev
+
+# Create non-root user
+RUN adduser -D -h /home/mcp mcp
+
+# Install global Python tools
+RUN pip install --no-cache-dir uv ruff
+
+# Set up project directory
+WORKDIR /home/mcp/mcp-server-guide
+
+# Copy project files with correct ownership
+COPY --chown=mcp:mcp . .
+
+# Ensure directory is owned by mcp user
+RUN mkdir -p home/mcp/.config/mcp-server-guide && chown -R mcp:mcp /home/mcp/.config
+
+# Switch to non-root user
+USER mcp
+
+# Install all dependencies including dev group
+RUN uv sync --group dev
+
+# Make entrypoint script executable
+RUN chmod +x docker-entrypoint.sh
+
+# Set entrypoint
+ENTRYPOINT ["./docker-entrypoint.sh"]

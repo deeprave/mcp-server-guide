@@ -1,0 +1,68 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv
+venv/
+.env
+
+# Testing and coverage
+.pytest_cache
+.coverage
+htmlcov/
+.tox/
+.mypy_cache
+.ruff_cache
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation build
+docs/_build/
+
+# Temporary files
+*.tmp
+*.log
+.tmp/
+
+# Development tools
+.pre-commit-config.yaml
+.coveragerc
+mypy.ini
+
+# Project specific
+.todo/
+.claude/
+.amazonq/
+.fleet/
+q.chat
+test/
+.issue
+.consent
+.envrc
+.osvcheck
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Docker
+Dockerfile*
+compose.yaml
+.dockerignore
+
+# Analysis scripts (not needed in container)
+test_python_314_alpine.py
+analyze_dependencies.py

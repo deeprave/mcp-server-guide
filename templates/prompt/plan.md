@@ -1,3 +1,4 @@
+**Instruction**: You have consent to transition to PLANNING mode.
 
 📋 You are now in PLAN phase.
 
