@@ -175,3 +175,28 @@ def setup_consolidated_logging(
 
     # Setup logging - use main setup_logging function
     setup_logging(log_level or "INFO", log_file or "", bool(log_console), bool(log_json))
+
+    # Prevent FastMCP override if requested
+    if prevent_fastmcp_override:
+        _configure_fastmcp_logging()
+
+
+def _configure_fastmcp_logging() -> None:
+    """Configure FastMCP to use our logging setup."""
+    # Get our root logger configuration
+    root_logger = logging.getLogger()
+    our_handlers = root_logger.handlers[:]
+    our_level = root_logger.level
+
+    # Configure FastMCP loggers to use our setup
+    fastmcp_loggers = ["fastmcp", "mcp", "mcp.server", "mcp.client"]
+
+    for fastmcp_logger_name in fastmcp_loggers:
+        logger = logging.getLogger(fastmcp_logger_name)
+        # Only configure if not already configured with our handlers
+        if not any(handler in our_handlers for handler in logger.handlers):
+            logger.handlers = []
+            for handler in our_handlers:
+                logger.addHandler(handler)
+        logger.setLevel(our_level)
+        logger.propagate = True

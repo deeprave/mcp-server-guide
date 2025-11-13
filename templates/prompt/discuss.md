@@ -8,9 +8,12 @@
 **Exceptions:**
 - Discussion briefs, analysis documents, specifications and plans
 - Remove `.consent` file if it exists
-- Create, update or remove `.issue` file ONLY at user's explicit instruction
+- if `.issue` file exists, provide a brief list of tasks queued for development
+    - The user may wish to remove completed tasks
+    - The user may wish to remove the entire .issue file
+    - You MUST wait for the user's explicit instruction
 
-**Purpose:** Decide WHAT needs to be done.
+**Purpose of this phase:** Decide WHAT needs to be done.
 
 **Instructions:**
 - Gather context from project files, documentation, plans, web searches, MCP integrations
