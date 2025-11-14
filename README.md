@@ -14,9 +14,15 @@ This MCP server is designed to work with:
 - gemini
 - possibly copilot cli
 
-Since I use multiple agents (often switching between the first three), I needed a common place I could store AI agent instructions. I used symlinks at first, but this became a little unwieldy to manage, sometimes needing to copy files between directories and keeping them updated whenever they changed.
+## Background
 
-Every AI client has its own idea of where to source instructions, and some of the implementations or versions from the same vendor often disagree with each other or just aren't consistent. This was my solution. This also keeps prompts in a central location plus it can keep them out of the project itself.
+Instructions and prompts are an **essential** part of using agentic AI constructively in a controlled, useful and productive manner. So-called "vibe coding" is useful only for a tiny subset of tasks, such as a simple command line utility or script. Once you move into serious applications, even small ones, the context window and other factors make the approach prone to error, disjointed architecture, over-engineering, mixed concerns and making incorrect decisions on their own based on guesses and ambiguities.
+
+When used in a controlled manner it is possible to make the result more deterministic.
+
+Since I use multiple agents (often switching between the first three), I needed a common place I could store prompts and instructions. Initially i used between documents at first, but this became a little unwieldy to manage, sometimes needing to copy files between directories and trying to keep them updated whenever they were improved.
+
+Every agentic client has its own idea of where to source instructions, and some of the implementations or versions from the same vendor often disagree with each other or lack consistency. `mcp-server-guide` is my solution. This also keeps prompts and instructions in a central location plus it can keep them out of the project itself.
 
 ## The Objective
 
@@ -26,6 +32,24 @@ This MCP is a step towards providing the AI with guardrails that it cannot (or s
 
 ### The Implementation
 
+`mcp-server-guide` supports a built-in iterative development cycle.
+It is designed to follow a four step process using the following phases:
+
+**Discussion**: This phase is for specifying requirements and ultimately what conditions must be satisfied to complete the feature to be implemented. Both the user and agent need to use this phase to arrive at alignment, the user makes it clear as to what needs to be done - and often, how it is to be done - and the agent needs to be clear. Not all issues that may arise during implemention may be sufficiently covered (or discovered) at this point, but any known assumptions should be stated.
+
+**Planning**: To state the obvious, the planning phase is for planning. The objective of this phase is to produce assets in the form of specification documents, implementation plans and/or checklists - or all three combined into a single document, depending on user preference. Documents are produced in markdown for readability by both the agent and user.
+Before transitioning to the next phase, the user must explicitly provide consent, which is essentially agreeing with the document(s) content.
+
+> The reason for producing document artifacts in this phase provides several benefits:
+> - A plan does not need to be executed immediately
+> - A plan can be paused and resumed
+ -
+
+**Implementation**: This phase, which requires explicit consent from the user, is where the agent executes the plan. Insist that the agent must periodically mark completed items on the checklist and mark anything that is deferred or "todo". Tests must be produced (in TDD mode, before implementation) and run after each individual task to ensure that the produced code works as it should.
+
+
+
+#### Documents & Instructions
 Documents containing prompts are served to the AI for its consumption. These take the form of general guidelines,
 
 Documents are organized using a **unified categories system**. The following three default categories are created when a project is first instantiated - implicitly, when started in a new project:, using using the switch_project tool with a different name.
@@ -210,44 +234,70 @@ content = await get_guide("context", "project-context")
 
 ### Prompts
 
-#### `@guide` Prompt
+#### `@guide` Prompt - Core Interface
 
-Get comprehensive guide content, specific category content, or execute CLI commands for advanced operations.
+The `@guide` prompt is the primary interface for accessing documentation, managing configuration, and controlling development workflow.
 
 **Basic Usage:**
 
 ```
-@guide                    # Get help and overview of all available categories
-@guide category_name      # Get all content from a specific category
-@guide collection_name    # Get all content from a specific collection
+@guide                    # Show help and available categories
+@guide help              # Show detailed help information
+@guide category_name     # Show content from a specific category
+@guide collection_name   # Show content from a specific collection
 ```
 
-## CLI Commands
-
-The `@guide` prompt supports a powerful CLI syntax for advanced operations:
-
-### Quick Reference
-
-| Short | Long        | Description                    |
-|-------|-------------|--------------------------------|
-| `-h`  | `--help`    | Show help (general or target-specific) |
-| `-T`  | `--content` | Inline text content           |
-| `-C`  | `--category`| Category target/argument       |
-| `-D`  | `--document`| Document target                |
-| `-M`  | `--collection`| Collection target            |
-| `-n`  | `--name`    | Name argument                  |
-| `-f`  | `--file`    | File path argument             |
-
-### Phase Commands
-
-Phase commands help manage development workflow transitions:
+**Phase Commands:**
 
 ```
-@guide -d "topic"         # Enter discussion phase with context
-@guide -p "task details"  # Enter planning phase with task context
-@guide -i "implementation notes" # Enter implementation phase
-@guide -c "check details" # Enter check/validation phase
-@guide -s                 # Show current project status
+@guide discuss "topic"   # Start discussion phase with context
+@guide plan "feature"    # Start planning phase with task details
+@guide implement         # Start implementation phase
+@guide check            # Start check/validation phase
+```
+
+**Configuration Management:**
+
+The `@guide` prompt also provides CRUD operations for managing categories, collections, and documents. Instead of memorizing complex syntax, you can simply ask the AI what to do:
+
+*"Add a new category called 'testing' with patterns for test files"*
+*"Create a collection that includes both 'api' and 'database' categories"*
+*"Show me all available categories"*
+
+The AI will use the appropriate operations to fulfill your request.
+
+#### Collections & Concatenated Categories
+
+**Collections** group multiple categories together for convenient access:
+- Create collections that combine related categories
+- Access multiple categories with a single command
+- Useful for organizing related documentation (e.g., "backend" collection including "api", "database", "auth" categories)
+
+**Category Concatenation** allows referencing multiple categories:
+- Use comma-separated category names: `@guide api,database,auth`
+- Combines content from all specified categories
+- Maintains logical organization while providing comprehensive context
+
+#### Document Management
+
+The system supports two types of content:
+
+**Pattern-Based Content:**
+- Files matched by category patterns (e.g., `*.md` files in category directories)
+- Automatically discovered based on file patterns
+- Changes when files are added/removed from directories
+
+**Managed Documents:**
+- Specific documents uploaded via document management tools
+- Unaffected by pattern matching
+- Can reference category/document names directly without requiring pattern matches
+- Persistent until explicitly removed
+
+**Instructions Referencing Documents:**
+You can reference specific documents by category and name:
+- `@guide category_name/document_name` - Access specific managed document
+- Works regardless of file patterns or directory structure
+- Provides direct access to uploaded instructions and documentation
 @guide -q "search term"   # Search across all content
 ```
 

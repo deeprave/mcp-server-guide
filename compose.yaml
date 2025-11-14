@@ -19,6 +19,9 @@ services:
     environment:
       - MCP_LOG_LEVEL=${MCP_LOG_LEVEL:-info}
       - TERM_WIDTH=${TERM_WIDTH:-166}
+    volumes:
+      - mcp-venv:/home/mcp/mcp-server-guide/.venv
+      - mcp-config:/home/mcp/.config/mcp-server-guide
 
 volumes:
   mcp-venv:
