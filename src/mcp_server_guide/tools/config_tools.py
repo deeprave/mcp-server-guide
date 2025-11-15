@@ -4,7 +4,8 @@ from typing import Dict, Any, Optional
 
 
 async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
-    """Get project configuration."""
+    """Get project configuration settings and values.
+    This is a read-only operation that displays current configuration without making changes."""
     from ..session_manager import SessionManager
 
     session = SessionManager()
@@ -17,6 +18,8 @@ async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
 
 async def set_project_config_values(config_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Set multiple project configuration values at once.
+    Use when user explicitly requests updating multiple configuration settings.
+    This operation modifies the project configuration and affects system behavior.
 
     Args:
         config_dict: Dictionary of key-value pairs to set
@@ -61,7 +64,9 @@ async def set_project_config_values(config_dict: Dict[str, Any]) -> Dict[str, An
 
 
 async def set_project_config(config_key: str, value: Any) -> Dict[str, Any]:
-    """Update project settings."""
+    """Update project configuration settings.
+    Use when user explicitly requests changing a specific configuration value.
+    This operation modifies the project configuration and affects system behavior."""
 
     # Note: Key and value validation will be handled by Pydantic models in future phases
 

@@ -122,7 +122,9 @@ async def create_spec_kit_collection(
 
 
 async def add_collection(name: str, categories: List[str], description: Optional[str] = None) -> Dict[str, Any]:
-    """Add a new collection."""
+    """Add a new collection to group related categories.
+    Use when user explicitly requests creating a new collection for organizing categories.
+    This operation modifies the project configuration."""
     from ..session_manager import SessionManager
 
     session = SessionManager()
@@ -202,7 +204,9 @@ async def add_collection(name: str, categories: List[str], description: Optional
 
 
 async def update_collection(name: str, *, description: Optional[str] = None) -> Dict[str, Any]:
-    """Update collection description."""
+    """Update collection configuration and description.
+    Use when user explicitly requests modifying collection settings.
+    This operation modifies the project configuration."""
     from ..session_manager import SessionManager
 
     session = SessionManager()
@@ -428,7 +432,9 @@ async def remove_from_collection(name: str, categories: List[str]) -> Dict[str, 
 
 
 async def remove_collection(name: str) -> Dict[str, Any]:
-    """Remove a collection."""
+    """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests collection removal.
+    This operation will permanently remove the collection from project configuration and cannot be undone.
+    Do not use without clear user intent to delete a collection."""
     from ..session_manager import SessionManager
 
     session = SessionManager()
@@ -458,7 +464,8 @@ async def remove_collection(name: str) -> Dict[str, Any]:
 
 
 async def list_collections(verbose: bool = False) -> Dict[str, Any]:
-    """List all collections."""
+    """List all available collections in the project.
+    This is a read-only operation that displays collection information without making changes."""
     from ..session_manager import SessionManager
 
     session = SessionManager()

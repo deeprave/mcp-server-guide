@@ -132,7 +132,8 @@ def _extract_document_from_content(content: str, document: str) -> Optional[str]
 
 
 async def search_content(query: str, project: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Search across all categories for content matching query."""
+    """Search across all categories for content matching the query.
+    This is a read-only operation that finds and displays matching content without making changes."""
     from ..session_manager import SessionManager
 
     session = SessionManager()

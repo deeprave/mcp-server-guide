@@ -125,7 +125,11 @@ def _get_docs_dir(category_dir: str) -> Path:
 async def create_mcp_document(
     category_dir: str, name: str, content: str, source_type: str = "manual", mime_type: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Create new server document in category/__docs__/ with metadata."""
+    """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests document creation or upload.
+    This operation will create a new managed document in the specified category directory.
+    Do not use frivolously or without clear user intent to create a new document.
+
+    Creates new server document in category/__docs__/ with metadata."""
     # Validate inputs
     if not _validate_document_name(name):
         return {"success": False, "error": f"Invalid document name: {name}", "error_type": "validation"}
@@ -169,7 +173,11 @@ async def create_mcp_document(
 
 
 async def update_mcp_document(category_dir: str, name: str, content: str) -> Dict[str, Any]:
-    """Update existing server document in category/__docs__/."""
+    """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests document modification or update.
+    This operation will overwrite the existing document content and cannot be undone.
+    Do not use frivolously or without clear user intent to modify an existing document.
+
+    Updates existing server document in category/__docs__/."""
     # Validate inputs
     if not _validate_document_name(name):
         return {"success": False, "error": f"Invalid document name: {name}", "error_type": "validation"}
@@ -228,7 +236,11 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
 
 
 async def delete_mcp_document(category_dir: str, name: str) -> Dict[str, Any]:
-    """Delete server document and metadata from category/__docs__/."""
+    """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests document deletion or removal.
+    This operation will permanently delete the document and its metadata and cannot be undone.
+    Do not use frivolously or without clear user intent to delete a document.
+
+    Deletes server document and metadata from category/__docs__/."""
     # Validate inputs
     if not _validate_document_name(name):
         return {"success": False, "error": f"Invalid document name: {name}", "error_type": "validation"}
@@ -261,7 +273,8 @@ async def list_mcp_documents(
     source_type: Optional[str] = None,
     mime_type: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """List server documents from category/__docs__/ with filtering."""
+    """List server documents from category/__docs__/ with optional filtering.
+    This is a read-only operation that displays available documents without making changes."""
     try:
         # Trigger async cleanup for this category
         add_category(category_dir)

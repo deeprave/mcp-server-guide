@@ -134,7 +134,9 @@ async def add_category(
     patterns: List[str],
     description: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Add a new custom category."""
+    """Add a new custom category to the project configuration.
+    Use when user explicitly requests creating a new category for organizing documentation.
+    This operation modifies the project configuration."""
     # Validate category name
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
@@ -189,7 +191,9 @@ async def update_category(
     dir: Optional[str] = None,
     patterns: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """Update an existing category."""
+    """Update an existing category configuration.
+    Use when user explicitly requests modifying category settings.
+    This operation modifies the project configuration."""
     # Validate category name
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
@@ -255,7 +259,9 @@ async def update_category(
 
 
 async def remove_category(name: str) -> Dict[str, Any]:
-    """Remove a custom category."""
+    """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests category removal.
+    This operation will permanently remove the category from project configuration and cannot be undone.
+    Do not use without clear user intent to delete a category."""
     # Validate category name
     if not _validate_category_name(name):
         return {"success": False, "error": "Invalid category name. Must match pattern [A-Za-z0-9_-]+"}
@@ -296,7 +302,8 @@ async def remove_category(name: str) -> Dict[str, Any]:
 
 
 async def list_categories(verbose: bool = False) -> Dict[str, Any]:
-    """List all categories (built-in and custom)."""
+    """List all available categories in the project.
+    This is a read-only operation that displays category information without making changes."""
     from ..session_manager import SessionManager
 
     session = SessionManager()
@@ -451,6 +458,7 @@ async def remove_from_category(name: str, patterns: List[str]) -> Dict[str, Any]
 
 async def get_category_content(name: str, file: Optional[str] = None) -> Dict[str, Any]:
     """Get content from a category using glob patterns or HTTP URL.
+    This is a read-only operation that retrieves and displays category content without making changes.
 
     If file parameter is provided, returns content of specific document within the category.
     If file is None, returns entire category content (existing behavior).
