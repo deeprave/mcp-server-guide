@@ -133,13 +133,17 @@ class CollectionCrudHandler(UnifiedCrudHandler):
         if not isinstance(categories, list):
             return {"valid": False, "error": "Categories must be a list"}
 
-        for category in categories:
-            if not isinstance(category, str) or len(category.strip()) == 0:
-                return {"valid": False, "error": "Category names must be non-empty strings"}
-
-        # Mock validation - would integrate with actual category storage
-        # For now, just check basic format requirements
-        return {"valid": True}
+        return next(
+            (
+                {
+                    "valid": False,
+                    "error": "Category names must be non-empty strings",
+                }
+                for category in categories
+                if not isinstance(category, str) or len(category.strip()) == 0
+            ),
+            {"valid": True},
+        )
 
     def _invalidate_collection_cache(self, collection_name: str) -> None:
         """Invalidate cache for the specified collection."""
