@@ -15,9 +15,12 @@ from ..utils.error_handler import handle_operation_error
 logger = get_logger()
 
 
-def _write_document_content(doc_path: Path, content: str) -> None:
+async def _write_document_content(doc_path: Path, content: str) -> None:
     """Write document content to file (used with lock_update)."""
-    doc_path.write_text(content, encoding="utf-8")
+    import aiofiles
+
+    async with aiofiles.open(doc_path, "w", encoding="utf-8") as f:
+        await f.write(content)
 
 
 WINDOWS_RESERVED = {
@@ -110,7 +113,7 @@ def _get_docs_dir(category_dir: str) -> Path:
 
     session = SessionManager()
     docroot = session.docroot
-    base_path = docroot.resolve_sync() if docroot else Path(".")
+    base_path = docroot.resolve() if docroot else Path(".")
 
     # If category_dir is absolute, use it directly (for tests and special cases)
     # Otherwise, resolve relative to docroot
@@ -144,7 +147,7 @@ async def create_mcp_document(
 
         # Create document file with locking
         doc_path = docs_dir / name
-        lock_update(doc_path, _write_document_content, content)
+        await lock_update(doc_path, _write_document_content, content)
 
         # Generate metadata
         if mime_type is None:
@@ -207,7 +210,7 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
             )
 
         # Update document content with locking
-        lock_update(doc_path, _write_document_content, content)
+        await lock_update(doc_path, _write_document_content, content)
 
         # Update metadata with new content hash
         new_content_hash = generate_content_hash(content)

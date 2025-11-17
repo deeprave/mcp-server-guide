@@ -8,7 +8,7 @@ from mcp_server_guide.models.category import Category
 class TestConcurrentSave:
     """Test concurrent save operations use proper locking."""
 
-    def test_save_config_uses_lock_update(self, tmp_path):
+    async def test_save_config_uses_lock_update(self, tmp_path):
         """Test that save_config uses lock_update for proper file locking."""
         config_manager = ProjectConfigManager()
         config_manager.set_config_filename(tmp_path / "test_config.yaml")
@@ -21,7 +21,7 @@ class TestConcurrentSave:
             # Mock lock_update to return a docroot value
             mock_lock_update.return_value = "."
 
-            config_manager.save_config("test_project", project_config)
+            await config_manager.save_config("test_project", project_config)
 
             # Verify lock_update was called
             assert mock_lock_update.called

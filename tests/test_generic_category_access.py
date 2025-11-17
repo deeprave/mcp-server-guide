@@ -35,7 +35,7 @@ class TestGenericCategoryAccess:
             # Mock config_manager and docroot
             mock_config_manager = Mock()
             mock_docroot = Mock()
-            mock_docroot.resolve_sync.return_value = Path("/test")
+            mock_docroot.resolve.return_value = Path("/test")
             mock_config_manager.docroot = mock_docroot
             mock_session.config_manager.return_value = mock_config_manager
 

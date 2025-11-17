@@ -16,10 +16,10 @@ async def test_lock_update_creates_lock_file():
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.yaml"
 
-        def dummy_func(file_path):
+        async def dummy_func(file_path):
             return "success"
 
-        result = lock_update(config_file, dummy_func)
+        result = await lock_update(config_file, dummy_func)
 
         assert result == "success"
         # Lock file should be cleaned up after execution
@@ -33,7 +33,7 @@ async def test_lock_file_contains_hostname_and_pid():
         config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
-        def check_lock_content(file_path):
+        async def check_lock_content(file_path):
             # Check lock file content while it exists
             with open(lock_file, "r") as f:
                 content = f.read().strip()
@@ -51,7 +51,7 @@ async def test_lock_file_contains_hostname_and_pid():
 
             return "success"
 
-        result = lock_update(config_file, check_lock_content)
+        result = await lock_update(config_file, check_lock_content)
         assert result == "success"
 
 
@@ -60,10 +60,10 @@ async def test_lock_update_executes_function_with_args():
     with tempfile.TemporaryDirectory() as temp_dir:
         config_file = Path(temp_dir) / "config.yaml"
 
-        def test_func(file_path, arg1, arg2, kwarg1=None, kwarg2=None):
+        async def test_func(file_path, arg1, arg2, kwarg1=None, kwarg2=None):
             return {"file_path": str(file_path), "arg1": arg1, "arg2": arg2, "kwarg1": kwarg1, "kwarg2": kwarg2}
 
-        result = lock_update(config_file, test_func, "value1", "value2", kwarg1="kw1", kwarg2="kw2")
+        result = await lock_update(config_file, test_func, "value1", "value2", kwarg1="kw1", kwarg2="kw2")
 
         expected = {"file_path": str(config_file), "arg1": "value1", "arg2": "value2", "kwarg1": "kw1", "kwarg2": "kw2"}
         assert result == expected
@@ -77,12 +77,12 @@ async def test_lock_file_removed_after_successful_execution():
 
         lock_existed_during_execution = False
 
-        def check_lock_exists(file_path):
+        async def check_lock_exists(file_path):
             nonlocal lock_existed_during_execution
             lock_existed_during_execution = lock_file.exists()
             return "completed"
 
-        result = lock_update(config_file, check_lock_exists)
+        result = await lock_update(config_file, check_lock_exists)
 
         # Lock should have existed during execution
         assert lock_existed_during_execution
@@ -97,13 +97,13 @@ async def test_lock_file_removed_after_exception():
         config_file = Path(temp_dir) / "config.yaml"
         lock_file = config_file.with_suffix(config_file.suffix + ".lock")
 
-        def failing_func(file_path):
+        async def failing_func(file_path):
             # Verify lock exists during execution
             assert lock_file.exists()
             raise ValueError("Test exception")
 
         with pytest.raises(ValueError, match="Test exception"):
-            lock_update(config_file, failing_func)
+            await lock_update(config_file, failing_func)
 
         # Lock should be removed even after exception
         assert not lock_file.exists()
@@ -133,11 +133,11 @@ async def test_stale_lock_different_hostname_dead_process():
         with open(lock_file, "w") as f:
             f.write("different-host:999999")
 
-        def dummy_func(file_path):
+        async def dummy_func(file_path):
             return "success"
 
         # Should succeed by removing stale lock
-        result = lock_update(config_file, dummy_func)
+        result = await lock_update(config_file, dummy_func)
         assert result == "success"
 
 
@@ -155,7 +155,7 @@ async def test_project_config_save_uses_locking():
         manager.set_config_filename(project_path / "test_config.yaml")
 
         # This should use locking internally
-        manager.save_config("test-project", config)
+        await manager.save_config("test-project", config)
 
         # Verify config was saved to temp location
         config_file = Path(manager.get_config_filename())
@@ -179,11 +179,11 @@ async def test_project_config_save_uses_locking():
         old_time = time.time() - 700  # 11+ minutes ago
         with patch("os.path.getmtime", return_value=old_time):
 
-            def dummy_func(file_path):
+            async def dummy_func(file_path):
                 return "success"
 
             # Should succeed by removing stale lock
-            result = lock_update(config_file, dummy_func)
+            result = await lock_update(config_file, dummy_func)
             assert result == "success"
 
 
@@ -202,8 +202,10 @@ async def test_concurrent_config_updates_prevented():
         results = []
 
         def save_config(project_name):
+            import asyncio
+
             config = ProjectConfig(categories={"test": Category(dir="test/", patterns=["*.md"])})
-            manager.save_config(project_name, config)
+            asyncio.run(manager.save_config(project_name, config))
             results.append(project_name)
 
         # Start two concurrent saves
@@ -238,11 +240,11 @@ async def test_invalid_lock_file_format_handled(tmp_path):
     # Create lock file with invalid format
     lock_file.write_text("invalid-format")
 
-    def test_func(file_path):
+    async def test_func(file_path):
         return "success"
 
     # Should treat invalid format as stale and remove it
-    result = lock_update(config_file, test_func)
+    result = await lock_update(config_file, test_func)
 
     assert result == "success"
     assert not lock_file.exists()
@@ -262,10 +264,10 @@ async def test_lock_file_read_errors_handled(tmp_path, monkeypatch):
 
     monkeypatch.setattr("pathlib.Path.read_text", mock_read_text)
 
-    def test_func(file_path):
+    async def test_func(file_path):
         return "success"
 
     # Should handle read error and proceed (treating as no lock)
-    result = lock_update(config_file, test_func)
+    result = await lock_update(config_file, test_func)
 
     assert result == "success"

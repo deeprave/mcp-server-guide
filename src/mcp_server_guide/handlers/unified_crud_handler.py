@@ -33,7 +33,7 @@ class UnifiedCrudHandler(ABC):
         else:
             return {"success": False, "error": f"Unsupported action: {action}"}
 
-    def _process_data_array(self, instruction: EnhancedInstruction) -> Optional[list]:
+    def _process_data_array(self, instruction: EnhancedInstruction) -> Optional[list[str]]:
         """Process data array if present in instruction."""
         if hasattr(instruction, "data") and instruction.data:
             try:
@@ -42,7 +42,7 @@ class UnifiedCrudHandler(ABC):
                 raise ValueError(f"Invalid data array: {e}")
         return None
 
-    def _encode_response_data(self, data: list) -> list:
+    def _encode_response_data(self, data: list[str]) -> list[str]:
         """Encode response data array for output."""
         try:
             return encode_data_array(data)

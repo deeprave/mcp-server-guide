@@ -105,18 +105,6 @@ class LazyPath:
 
         return self._resolved_path
 
-    def resolve_sync(self) -> Path:
-        """Synchronous resolution.
-
-        Returns:
-            Resolved Path object
-
-        Raises:
-            OSError: If the path cannot be resolved
-            ValueError: If the path string is malformed
-        """
-        return self.resolve()
-
     def to_file_source(self) -> "FileSource":
         """Convert LazyPath to FileSource representation.
 

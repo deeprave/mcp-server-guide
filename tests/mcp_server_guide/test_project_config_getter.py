@@ -47,7 +47,7 @@ async def test_project_config_manager_uses_getter_internally():
             config = ProjectConfig(categories={})
 
             # Save config - should use the mocked filename
-            manager.save_config("test-project", config)
+            await manager.save_config("test-project", config)
 
             # The custom filename should exist (global config location)
             custom_file = Path("custom-config.yaml")
@@ -77,7 +77,7 @@ async def test_project_config_manager_load_uses_getter():
         custom_config_file.write_text(yaml.dump(config_data))
 
         try:
-            config = manager.load_config("test-project")
+            config = await manager.load_config("test-project")
 
             # Should successfully load the config
             assert config is not None

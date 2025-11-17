@@ -1,6 +1,6 @@
 """Guide prompt integration with Click-based CLI parsing support."""
 
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from mcp.server.fastmcp import Context
 
@@ -19,7 +19,7 @@ class GuidePromptHandler:
     def __init__(self) -> None:
         self.error_handler = ErrorHandler()
 
-    async def handle_guide_request(self, args: List[str], ctx: Optional[Context] = None) -> str:
+    async def handle_guide_request(self, args: List[str], ctx: Optional["Context[Any, Any]"] = None) -> str:
         """Handle guide prompt request with Click-based CLI parsing."""
         # Set up context project name in session manager if context is available
         if ctx:

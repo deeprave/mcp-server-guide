@@ -1,9 +1,10 @@
 """File locking strategy for configuration updates."""
 
+import asyncio
 import os
 import time
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Awaitable
 
 T = TypeVar("T")
 STALE_LOCK_SECONDS = 600  # 10 minutes
@@ -47,7 +48,7 @@ def is_lock_stale(lock_file: Path, current_hostname: str) -> bool:
         return True  # Error reading lock file, consider stale
 
 
-def lock_update(file_path: Path, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+async def lock_update(file_path: Path, func: Callable[..., Awaitable[T]], *args: Any, **kwargs: Any) -> T:
     """Execute function with file locking to prevent concurrent updates."""
     pid = os.getpid()
     hostname = os.uname().nodename.split(".")[0]
@@ -65,12 +66,12 @@ def lock_update(file_path: Path, func: Callable[..., T], *args: Any, **kwargs: A
                 if is_lock_stale(lock_file, hostname):
                     lock_file.unlink(missing_ok=True)
                 else:
-                    time.sleep(1)
+                    await asyncio.sleep(1)
             except Exception:
                 # If we can't read the lock file, treat as stale
                 lock_file.unlink(missing_ok=True)
 
     try:
-        return func(file_path, *args, **kwargs)
+        return await func(file_path, *args, **kwargs)
     finally:
         lock_file.unlink(missing_ok=True)

@@ -511,7 +511,7 @@ async def get_category_content(name: str, file: Optional[str] = None) -> Dict[st
 
     # Get docroot from session manager's config manager
     docroot = session.config_manager().docroot
-    base_path = docroot.resolve_sync() if docroot else Path(".")
+    base_path = docroot.resolve() if docroot else Path(".")
     search_dir = base_path / category_dir
 
     if not search_dir.exists():
@@ -558,7 +558,7 @@ async def _get_specific_document(category: Any, file: str, session: Any) -> Dict
 
     # Get docroot from session manager's config manager
     docroot = session.config_manager().docroot
-    base_path = docroot.resolve_sync() if docroot else Path(".")
+    base_path = docroot.resolve() if docroot else Path(".")
 
     # Check managed documents first (category/__docs__/document)
     docs_dir = base_path / category.dir / "__docs__"

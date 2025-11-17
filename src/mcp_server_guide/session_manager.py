@@ -10,7 +10,6 @@ from pathlib import Path
 from .path_resolver import LazyPath
 from .project_config import ProjectConfigManager, ProjectConfig
 from .models.collection import Collection
-from .models.category import Category
 from .session import SessionState
 from .logging_config import get_logger
 from .models.speckit_config import SpecKitConfig
@@ -166,7 +165,7 @@ class SessionManager:
         self._config_manager.set_config_filename(filename)
 
     async def load_config(self, project_name: str) -> Optional[ProjectConfig]:
-        return self._config_manager.load_config(project_name)
+        return await self._config_manager.load_config(project_name)
 
     def set_project_name(self, project_name: str) -> None:
         if not project_name or not isinstance(project_name, str):
@@ -279,7 +278,7 @@ class SessionManager:
         # Load existing config from file (if it exists)
         from .models.category import Category
 
-        if existing_config := self._config_manager.load_config(project_name):
+        if existing_config := await self._config_manager.load_config(project_name):
             # Merge session state changes into existing config
             session_config = self._session_state.get_project_config()
 
@@ -324,7 +323,7 @@ class SessionManager:
             project_config = self._session_state.get_project_config()
 
         # Save using config manager with project name as key
-        self._config_manager.save_config(project_name, project_config)
+        await self._config_manager.save_config(project_name, project_config)
 
     async def safe_save_session(self) -> None:
         """Auto-save session state with error handling that won't propagate exceptions."""
@@ -387,31 +386,19 @@ class SessionManager:
 
     @staticmethod
     def default_categories() -> Dict[str, Any]:
-        """Create default categories with default values."""
+        """Create the four default categories for new projects."""
+        from .models.category import Category
+
         return {
             "guide": Category(
-                url=None,
-                dir="guide/",
-                patterns=["guidelines"],
-                description="Development guidelines",
+                dir="guide/", patterns=["guidelines"], description="Project guidelines and development rules", url=None
             ),
-            "lang": Category(
-                url=None,
-                dir="lang/",
-                patterns=["none"],
-                description="Language-specific guidelines",
-            ),
+            "lang": Category(dir="lang/", patterns=["none"], description="Language-specific guidelines", url=None),
             "context": Category(
-                url=None,
                 dir="context/",
                 patterns=["project-context"],
-                description="Project-specific guidelines",
-            ),
-            "prompt": Category(
+                description="Context information for AI assistants",
                 url=None,
-                dir="prompt/",
-                patterns=[],
-                description="Prompt-related instructions",
             ),
         }
 
@@ -419,17 +406,17 @@ class SessionManager:
     def docroot(self) -> Optional[LazyPath]:
         return self._config_manager.docroot or LazyPath(".")
 
-    def get_speckit_config(self) -> Optional["SpecKitConfig"]:
+    async def get_speckit_config(self) -> Optional["SpecKitConfig"]:
         """Get SpecKit configuration - delegates to service."""
-        return self._config_manager.get_speckit_config()
+        return await self._config_manager.get_speckit_config()
 
-    def set_speckit_config(self, speckit_config: "SpecKitConfig") -> None:
+    async def set_speckit_config(self, speckit_config: "SpecKitConfig") -> None:
         """Set SpecKit configuration - delegates to service."""
-        self._config_manager.set_speckit_config(speckit_config)
+        await self._config_manager.set_speckit_config(speckit_config)
 
-    def is_speckit_enabled(self) -> bool:
+    async def is_speckit_enabled(self) -> bool:
         """Check if SpecKit is enabled - delegates to service."""
-        speckit_config = self.get_speckit_config()
+        speckit_config = await self.get_speckit_config()
         return speckit_config is not None and speckit_config.enabled
 
 

@@ -7,6 +7,13 @@ from .project_config import ProjectConfig
 from .speckit_config import SpecKitConfig
 
 
+def get_default_docroot() -> str:
+    """Get the default docroot path."""
+    from ..config_paths import get_default_docroot
+
+    return str(get_default_docroot())
+
+
 class ConfigFile(BaseModel):
     """Complete configuration file with global settings and projects."""
 
@@ -15,7 +22,7 @@ class ConfigFile(BaseModel):
         validate_assignment=True,  # Validate on assignment
     )
 
-    docroot: Optional[str] = Field(".", description="Global project root directory")
+    docroot: Optional[str] = Field(default_factory=get_default_docroot, description="Global project root directory")
     projects: Dict[str, ProjectConfig] = Field(default_factory=dict, description="Project configurations")
     speckit: Optional[SpecKitConfig] = Field(None, description="SpecKit global configuration")
 
@@ -33,14 +40,14 @@ class ConfigFile(BaseModel):
     def validate_docroot(cls, v: Optional[str]) -> str:
         """Validate and normalize docroot."""
         if v is None:
-            return "."
+            return get_default_docroot()
 
         # Strip whitespace
         v = v.strip()
 
-        # If empty or whitespace only, default to current directory
+        # If empty or whitespace only, default to proper default
         if not v:
-            return "."
+            return get_default_docroot()
 
         # Check for path traversal
         if ".." in v:

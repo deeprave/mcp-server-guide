@@ -51,7 +51,7 @@ class TestConfigFormatUpdates:
         config = ProjectConfig(
             categories={"guide": Category(dir="guide/", patterns=["*.md"], description="Guide files")}
         )
-        manager.save_config("new-project", config)
+        await manager.save_config("new-project", config)
 
         # Read saved file from global config location (now YAML format)
         saved_data = yaml.safe_load(config_file_path.read_text())

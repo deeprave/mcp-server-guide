@@ -23,14 +23,17 @@ async def test_project_config_manager_save_config_corrupted_file(monkeypatch):
         config = ProjectConfig(categories={})
 
         # Should handle corrupted file and create new one
-        manager.save_config("test-project", config)
+        await manager.save_config("test-project", config)
 
         # Verify file was recreated with valid content (now in YAML format)
         data = yaml.safe_load(config_file.read_text())
         assert "projects" in data
         assert "test-project" in data["projects"]
-        # docroot should be defaulted to "."
-        assert data["docroot"] == "."
+        # docroot should be defaulted to proper path
+        from mcp_server_guide.models.config_file import get_default_docroot
+
+        expected_docroot = str(get_default_docroot())
+        assert data["docroot"] == expected_docroot
 
 
 async def test_project_config_to_dict_excludes_empty():
@@ -49,7 +52,7 @@ async def test_project_config_manager_load_config_default():
         manager = ProjectConfigManager()
 
         # Should return None when no config file exists
-        config = manager.load_config("nonexistent-project")
+        config = await manager.load_config("nonexistent-project")
 
         assert config is None
 
@@ -67,7 +70,7 @@ async def test_project_config_manager_load_config_with_projects(monkeypatch):
         # Set the config path to use our temp file
         manager.set_config_filename(config_file)
 
-        config = manager.load_config("test-project")
+        config = await manager.load_config("test-project")
 
         assert config is not None
         # docroot is stored in manager, not in ProjectConfig
@@ -87,7 +90,7 @@ async def test_project_config_manager_load_config_nonexistent():
         # Set the config path to use our temp file
         manager.set_config_filename(config_file)
 
-        config = manager.load_config("test-project")
+        config = await manager.load_config("test-project")
         assert config is None
 
 

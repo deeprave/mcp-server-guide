@@ -96,16 +96,11 @@ class Config:
 
     def resolve_path(self, path: str, relative_to: str = ".") -> str:
         """Resolve a path relative to a base directory."""
-        if os.path.isabs(path):
-            return path
-        else:
-            return os.path.join(relative_to, path)
+        return path if os.path.isabs(path) else os.path.join(relative_to, path)
 
     def add_md_extension(self, path: str) -> str:
         """Add .md extension if the path doesn't have an extension."""
-        if not os.path.splitext(path)[1]:
-            return f"{path}.md"
-        return path
+        return path if os.path.splitext(path)[1] else f"{path}.md"
 
     def validate_path(
         self, path: str, must_exist: bool = True, must_be_file: bool = False, must_be_dir: bool = False

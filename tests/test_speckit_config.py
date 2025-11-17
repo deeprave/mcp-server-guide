@@ -52,44 +52,44 @@ class TestSpecKitConfig:
         assert speckit_config.url == "https://github.com/spec-kit/spec-kit"  # Default
         assert speckit_config.version == "latest"  # Default
 
-    def test_speckit_state_detection_disabled(self):
+    async def test_speckit_state_detection_disabled(self):
         """Test detection of disabled SpecKit state."""
         from mcp_server_guide.services.speckit_manager import is_speckit_enabled
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch, AsyncMock
 
         # Mock SessionManager to return disabled state
         with patch("mcp_server_guide.services.speckit_manager.SessionManager") as mock_session_class:
-            mock_session = MagicMock()
+            mock_session = AsyncMock()
             mock_session.is_speckit_enabled.return_value = False
             mock_session_class.return_value = mock_session
 
-            result = is_speckit_enabled()
+            result = await is_speckit_enabled()
             assert result is False
 
-    def test_speckit_state_detection_enabled(self):
+    async def test_speckit_state_detection_enabled(self):
         """Test detection of enabled SpecKit state."""
         from mcp_server_guide.services.speckit_manager import is_speckit_enabled
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch, AsyncMock
 
         # Mock SessionManager to return enabled state
         with patch("mcp_server_guide.services.speckit_manager.SessionManager") as mock_session_class:
-            mock_session = MagicMock()
+            mock_session = AsyncMock()
             mock_session.is_speckit_enabled.return_value = True
             mock_session_class.return_value = mock_session
 
-            result = is_speckit_enabled()
+            result = await is_speckit_enabled()
             assert result is True
 
-    def test_speckit_state_detection_explicitly_disabled(self):
+    async def test_speckit_state_detection_explicitly_disabled(self):
         """Test detection when SpecKit is explicitly disabled."""
         from mcp_server_guide.services.speckit_manager import is_speckit_enabled
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch, AsyncMock
 
         # Mock SessionManager to return disabled state
         with patch("mcp_server_guide.services.speckit_manager.SessionManager") as mock_session_class:
-            mock_session = MagicMock()
+            mock_session = AsyncMock()
             mock_session.is_speckit_enabled.return_value = False
             mock_session_class.return_value = mock_session
 
-            result = is_speckit_enabled()
+            result = await is_speckit_enabled()
             assert result is False

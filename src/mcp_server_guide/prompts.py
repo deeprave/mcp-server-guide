@@ -171,7 +171,7 @@ async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None)
     return await execute_prompt_with_guide("check", base_response, None, pre_text, content)
 
 
-async def spec_prompt(arg: Optional[str] = None, ctx: Optional[Context] = None) -> str:
+async def spec_prompt(arg: Optional[str] = None, ctx: Optional["Context[Any, Any]"] = None) -> str:
     """Handle spec init/upgrade commands with feature gating."""
     # Set up context project name in session manager if context is available
     if ctx:
@@ -185,7 +185,7 @@ async def spec_prompt(arg: Optional[str] = None, ctx: Optional[Context] = None) 
             logger.debug(f"Failed to set up context project name from spec prompt: {e}")
 
     # Check if SpecKit is enabled
-    enabled = is_speckit_enabled()
+    enabled = await is_speckit_enabled()
 
     if not arg or not arg.strip():
         if enabled:
@@ -266,7 +266,7 @@ def parse_spec_kwargs(args: list[str]) -> dict[str, str]:
 async def handle_spec_init(kwargs: dict[str, str]) -> str:
     """Handle spec init command with optional parameters."""
     # Check if already enabled
-    if is_speckit_enabled():
+    if await is_speckit_enabled():
         return "⚠️ SpecKit is already initialized. Use 'spec upgrade' to update settings."
 
     # Get parameters with defaults
@@ -282,7 +282,7 @@ async def handle_spec_init(kwargs: dict[str, str]) -> str:
         return f"❌ Invalid GitHub URL format: '{url}'"
 
     # Enable SpecKit
-    enable_speckit(url, version)
+    await enable_speckit(url, version)
 
     return f"✅ SpecKit initialized successfully!\n📍 URL: {url}\n🏷️ Version: {version}"
 
@@ -291,10 +291,10 @@ async def handle_spec_upgrade(kwargs: dict[str, str]) -> str:
     """Handle spec upgrade command with optional parameters."""
     try:
         # Check if SpecKit is enabled
-        if not is_speckit_enabled():
+        if not await is_speckit_enabled():
             return "❌ SpecKit is not initialized. Run 'spec init' first."
 
-        current_config = get_speckit_config()
+        current_config = await get_speckit_config()
         target_version = kwargs.get("version")
         target_url = kwargs.get("url", current_config.url)
 
@@ -317,7 +317,7 @@ async def handle_spec_upgrade(kwargs: dict[str, str]) -> str:
             return f"✅ SpecKit is already at version {target_version}. No upgrade needed."
 
         # Update configuration
-        update_speckit_config({"enabled": True, "url": target_url, "version": target_version})
+        await update_speckit_config({"enabled": True, "url": target_url, "version": target_version})
 
         return f"""✅ **SpecKit Upgraded Successfully!**
 
@@ -394,7 +394,7 @@ def register_prompts(mcp: FastMCP) -> None:
     setattr(mcp, "_prompts_registered", True)
 
     @mcp.prompt("spec")
-    async def _spec_prompt(arg: Optional[str] = None, ctx: Optional[Context] = None) -> str:
+    async def _spec_prompt(arg: Optional[str] = None, ctx: Optional["Context[Any, Any]"] = None) -> str:
         return await spec_prompt(arg, ctx)
 
     @mcp.prompt("guide")
@@ -415,7 +415,7 @@ def register_prompts(mcp: FastMCP) -> None:
         arg14: Optional[str] = None,
         arg15: Optional[str] = None,
         arg16: Optional[str] = None,
-        ctx: Optional[Context] = None,
+        ctx: Optional["Context[Any, Any]"] = None,
     ) -> str:
         """Access guide content with category/document syntax.
 

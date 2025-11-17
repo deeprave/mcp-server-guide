@@ -53,7 +53,7 @@ class TestProjectConfigValidation:
         assert "test" in config.categories
         assert "coll" in config.collections
 
-    def test_project_config_manager_basic(self):
+    async def test_project_config_manager_basic(self):
         """Test ProjectConfigManager basic functionality."""
         from mcp_server_guide.project_config import ProjectConfigManager
 
@@ -63,5 +63,5 @@ class TestProjectConfigValidation:
 
         # Test load_config with string instead of Path
         with patch("pathlib.Path.exists", return_value=False):
-            result = manager.load_config("nonexistent")
+            result = await manager.load_config("nonexistent")
             assert result is None

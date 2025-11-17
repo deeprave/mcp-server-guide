@@ -1,57 +1,21 @@
+#!/usr/bin/env python3
 """Installation script for mcp-server-guide templates and configuration."""
 
+import asyncio
 import contextlib
-import filecmp
+import hashlib
 import shutil
 from pathlib import Path
 from typing import Optional, Tuple
 
+import aiofiles
 import click
 import yaml
 
-
-def get_templates_dir() -> Path:
-    """Get the templates directory from the installed package.
-
-    Returns:
-        Path to the templates directory
-
-    Raises:
-        FileNotFoundError: If templates directory can't be found
-    """
-    # First, try to find templates relative to this script's location
-    # This works when running from the installed package
-    script_dir = Path(__file__).parent
-    package_templates = script_dir.parent / "templates"
-
-    if package_templates.exists():
-        return package_templates
-
-    # Fallback: look in the package installation directory
-    with contextlib.suppress(ImportError):
-        import mcp_server_guide
-
-        pkg_path = Path(mcp_server_guide.__file__).parent.parent.parent
-        fallback_templates = pkg_path / "templates"
-        if fallback_templates.exists():
-            return fallback_templates
-    raise FileNotFoundError(
-        "Templates directory not found. This may indicate an incomplete installation. "
-        "Please ensure mcp-server-guide is properly installed."
-    )
-
-
-def default_config_file() -> Path:
-    """Get the config directory, creating it if necessary.
-
-    Returns:
-        Path to ~/.config/mcp-server-guide
-    """
-    return Path.home() / ".config" / "mcp-server-guide" / "config.yaml"
-
-
-def default_install_location() -> Path:
-    return Path.home() / ".config" / "mcp-server-guide" / "docs"
+from mcp_server_guide.config_paths import get_default_config_file, get_default_docroot
+from mcp_server_guide.utils.installation_utils import get_templates_dir
+from mcp_server_guide.security.path_validator import PathValidator
+from mcp_server_guide.exceptions import SecurityError
 
 
 def prompt_install_location(default_location: Path, yes: bool = False) -> Path:
@@ -71,23 +35,56 @@ def prompt_install_location(default_location: Path, yes: bool = False) -> Path:
         click.echo("\nYou can specify a custom location or press Enter for the default.")
         user_input = click.prompt("Installation path", default=str(default_location), type=str)
 
-    return Path(user_input).expanduser()
+    resolved_path = Path(user_input).expanduser()
+
+    # Only validate user-provided paths (not default paths)
+    if not yes and str(user_input) != str(default_location):
+        # Create validator with reasonable allowed roots
+        allowed_roots: list[str | Path] = [str(Path.home()), "/tmp", "/var/tmp"]
+        validator = PathValidator(allowed_roots)
+        try:
+            validator.validate_path(str(resolved_path), Path.home())
+        except SecurityError as e:
+            click.echo(f"Error: {e}", err=True)
+            raise click.Abort()
+
+    return resolved_path
 
 
-def _files_identical(src_file: Path, dst_file: Path) -> bool:
-    """Check if two files are identical.
+async def compare_files(file1: Path, file2: Path) -> bool:
+    """Compare two files by computing their SHA256 hashes.
 
     Args:
-        src_file: Source file path
-        dst_file: Destination file path
+        file1: First file path
+        file2: Second file path
 
     Returns:
         True if files are identical, False otherwise
     """
-    return filecmp.cmp(src_file, dst_file, shallow=False)
+
+    async def file_hash(filepath: Path) -> str:
+        """Compute SHA256 hash of a file asynchronously."""
+        hasher = hashlib.sha256()
+        async with aiofiles.open(filepath, "rb") as f:
+            while chunk := await f.read(8192):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    try:
+        # Quick size check first
+        if file1.stat().st_size != file2.stat().st_size:
+            return False
+
+        # Compute and compare hashes
+        hash1 = await file_hash(file1)
+        hash2 = await file_hash(file2)
+
+        return hash1 == hash2
+    except (OSError, IOError):
+        return False
 
 
-def _copy_item(
+async def _copy_item(
     src_item: Path,
     dst_item: Path,
     verbose: bool = False,
@@ -104,7 +101,7 @@ def _copy_item(
         dst_root: Root destination path for relative path display
     """
 
-    def backup_existing(dest_item: Path, src_path: Path) -> None:
+    async def backup_existing(dest_item: Path, src_path: Path) -> None:
         # Destination is a file, not a directory - back it up
         backup_path = dest_item.parent / f"orig.{dest_item.name}"
         dest_item.rename(backup_path)
@@ -118,21 +115,21 @@ def _copy_item(
             if dst_item.is_dir():
                 # For directories, recursively copy contents
                 for child in src_item.iterdir():
-                    _copy_item(child, dst_item / child.name, verbose, src_root, dst_root)
+                    await _copy_item(child, dst_item / child.name, verbose, src_root, dst_root)
                 return
             else:
-                backup_existing(dst_item, src_item)
+                await backup_existing(dst_item, src_item)
         # Create and populate the directory
         dst_item.mkdir(parents=True, exist_ok=True)
         for child in src_item.iterdir():
-            _copy_item(child, dst_item / child.name, verbose, src_root, dst_root)
+            await _copy_item(child, dst_item / child.name, verbose, src_root, dst_root)
     else:
         # It's a file
         if dst_item.exists():
             if dst_item.is_dir():
                 # Destination is a directory, remove it first
                 shutil.rmtree(dst_item)
-            elif _files_identical(src_item, dst_item):
+            elif await compare_files(src_item, dst_item):
                 # Files are identical, skip
                 if verbose:
                     src = src_item.relative_to(src_root) if src_root else src_item
@@ -140,7 +137,7 @@ def _copy_item(
                     click.echo(f"  {src} -> {dst} Skipped (identical)")
                 return
             else:
-                backup_existing(dst_item, src_item)
+                await backup_existing(dst_item, src_item)
         else:
             # New file
             if verbose:
@@ -152,8 +149,10 @@ def _copy_item(
         shutil.copy2(src_item, dst_item)
 
 
-def copy_templates(source: Path, destination: Path, verbose: bool = False) -> None:
-    """Copy templates from source to destination.
+async def copy_templates_with_interaction(
+    source: Path, destination: Path, verbose: bool = False, yes: bool = False
+) -> None:
+    """Copy templates from source to destination with user interaction.
 
     When copying:
     - If source and destination files are identical, they're skipped
@@ -163,6 +162,7 @@ def copy_templates(source: Path, destination: Path, verbose: bool = False) -> No
         source: Source templates directory
         destination: Destination path
         verbose: Whether to output verbose copy status
+        yes: Whether to skip confirmation prompts
 
     Raises:
         FileNotFoundError: If the source file doesn't exist.
@@ -178,20 +178,23 @@ def copy_templates(source: Path, destination: Path, verbose: bool = False) -> No
     if (
         destination.exists()
         and any(destination.iterdir())
+        and not yes
         and not click.confirm(f"\n{destination} already contains files. Update?", default=False)
     ):
         click.echo("Installation cancelled.")
-        click.Abort()
+        raise click.Abort()
 
     # Copy templates
     click.echo("\nCopying templates:")
     for item in source.iterdir():
-        _copy_item(item, destination / item.name, verbose, source, destination)
+        if item.name.startswith("."):
+            continue
+        await _copy_item(item, destination / item.name, verbose, source, destination)
 
     click.echo(f"✓ Templates copied to: {destination}")
 
 
-def create_or_update_config(
+async def create_or_update_config(
     docroot: Path, config_path: Optional[str] = None, install_path: Optional[str] = None
 ) -> Tuple[Path, Path]:
     """Create or update the configuration file.
@@ -204,7 +207,7 @@ def create_or_update_config(
         config_path: Optional path to config file.
         If not provided, use the default location.
     """
-    config_file = Path(config_path).expanduser() if config_path else default_config_file()
+    config_file = Path(config_path).expanduser() if config_path else get_default_config_file()
     # Create the parent directory if it doesn't exist
     config_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -229,7 +232,7 @@ def create_or_update_config(
     return docroot, config_file
 
 
-def main(
+async def main(
     install_path: Optional[str] = None, config_path: Optional[str] = None, verbose: bool = False, yes: bool = False
 ) -> None:
     """Main installation routine.
@@ -242,7 +245,7 @@ def main(
         yes: Whether to ask for user confirmation.
     """
     try:
-        # Get templates from the package
+        # Get templates from the package using shared module
         templates_source = get_templates_dir()
         if verbose:
             click.echo(f"\n✓ Found templates at: {templates_source}")
@@ -251,10 +254,10 @@ def main(
         if install_path:
             install_destination = Path(install_path).expanduser()
         else:
-            install_destination = default_install_location()
+            install_destination = get_default_docroot()
 
         # Create configuration
-        install_destination, config_file = create_or_update_config(
+        install_destination, config_file = await create_or_update_config(
             install_destination, config_path=config_path, install_path=install_path
         )
 
@@ -268,10 +271,10 @@ def main(
 
         if not yes and not click.confirm("\nProceed with installation?", default=True):
             click.echo("Installation cancelled.")
-            click.Abort()
+            raise click.Abort()
 
-        # Copy templates
-        copy_templates(templates_source, install_destination, verbose=verbose)
+        # Copy templates with user interaction
+        await copy_templates_with_interaction(templates_source, install_destination, verbose=verbose, yes=yes)
 
         if verbose:
             click.echo("\n" + "=" * 70)
@@ -325,7 +328,7 @@ def cli_main(path: Optional[str], config: Optional[str], verbose: bool, yes: boo
     This tool copies the template files to your desired location and creates
     a configuration file at ~/.config/mcp-server-guide/config.yaml.
     """
-    main(install_path=path, config_path=config, verbose=verbose, yes=yes)
+    asyncio.run(main(install_path=path, config_path=config, verbose=verbose, yes=yes))
 
 
 if __name__ == "__main__":

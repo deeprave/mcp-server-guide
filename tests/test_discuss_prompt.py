@@ -49,4 +49,5 @@ async def test_discuss_prompt_includes_explanatory_text():
 
     # Should include mode description
     assert "Discuss" in result or "discuss" in result
-    assert "ideation" in result.lower() or "exploration" in result.lower()
+    # Check for actual content that describes the discussion phase purpose
+    assert "brainstorm ideas" in result.lower() or "explore concepts" in result.lower()

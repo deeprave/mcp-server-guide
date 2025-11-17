@@ -53,7 +53,11 @@ def test_category_invalid_patterns():
 def test_project_config_docroot_validation():
     """Test ConfigFile docroot validation"""
     config = ConfigFile(docroot=None)
-    assert config.docroot == "."  # Should default to current directory
+    # Should default to proper config path, not "."
+    from mcp_server_guide.models.config_file import get_default_docroot
+
+    expected_docroot = str(get_default_docroot())
+    assert config.docroot == expected_docroot
 
 
 def test_config_file_docroot_path_traversal():
@@ -65,7 +69,11 @@ def test_config_file_docroot_path_traversal():
 def test_config_file_empty_docroot():
     """Test ConfigFile empty docroot validation"""
     config = ConfigFile(docroot="  ")  # Empty/whitespace string
-    assert config.docroot == "."  # Should default to current directory
+    # Should default to proper config path, not "."
+    from mcp_server_guide.models.config_file import get_default_docroot
+
+    expected_docroot = str(get_default_docroot())
+    assert config.docroot == expected_docroot
 
 
 def test_category_empty_patterns():

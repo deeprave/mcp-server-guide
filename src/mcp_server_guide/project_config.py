@@ -38,28 +38,34 @@ class ProjectConfigManager:
                 self._config_filename = Path(filename).resolve()
 
     def get_config_filename(self) -> Path:
-        """Get config filename - returns full global path."""
+        """Get config filename - returns full global path.
+
+        This is a pure getter with no I/O operations.
+        """
         if self._config_filename is None:
             self._config_filename = _get_global_config_path()
+
         return self._config_filename
 
-    def save_config(self, project_name: str, config: ProjectConfig) -> None:
+    async def save_config(self, project_name: str, config: ProjectConfig) -> None:
         """Save project configuration with proper file locking."""
         config_file = Path(self.get_config_filename())
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Use lock_update for proper file locking
-        docroot = lock_update(config_file, _save_config_locked, project_name, config)
+        docroot = await lock_update(config_file, _save_config_locked, project_name, config)
 
         # Cache the docroot after successful save (preserve new functionality)
-        self._docroot = LazyPath(docroot or ".")
+        from .models.config_file import get_default_docroot
+
+        self._docroot = LazyPath(docroot or get_default_docroot())
 
         # Debug output (preserve debug logging)
         logger.debug(
             f"Project config saved for project '{project_name}' with {len(config.collections) if config.collections else 0} collections."
         )
 
-    def load_config(self, project_name: str) -> Optional[ProjectConfig]:
+    async def load_config(self, project_name: str) -> Optional[ProjectConfig]:
         """Load project configuration from file.
 
         Args:
@@ -76,7 +82,8 @@ class ProjectConfigManager:
         config_file = Path(self.get_config_filename())
 
         # Use file locking to ensure thread-safe reads
-        project_config, docroot = lock_update(config_file, _load_config_locked, project_name_str)
+        result = await lock_update(config_file, _load_config_locked, project_name_str)
+        project_config, docroot = result
         # Update cached docroot
         self._docroot = docroot
         return project_config
@@ -90,38 +97,44 @@ class ProjectConfigManager:
         """
         return self._docroot
 
-    def get_speckit_config(self) -> Optional["SpecKitConfig"]:
+    async def get_speckit_config(self) -> Optional["SpecKitConfig"]:
         """Get SpecKit configuration from global config file."""
         from .file_lock import lock_update
 
         config_file = self.get_config_filename()
 
-        def _load_speckit(file_path: Path) -> Optional["SpecKitConfig"]:
+        async def _load_speckit(file_path: Path) -> Optional["SpecKitConfig"]:
             if not file_path.exists():
                 return None
 
             try:
-                with open(file_path, "r") as f:
-                    data = yaml.safe_load(f) or {}
+                import aiofiles
+
+                async with aiofiles.open(file_path, "r") as f:
+                    content = await f.read()
+                    data = yaml.safe_load(content) or {}
                 config_data = ConfigFile(**data)
                 return config_data.speckit
             except Exception:
                 return None
 
-        return lock_update(config_file, _load_speckit)
+        return await lock_update(config_file, _load_speckit)
 
-    def set_speckit_config(self, speckit_config: "SpecKitConfig") -> None:
+    async def set_speckit_config(self, speckit_config: "SpecKitConfig") -> None:
         """Set SpecKit configuration in global config file."""
         from .file_lock import lock_update
 
         config_file = self.get_config_filename()
 
-        def _save_speckit(file_path: Path, config: "SpecKitConfig") -> None:
+        async def _save_speckit(file_path: Path, config: "SpecKitConfig") -> None:
             # Load existing config or create new
             if file_path.exists():
                 try:
-                    with open(file_path, "r") as f:
-                        data = yaml.safe_load(f) or {}
+                    import aiofiles
+
+                    async with aiofiles.open(file_path, "r") as f:
+                        content = await f.read()
+                        data = yaml.safe_load(content) or {}
                 except yaml.YAMLError:
                     data = {}
             else:
@@ -131,54 +144,67 @@ class ProjectConfigManager:
             try:
                 config_data = ConfigFile(**data)
             except Exception:
-                config_data = ConfigFile(docroot=".", projects={}, speckit=None)
+                from .models.config_file import get_default_docroot
+
+                config_data = ConfigFile(docroot=get_default_docroot(), projects={}, speckit=None)
 
             # Update speckit config
             config_data.speckit = config
 
             # Save back to file
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "w") as f:
-                yaml.dump(config_data.model_dump(exclude_none=True), f, default_flow_style=False)
+            import aiofiles
 
-        lock_update(config_file, _save_speckit, speckit_config)
+            async with aiofiles.open(file_path, "w") as f:
+                yaml_content = yaml.dump(config_data.model_dump(exclude_none=True), default_flow_style=False)
+                await f.write(yaml_content)
+
+        await lock_update(config_file, _save_speckit, speckit_config)
 
 
 def _get_global_config_path() -> Path:
     """Get the default global config file path."""
-    import os
+    from .config_paths import get_default_config_file
 
-    # Use XDG_CONFIG_HOME if available, otherwise ~/.config
-    config_home = os.environ.get("XDG_CONFIG_HOME")
-    if config_home:
-        config_dir = Path(config_home)
-    else:
-        config_dir = Path.home() / ".config"
-
-    return config_dir / "mcp-server-guide" / "config.yaml"
+    return get_default_config_file()
 
 
-def _save_config_locked(config_file: Path, project_name: str, config: ProjectConfig) -> str:
+async def _save_config_locked(config_file: Path, project_name: str, config: ProjectConfig) -> str:
     """Save project configuration with file locking (internal function)."""
     try:
         # Load existing config file or create new one
         if config_file.exists():
             try:
-                with open(config_file, "r") as f:
-                    data = yaml.safe_load(f) or {}
+                import aiofiles
+
+                async with aiofiles.open(config_file, "r") as f:
+                    content = await f.read()
+                    data = yaml.safe_load(content) or {}
             except yaml.YAMLError:
                 # If existing file is corrupted, start fresh
                 data = {}
         else:
-            data = {}
+            # Config file doesn't exist - trigger auto-initialization
+            from .installation import auto_initialize_new_installation
+
+            await auto_initialize_new_installation(config_file)
+
+            # Load the newly created config
+            import aiofiles
+
+            async with aiofiles.open(config_file, "r") as f:
+                content = await f.read()
+                data = yaml.safe_load(content) or {}
 
         # Create ConfigFile instance
         try:
             config_data = ConfigFile(**data)
         except Exception:
-            # If existing data is invalid, start fresh
+            # If existing data is invalid, start fresh with proper default
+            from .models.config_file import get_default_docroot
+
             config_data = ConfigFile(
-                projects={}, docroot="~/", speckit=SpecKitConfig(enabled=False, url="", version="")
+                projects={}, docroot=get_default_docroot(), speckit=SpecKitConfig(enabled=False, url="", version="")
             )
 
         # Update the specific project
@@ -186,13 +212,18 @@ def _save_config_locked(config_file: Path, project_name: str, config: ProjectCon
 
         # Save back to file
         try:
-            with open(config_file, "w") as f:
-                yaml.dump(config_data.model_dump(), f, default_flow_style=False, sort_keys=False)
+            import aiofiles
+
+            async with aiofiles.open(config_file, "w") as f:
+                yaml_content = yaml.dump(config_data.model_dump(), default_flow_style=False, sort_keys=False)
+                await f.write(yaml_content)
         except yaml.YAMLError as e:
             raise ValueError("Cannot serialize configuration to YAML") from e
 
         # Return docroot
-        return config_data.docroot or "."
+        from .models.config_file import get_default_docroot
+
+        return config_data.docroot or get_default_docroot()
     except ValueError:
         # Re-raise ValueError (from YAML serialization)
         raise
@@ -201,17 +232,25 @@ def _save_config_locked(config_file: Path, project_name: str, config: ProjectCon
         raise
 
 
-def _load_config_locked(config_file: Path, project_name: str) -> tuple[Optional[ProjectConfig], Optional[LazyPath]]:
+async def _load_config_locked(
+    config_file: Path, project_name: str
+) -> tuple[Optional[ProjectConfig], Optional[LazyPath]]:
     """Load project configuration with file locking (internal function)."""
     logger = get_logger(__name__)
 
     try:
         if not config_file.exists():
-            return None, None
+            # Config file doesn't exist - trigger auto-initialization
+            from .installation import auto_initialize_new_installation
+
+            await auto_initialize_new_installation(config_file)
 
         try:
-            with open(config_file, "r") as f:
-                data = yaml.safe_load(f) or {}
+            import aiofiles
+
+            async with aiofiles.open(config_file, "r") as f:
+                content = await f.read()
+                data = yaml.safe_load(content) or {}
         except yaml.YAMLError as e:
             logger.warning(f"Failed to parse YAML config for {project_name}: {e}")
             return None, None
