@@ -35,7 +35,7 @@ class TestCreateDocumentErrorPaths:
         """Test FileNotFoundError handling in create_mcp_document."""
         mock_get_docs_dir.side_effect = FileNotFoundError("Directory not found")
 
-        result = await create_mcp_document("test_category", "test.txt", "content")
+        result = await create_mcp_document("test_category", "test.txt", "content", explicit_action="CREATE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "not_found"
@@ -47,7 +47,7 @@ class TestCreateDocumentErrorPaths:
         """Test PermissionError handling in create_mcp_document."""
         mock_get_docs_dir.side_effect = PermissionError("Permission denied")
 
-        result = await create_mcp_document("test_category", "test.txt", "content")
+        result = await create_mcp_document("test_category", "test.txt", "content", explicit_action="CREATE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "permission"
@@ -59,7 +59,7 @@ class TestCreateDocumentErrorPaths:
         """Test OSError handling in create_mcp_document."""
         mock_get_docs_dir.side_effect = OSError("File system error")
 
-        result = await create_mcp_document("test_category", "test.txt", "content")
+        result = await create_mcp_document("test_category", "test.txt", "content", explicit_action="CREATE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "filesystem"
@@ -71,7 +71,7 @@ class TestCreateDocumentErrorPaths:
         """Test generic Exception handling in create_mcp_document."""
         mock_get_docs_dir.side_effect = RuntimeError("Unexpected error")
 
-        result = await create_mcp_document("test_category", "test.txt", "content")
+        result = await create_mcp_document("test_category", "test.txt", "content", explicit_action="CREATE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "unexpected"
@@ -87,7 +87,7 @@ class TestUpdateDocumentErrorPaths:
         """Test PermissionError handling in update_mcp_document."""
         mock_get_docs_dir.side_effect = PermissionError("Permission denied")
 
-        result = await update_mcp_document("test_category", "test.txt", "content")
+        result = await update_mcp_document("test_category", "test.txt", "content", explicit_action="UPDATE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "permission"
@@ -98,7 +98,7 @@ class TestUpdateDocumentErrorPaths:
         """Test OSError handling in update_mcp_document."""
         mock_get_docs_dir.side_effect = OSError("File system error")
 
-        result = await update_mcp_document("test_category", "test.txt", "content")
+        result = await update_mcp_document("test_category", "test.txt", "content", explicit_action="UPDATE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "filesystem"
@@ -113,7 +113,7 @@ class TestDeleteDocumentErrorPaths:
         """Test PermissionError handling in delete_mcp_document."""
         mock_get_docs_dir.side_effect = PermissionError("Permission denied")
 
-        result = await delete_mcp_document("test_category", "test.txt")
+        result = await delete_mcp_document("test_category", "test.txt", explicit_action="DELETE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "permission"
@@ -124,7 +124,7 @@ class TestDeleteDocumentErrorPaths:
         """Test generic Exception handling in delete_mcp_document."""
         mock_get_docs_dir.side_effect = RuntimeError("Unexpected error")
 
-        result = await delete_mcp_document("test_category", "test.txt")
+        result = await delete_mcp_document("test_category", "test.txt", explicit_action="DELETE_DOCUMENT")
 
         assert result["success"] is False
         assert result["error_type"] == "unexpected"

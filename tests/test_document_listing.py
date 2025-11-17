@@ -15,11 +15,19 @@ async def test_list_mcp_documents_basic():
 
         # Create test documents
         await create_mcp_document(
-            category_dir=str(category_dir), name="doc1.md", content="# Document 1", source_type="manual"
+            category_dir=str(category_dir),
+            name="doc1.md",
+            content="# Document 1",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         await create_mcp_document(
-            category_dir=str(category_dir), name="doc2.yaml", content="key: value", source_type="imported"
+            category_dir=str(category_dir),
+            name="doc2.yaml",
+            content="key: value",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="imported",
         )
 
         # List documents
@@ -62,13 +70,18 @@ async def test_list_mcp_documents_with_filtering():
 
         # Create documents with different types
         await create_mcp_document(
-            category_dir=str(category_dir), name="manual.md", content="# Manual", source_type="manual"
+            category_dir=str(category_dir),
+            name="manual.md",
+            content="# Manual",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         await create_mcp_document(
             category_dir=str(category_dir),
             name="imported.json",
             content='{"imported": true}',
+            explicit_action="CREATE_DOCUMENT",
             source_type="imported",
             mime_type="application/json",
         )
@@ -102,7 +115,11 @@ async def test_list_mcp_documents_mixed_with_pattern_files():
 
         # Create managed documents (inside __docs__)
         await create_mcp_document(
-            category_dir=str(category_dir), name="managed.md", content="# Managed Document", source_type="manual"
+            category_dir=str(category_dir),
+            name="managed.md",
+            content="# Managed Document",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         # List documents should only return managed documents
@@ -127,7 +144,11 @@ async def test_list_mcp_documents_corrupted_metadata():
 
         # Create a document with valid metadata
         await create_mcp_document(
-            category_dir=str(category_dir), name="valid.md", content="# Valid Document", source_type="manual"
+            category_dir=str(category_dir),
+            name="valid.md",
+            content="# Valid Document",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         # Create a document file with corrupted metadata

@@ -99,7 +99,11 @@ async def test_category_processing_with_valid_documents():
 
         # Create document
         await create_mcp_document(
-            category_dir=str(category_dir), name="test.md", content="# Original", source_type="manual"
+            category_dir=str(category_dir),
+            name="test.md",
+            content="# Original",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         # Modify externally

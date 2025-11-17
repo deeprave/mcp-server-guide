@@ -1,7 +1,7 @@
 """Document CRUD operations for managed documents."""
 
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Literal
 from ..constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
 from ..models.document_metadata import DocumentMetadata
 from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
@@ -20,7 +20,7 @@ async def _write_document_content(doc_path: Path, content: str) -> None:
     import aiofiles
 
     async with aiofiles.open(doc_path, "w", encoding="utf-8") as f:
-        await f.write(content)
+        await f.write(content if content.endswith("\n") else content + "\n")
 
 
 WINDOWS_RESERVED = {
@@ -126,11 +126,19 @@ def _get_docs_dir(category_dir: str) -> Path:
 
 
 async def create_mcp_document(
-    category_dir: str, name: str, content: str, source_type: str = "manual", mime_type: Optional[str] = None
+    category_dir: str,
+    name: str,
+    content: str,
+    explicit_action: Literal["CREATE_DOCUMENT"],
+    source_type: str = "manual",
+    mime_type: Optional[str] = None,
 ) -> Dict[str, Any]:
     """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests document creation or upload.
     This operation will create a new managed document in the specified category directory.
     Do not use frivolously or without clear user intent to create a new document.
+
+    Args:
+        explicit_action: Must be 'CREATE_DOCUMENT' to confirm intentional document creation.
 
     Creates new server document in category/__docs__/ with metadata."""
     # Validate inputs
@@ -153,7 +161,9 @@ async def create_mcp_document(
         if mime_type is None:
             mime_type = detect_mime_type(name)
 
-        content_hash = generate_content_hash(content)
+        # Calculate hash on the content that will actually be written (with newline)
+        final_content = content if content.endswith("\n") else content + "\n"
+        content_hash = generate_content_hash(final_content)
 
         metadata = DocumentMetadata(source_type=source_type, content_hash=content_hash, mime_type=mime_type)
 
@@ -175,10 +185,15 @@ async def create_mcp_document(
         return handle_operation_error("create_mcp_document", e, {"category_dir": category_dir, "name": name})
 
 
-async def update_mcp_document(category_dir: str, name: str, content: str) -> Dict[str, Any]:
+async def update_mcp_document(
+    category_dir: str, name: str, content: str, explicit_action: Literal["UPDATE_DOCUMENT"]
+) -> Dict[str, Any]:
     """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests document modification or update.
     This operation will overwrite the existing document content and cannot be undone.
     Do not use frivolously or without clear user intent to modify an existing document.
+
+    Args:
+        explicit_action: Must be 'UPDATE_DOCUMENT' to confirm intentional document modification.
 
     Updates existing server document in category/__docs__/."""
     # Validate inputs
@@ -213,7 +228,9 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
         await lock_update(doc_path, _write_document_content, content)
 
         # Update metadata with new content hash
-        new_content_hash = generate_content_hash(content)
+        # Calculate hash on the content that will actually be written (with newline)
+        final_content = content if content.endswith("\n") else content + "\n"
+        new_content_hash = generate_content_hash(final_content)
         updated_metadata = DocumentMetadata(
             source_type=existing_metadata.source_type,
             content_hash=new_content_hash,
@@ -238,10 +255,15 @@ async def update_mcp_document(category_dir: str, name: str, content: str) -> Dic
         return handle_operation_error("update_mcp_document", e, {"category_dir": category_dir, "name": name})
 
 
-async def delete_mcp_document(category_dir: str, name: str) -> Dict[str, Any]:
+async def delete_mcp_document(
+    category_dir: str, name: str, explicit_action: Literal["DELETE_DOCUMENT"]
+) -> Dict[str, Any]:
     """REQUIRES EXPLICIT USER INSTRUCTION: Only use when user specifically requests document deletion or removal.
     This operation will permanently delete the document and its metadata and cannot be undone.
     Do not use frivolously or without clear user intent to delete a document.
+
+    Args:
+        explicit_action: Must be 'DELETE_DOCUMENT' to confirm intentional document deletion.
 
     Deletes server document and metadata from category/__docs__/."""
     # Validate inputs

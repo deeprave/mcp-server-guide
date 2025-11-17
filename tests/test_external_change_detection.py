@@ -41,7 +41,11 @@ async def test_content_hash_validation():
 
         # Create document
         await create_mcp_document(
-            category_dir=str(category_dir), name="test.md", content="# Original Content", source_type="manual"
+            category_dir=str(category_dir),
+            name="test.md",
+            content="# Original Content",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         # Validate integrity (should pass)
@@ -50,7 +54,7 @@ async def test_content_hash_validation():
         assert is_valid["success"] is True
 
         # Modify content externally
-        doc_path.write_text("# Modified Content", encoding="utf-8")
+        doc_path.write_text("# Modified Content\n", encoding="utf-8")
 
         # Validate integrity (should fail)
         is_valid = await validate_document_integrity(doc_path)
@@ -70,7 +74,11 @@ async def test_external_modification_detection():
 
         # Create document
         await create_mcp_document(
-            category_dir=str(category_dir), name="test.md", content="# Original", source_type="manual"
+            category_dir=str(category_dir),
+            name="test.md",
+            content="# Original",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         doc_path = category_dir / DOCUMENT_SUBDIR / "test.md"
@@ -102,7 +110,11 @@ async def test_category_cleanup_trigger():
 
         # Create document
         await create_mcp_document(
-            category_dir=str(category_dir), name="test.md", content="# Test", source_type="manual"
+            category_dir=str(category_dir),
+            name="test.md",
+            content="# Test",
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
         )
 
         # Modify externally

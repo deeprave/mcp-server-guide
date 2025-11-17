@@ -38,6 +38,7 @@ class TestDocumentToolsDocroot:
                     category_dir="review",  # Relative path - should use docroot
                     name="test.md",
                     content="# Test Document\n\nThis is a test.",
+                    explicit_action="CREATE_DOCUMENT",
                 )
 
                 # Should succeed
@@ -47,7 +48,7 @@ class TestDocumentToolsDocroot:
                 # Verify file was created in docroot/review/__docs__/
                 expected_path = docroot_path / "review" / DOCUMENT_SUBDIR / "test.md"
                 assert expected_path.exists()
-                assert expected_path.read_text() == "# Test Document\n\nThis is a test."
+                assert expected_path.read_text() == "# Test Document\n\nThis is a test.\n"
 
     @pytest.mark.asyncio
     async def test_create_mcp_document_fallback_to_current_dir(self):
@@ -75,6 +76,7 @@ class TestDocumentToolsDocroot:
                         category_dir="review",  # Should use current directory
                         name="test.md",
                         content="# Test Document",
+                        explicit_action="CREATE_DOCUMENT",
                     )
 
                     # Should succeed
@@ -110,10 +112,20 @@ class TestDocumentToolsDocroot:
                 mock_session_class.return_value = mock_session
 
                 # Create initial document
-                await create_mcp_document(category_dir="review", name="test.md", content="# Original Content")
+                await create_mcp_document(
+                    category_dir="review",
+                    name="test.md",
+                    content="# Original Content",
+                    explicit_action="CREATE_DOCUMENT",
+                )
 
                 # Update the document
-                result = await update_mcp_document(category_dir="review", name="test.md", content="# Updated Content")
+                result = await update_mcp_document(
+                    category_dir="review",
+                    name="test.md",
+                    content="# Updated Content",
+                    explicit_action="UPDATE_DOCUMENT",
+                )
 
                 # Should succeed
                 assert result["success"] is True
@@ -121,7 +133,7 @@ class TestDocumentToolsDocroot:
                 # Verify file was updated in docroot/review/__docs__/
                 expected_path = docroot_path / "review" / DOCUMENT_SUBDIR / "test.md"
                 assert expected_path.exists()
-                assert expected_path.read_text() == "# Updated Content"
+                assert expected_path.read_text() == "# Updated Content\n"
 
     @pytest.mark.asyncio
     async def test_delete_mcp_document_uses_docroot(self):
@@ -146,14 +158,18 @@ class TestDocumentToolsDocroot:
                 mock_session_class.return_value = mock_session
 
                 # Create document
-                await create_mcp_document(category_dir="review", name="test.md", content="# Test Document")
+                await create_mcp_document(
+                    category_dir="review", name="test.md", content="# Test Document", explicit_action="CREATE_DOCUMENT"
+                )
 
                 # Verify file exists
                 expected_path = docroot_path / "review" / DOCUMENT_SUBDIR / "test.md"
                 assert expected_path.exists()
 
                 # Delete the document
-                result = await delete_mcp_document(category_dir="review", name="test.md")
+                result = await delete_mcp_document(
+                    category_dir="review", name="test.md", explicit_action="DELETE_DOCUMENT"
+                )
 
                 # Should succeed
                 assert result["success"] is True
@@ -184,8 +200,12 @@ class TestDocumentToolsDocroot:
                 mock_session_class.return_value = mock_session
 
                 # Create documents
-                await create_mcp_document(category_dir="review", name="doc1.md", content="# Document 1")
-                await create_mcp_document(category_dir="review", name="doc2.md", content="# Document 2")
+                await create_mcp_document(
+                    category_dir="review", name="doc1.md", content="# Document 1", explicit_action="CREATE_DOCUMENT"
+                )
+                await create_mcp_document(
+                    category_dir="review", name="doc2.md", content="# Document 2", explicit_action="CREATE_DOCUMENT"
+                )
 
                 # List documents
                 result = await list_mcp_documents(category_dir="review")
