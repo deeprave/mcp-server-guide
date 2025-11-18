@@ -311,6 +311,14 @@ def detect_help_request(args: List[str]) -> Optional[Command]:
     if not args or not all(isinstance(arg, str) for arg in args):
         return None
 
+    # Check if --help or -h appears anywhere in args
+    if "--help" not in args and "-h" not in args:
+        # No help flag, check for "help" command
+        if args[0] not in ["help", "show", "get"]:
+            return None
+        if args[0] in ["show", "get"] and (len(args) < 2 or args[1] != "help"):
+            return None
+
     # Detect semantic intent from first word
     semantic_intent = None
     if args[0] == "show":
@@ -318,43 +326,18 @@ def detect_help_request(args: List[str]) -> Optional[Command]:
     elif args[0] == "get":
         semantic_intent = "retrieve"
 
-    # Pattern: [target] --help/-h [--verbose/-v]
-    if len(args) >= 2 and args[1] in ["--help", "-h"]:
-        target = args[0]
-        verbose = len(args) > 2 and args[2] in ["--verbose", "-v"]
-        if target in ["category", "collection", "document"]:
-            data = {"verbose": verbose}
-            return Command(type="help", target=target, semantic_intent=semantic_intent, data=data)
+    # Check for verbose flag
+    verbose = "--verbose" in args or "-v" in args
 
-    # Pattern: --help/-h [--verbose/-v] (general help)
-    if len(args) >= 1 and args[0] in ["--help", "-h"]:
-        verbose = len(args) > 1 and args[1] in ["--verbose", "-v"]
-        data = {"verbose": verbose}
-        return Command(type="help", semantic_intent=semantic_intent, data=data)
+    # Determine target from first non-flag arg (if it's a CRUD target)
+    target = None
+    for arg in args:
+        if arg in ["category", "collection", "document"]:
+            target = arg
+            break
 
-    # Pattern: help [target] [--verbose/-v] or show/get help [target] [--verbose/-v]
-    help_index = 0
-    if args[0] in ["show", "get"] and len(args) > 1 and args[1] == "help":
-        help_index = 1
-    elif args[0] == "help":
-        help_index = 0
-    else:
-        return None
-
-    # Parse arguments more carefully to distinguish targets from flags
-    remaining_args = [arg for arg in args[help_index + 1 :] if not arg.startswith("-")]
-    flags = [arg for arg in args[help_index + 1 :] if arg.startswith("-")]
-    verbose = any(flag in ["--verbose", "-v"] for flag in flags)
-    help_target = remaining_args[0] if remaining_args else None
-
-    if help_target and help_target in ["category", "collection", "document"]:
-        data = {"verbose": bool(verbose)}
-        return Command(type="help", target=help_target, semantic_intent=semantic_intent, data=data)
-    else:  # General help
-        data = {"verbose": bool(verbose)}
-        return Command(type="help", semantic_intent=semantic_intent, data=data)
-
-    return None
+    data = {"verbose": verbose}
+    return Command(type="help", target=target, semantic_intent=semantic_intent, data=data)
 
 
 def parse_command(args: List[str]) -> Command:

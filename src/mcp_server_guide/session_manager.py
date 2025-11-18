@@ -350,14 +350,12 @@ class SessionManager:
             project_is_current = self._session_state.project_name == project
             logger.debug(f"Project '{project}' is already current: {project_is_current}")
 
-            if project_is_current:
-                logger.debug(f"Project '{project}' is already current")
-            else:
+            if not project_is_current:
                 # fetch existing or initialise a new project with built-in categories
                 try:
                     await self.switch_project(project)
                 except Exception as e:
-                    logger.warning(f"Failed to initialize project '{project}': {e}")
+                    logger.warning(f"Failed to load or initialize project '{project}': {e}")
 
             return self._session_state.get_project_config()
 
