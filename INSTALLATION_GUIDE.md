@@ -2,6 +2,33 @@
 
 After installing `mcp-server-guide` from PyPI, you need to set up the template files and configuration to point to them. The package includes a script to do this and installs an executable mcp-server-guide-install.
 
+## Prerequisites
+
+### System Dependencies
+
+The server requires `libmagic` for content-based file type detection:
+
+**macOS:**
+```bash
+brew install libmagic
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install libmagic1
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install file-libs
+```
+
+**Windows:**
+```bash
+# Install via chocolatey
+choco install file
+```
+
 ## Quick Start
 
 ### 1. Install the Package

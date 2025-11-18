@@ -7,7 +7,12 @@ from ..models.document_metadata import DocumentMetadata
 from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
 from ..utils.document_helpers import get_metadata_path
 from ..logging_config import get_logger
-from ..utils.document_utils import generate_content_hash, detect_mime_type
+from ..utils.document_utils import (
+    generate_content_hash,
+    detect_mime_type,
+    normalize_document_name,
+    detect_best_mime_type,
+)
 from ..file_lock import lock_update
 from ..queue.category_queue import add_category
 from ..utils.error_handler import handle_operation_error
@@ -149,17 +154,28 @@ async def create_mcp_document(
         return {"success": False, "error": "Document content too large", "error_type": "validation"}
 
     try:
+        # Normalize document name based on content (appends correct extension if needed)
+        normalized_name = normalize_document_name(name, content)
+
+        # Re-validate normalized name
+        if not _validate_document_name(normalized_name):
+            return {
+                "success": False,
+                "error": f"Normalized document name is invalid: {normalized_name}",
+                "error_type": "validation",
+            }
+
+        # Detect mime-type using hybrid approach if not provided
+        if mime_type is None:
+            mime_type = detect_best_mime_type(normalized_name, content)
+
         # Get documents directory
         docs_dir = _get_docs_dir(category_dir)
         docs_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create document file with locking
-        doc_path = docs_dir / name
+        # Create document file with locking (use normalized name)
+        doc_path = docs_dir / normalized_name
         await lock_update(doc_path, _write_document_content, content)
-
-        # Generate metadata
-        if mime_type is None:
-            mime_type = detect_mime_type(name)
 
         # Calculate hash on the content that will actually be written (with newline)
         final_content = content if content.endswith("\n") else content + "\n"
@@ -170,12 +186,12 @@ async def create_mcp_document(
         # Create sidecar metadata
         create_sidecar_metadata(doc_path, metadata)
 
-        # Generate URI
-        uri = _generate_document_uri(category_dir, name)
+        # Generate URI (use normalized name)
+        uri = _generate_document_uri(category_dir, normalized_name)
 
         return {
             "success": True,
-            "message": f"Document '{name}' created successfully",
+            "message": f"Document '{normalized_name}' created successfully",
             "uri": uri,
             "path": str(doc_path),
             "metadata": metadata.model_dump(),

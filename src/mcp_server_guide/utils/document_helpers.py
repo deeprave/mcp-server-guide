@@ -8,8 +8,18 @@ DOCUMENT_EXTENSIONS = {".md", ".yaml", ".yml", ".json", ".pdf", ".txt", ".rst", 
 
 
 def get_metadata_path(document_path: Path) -> Path:
-    """Get corresponding metadata file path for a document."""
-    return document_path.with_suffix(f"{document_path.suffix}{METADATA_SUFFIX}")
+    """Get corresponding metadata file path for a document.
+
+    Metadata files use the pattern: {document_name}{METADATA_SUFFIX}
+    Examples:
+        - file.md -> file.md_.json
+        - file -> file_.json
+        - file.name.txt -> file.name.txt_.json
+
+    Note: We don't use Path.with_suffix() because it validates that suffixes
+    must start with a dot, which fails for files without extensions.
+    """
+    return document_path.parent / f"{document_path.name}{METADATA_SUFFIX}"
 
 
 def get_document_path(metadata_path: Path) -> Path:

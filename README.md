@@ -44,6 +44,14 @@ Transition between phases is not automatic and is triggered when certain conditi
 
 ## Quick Install
 
+**Prerequisites:** Install `libmagic` system library first:
+- macOS: `brew install libmagic`
+- Ubuntu/Debian: `sudo apt-get install libmagic1`
+- Fedora/RHEL: `sudo dnf install file-libs`
+- Windows: `choco install file`
+
+See [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) for detailed installation instructions.
+
 Get started quickly with agents that support JSON configuration:
 
 ```json

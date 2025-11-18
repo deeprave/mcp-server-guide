@@ -83,10 +83,10 @@ async def test_create_mcp_document_explicit_mime_type():
     with tempfile.TemporaryDirectory() as temp_dir:
         category_dir = Path(temp_dir)
 
-        # Create document with explicit mime-type
+        # Create document with explicit mime-type (extension must match)
         result = await create_mcp_document(
             category_dir=str(category_dir),
-            name="data.txt",
+            name="data.json",  # Changed from .txt to .json to match mime-type
             content='{"key": "value"}',
             explicit_action="CREATE_DOCUMENT",
             source_type="manual",
@@ -96,9 +96,31 @@ async def test_create_mcp_document_explicit_mime_type():
         assert result["success"] is True
 
         # Check metadata uses explicit mime-type
-        metadata_path = Path(temp_dir) / DOCUMENT_SUBDIR / f"data.txt{METADATA_SUFFIX}"
+        metadata_path = Path(temp_dir) / DOCUMENT_SUBDIR / f"data.json{METADATA_SUFFIX}"
         metadata = json.loads(metadata_path.read_text())
         assert metadata["mime_type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_create_mcp_document_explicit_mime_type_mismatch():
+    """Test that mismatched extension is corrected when explicit mime-type provided."""
+    from mcp_server_guide.tools.document_tools import create_mcp_document
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        category_dir = Path(temp_dir)
+
+        result = await create_mcp_document(
+            category_dir=str(category_dir),
+            name="data.txt",  # Wrong extension for JSON content
+            content='{"key": "value"}',
+            explicit_action="CREATE_DOCUMENT",
+            source_type="manual",
+            mime_type="application/json",
+        )
+
+        assert result["success"] is True
+        # Should be corrected to data.txt.json (appends correct extension)
+        assert "data.txt.json" in result["path"]
 
 
 @pytest.mark.asyncio

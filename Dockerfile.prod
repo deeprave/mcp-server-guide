@@ -1,7 +1,7 @@
 FROM python:3.14-alpine3.22 as builder
 
 # Install build dependencies
-RUN apk add --no-cache gcc libffi-dev musl-dev yaml-dev
+RUN apk add --no-cache gcc libffi-dev musl-dev yaml-dev libmagic
 
 # Install uv for dependency management
 RUN pip install --no-cache-dir uv
@@ -19,7 +19,7 @@ RUN uv sync --no-dev
 FROM python:3.14-alpine3.22
 
 # Install only runtime system dependencies (if any needed)
-RUN apk add --no-cache yaml
+RUN apk add --no-cache yaml libmagic
 
 # Create non-root user
 RUN adduser -D -h /home/mcp mcp
@@ -34,7 +34,7 @@ WORKDIR /home/mcp/mcp-server-guide
 COPY --from=builder --chown=mcp:mcp /build .
 
 # Ensure all files are owned by mcp user
-RUN mkdir -p home/mcp/.config/mcp-server-guide && RUN chown -R mcp:mcp /home/mcp
+RUN mkdir -p /home/mcp/.config/mcp-server-guide && chown -R mcp:mcp /home/mcp
 
 # Switch to non-root user
 USER mcp
