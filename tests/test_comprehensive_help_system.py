@@ -15,9 +15,9 @@ class TestComprehensiveHelpSystem:
 
         # Check for major sections that still exist
         assert "# MCP Server Guide Help" in help_content
-        assert "## For AI Agents" in help_content
+        assert "Commands:" in help_content
+        assert "clone" in help_content  # New clone command
         assert "## Categories and Collections" in help_content
-        assert "@guide clone" in help_content  # New clone command
 
     @pytest.mark.asyncio
     async def test_format_guide_help_basic(self):
@@ -31,15 +31,15 @@ class TestComprehensiveHelpSystem:
 
         # Should NOT contain comprehensive sections
         assert "# MCP Server Guide Help" not in help_content
-        assert "## For AI Agents" not in help_content
+        assert "## Available Prompts" not in help_content
 
     @pytest.mark.asyncio
     async def test_format_guide_help_includes_cli_help(self):
         """Test that comprehensive help includes CLI interface info."""
         help_content = await format_guide_help(verbose=True)
 
-        # Should include CLI interface guidance
-        assert "CLI Interface" in help_content
+        # Should include CLI commands
+        assert "Commands:" in help_content
         assert "category" in help_content
         assert "collection" in help_content
 
@@ -86,10 +86,9 @@ class TestComprehensiveHelpSystem:
         assert "Category management operations" in result
 
     @pytest.mark.asyncio
-    async def test_ai_agent_guidance_included(self):
-        """Test that AI agent guidance is included in help."""
+    async def test_prompts_section_included(self):
+        """Test that help includes commands section."""
         help_content = await format_guide_help(verbose=True)
 
-        assert "When to use this MCP server:" in help_content
-        assert "CLI Interface:" in help_content
+        assert "Commands:" in help_content
 

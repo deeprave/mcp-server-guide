@@ -38,32 +38,9 @@ async def format_guide_help(verbose: bool = True) -> str:
 
 This server provides access to project documentation, categories, collections, and development guidelines through MCP prompts, tools, and resources.""")
 
-    # AI Agent Guidance section
-    help_sections.append("""## For AI Agents
-
-**When to use this MCP server:**
-- User asks about project guidelines or documentation
-- Need to access project-specific rules or standards
-- User requests code review criteria or development processes
-- Need to understand project structure or conventions
-
-**Available tool functions:**
-- Use `guide_get_category_content(name="category")` to access category content
-- Use `guide_get_category_content(name="category", file="document")` for specific documents
-- Use `guide_list_categories()` to see available categories
-- Use `guide_search_content(query="search terms")` to find relevant content
-- Use `guide_list_collections()` to see available collections
-- Use `guide_get_project_config()` to check guide settings
-
-## For Users:
-
-**CLI Interface:**
-- You can use @guide --help for complete CLI documentation
-- You can use @guide --[target] --help for context-specific help
-- Phase transition commands: @guide discuss, @guide plan, @guide implement, @guide check
-- @guide management operations: @guide category list, @guide category add <name> <pattern1,pattern2...>
-- @guide project operations: @guide clone <source-project> [target-project]
-""")
+    # CLI Commands section
+    basic_cli_help = generate_basic_cli_help()
+    help_sections.append(basic_cli_help)
 
     # Categories and Collections section
     try:

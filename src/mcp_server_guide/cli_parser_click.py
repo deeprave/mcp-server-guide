@@ -437,6 +437,8 @@ def generate_basic_cli_help() -> str:
 
   MCP Server Guide - Project documentation and guidelines.
 
+  You can use the CLI interface to manage documentation, categories, and collections.
+
 Options:
   --help  Show this message and exit.
 
