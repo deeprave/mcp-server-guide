@@ -6,7 +6,7 @@ from mcp_server_guide.session_manager import SessionManager
 
 @pytest.mark.asyncio
 async def test_docroot_defaults_to_current():
-    """Test that docroot defaults to current directory when not explicitly set."""
+    """Test that docroot defaults to config-based path when not explicitly set."""
     # Reset singleton to ensure fresh state
     SessionManager.clear()
     session = SessionManager()
@@ -18,9 +18,9 @@ async def test_docroot_defaults_to_current():
     # Access docroot via SessionManager property
     docroot = session.docroot
 
-    # Should default to "."
+    # Should default to config-based docroot
     assert docroot is not None
-    assert str(docroot) == "."
+    assert "docs" in str(docroot)
 
 
 @pytest.mark.asyncio

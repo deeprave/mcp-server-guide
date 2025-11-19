@@ -56,6 +56,8 @@ class GuidePromptHandler:
                 return await status_prompt(command.data)
             case "search":
                 return f"Search functionality not yet implemented. Query: {command.data}"
+            case "clone":
+                return await self._handle_clone_command(command)
             case "category_access":
                 # Handle category access
                 if command.category:
@@ -218,6 +220,30 @@ class GuidePromptHandler:
             target = command.target or "target"
             error_msg = f"Error executing {operation} on {target}: {str(e)}"
             return _wrap_display_content(error_msg)
+
+    async def _handle_clone_command(self, command: Command) -> str:
+        """Handle project clone command."""
+        from .tools.project_tools import clone_project
+        from .help_system import _wrap_display_content
+
+        if not command.data:
+            return _wrap_display_content("Error: No clone parameters provided")
+
+        source_project = command.data.get("source_project")
+        target_project = command.data.get("target_project")
+        force = command.data.get("force", False)
+
+        if not source_project:
+            return _wrap_display_content("Error: Source project name required")
+
+        result = await clone_project(source_project=source_project, target_project=target_project, force=force)
+
+        if result.get("success"):
+            message = result.get("message", "Project cloned successfully")
+            return _wrap_display_content(message)
+        else:
+            error_msg = result.get("error", "Clone operation failed")
+            return _wrap_display_content(f"Error: {error_msg}")
 
     async def _handle_content_command(self, command: Command) -> str:
         """Handle content access commands."""

@@ -94,6 +94,22 @@ def search(ctx: click.Context, query: tuple[str, ...]) -> None:
     _set_result(ctx, Command(type="search", data=" ".join(query) if query else None))
 
 
+@guide.command()
+@click.argument("source_project")
+@click.argument("target_project", required=False)
+@click.option("--force", is_flag=True, help="Overwrite target even if it has custom content")
+@click.pass_context
+def clone(ctx: click.Context, source_project: str, target_project: Optional[str], force: bool) -> None:
+    """Clone project configuration from source to target."""
+    _set_result(
+        ctx,
+        Command(
+            type="clone",
+            data={"source_project": source_project, "target_project": target_project, "force": force},
+        ),
+    )
+
+
 # Category commands
 @guide.group()
 def category() -> None:

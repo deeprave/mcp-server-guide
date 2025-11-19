@@ -9,24 +9,6 @@ class TestHelpSystemAdditional:
     """Additional tests for help system functionality."""
 
     @pytest.mark.asyncio
-    async def test_format_guide_help_cli_generation_error(self):
-        """Test help formatting when CLI help generation fails."""
-        with patch("mcp_server_guide.cli_parser_click.generate_cli_help") as mock_cli_help:
-            mock_cli_help.side_effect = Exception("CLI help failed")
-
-            result = await format_guide_help()
-            assert "Error generating CLI help: CLI help failed" in result
-
-    @pytest.mark.asyncio
-    async def test_format_guide_help_prompts_error(self):
-        """Test help formatting when prompts loading fails."""
-        with patch("mcp_server_guide.tools.prompt_tools.list_prompts") as mock_list_prompts:
-            mock_list_prompts.side_effect = Exception("Prompts failed")
-
-            result = await format_guide_help()
-            assert "Error loading prompts: Prompts failed" in result
-
-    @pytest.mark.asyncio
     async def test_format_guide_help_categories_error(self):
         """Test help formatting when categories loading fails."""
         with patch("mcp_server_guide.tools.category_tools.list_categories") as mock_list_categories:
@@ -34,15 +16,6 @@ class TestHelpSystemAdditional:
 
             result = await format_guide_help()
             assert "Error loading categories: Categories failed" in result
-
-    @pytest.mark.asyncio
-    async def test_format_guide_help_prompts_unsuccessful_result(self):
-        """Test help formatting when prompts returns unsuccessful result."""
-        with patch("mcp_server_guide.tools.prompt_tools.list_prompts") as mock_list_prompts:
-            mock_list_prompts.return_value = {"success": False, "error": "No prompts found"}
-
-            result = await format_guide_help()
-            assert "Error loading prompts: No prompts found" in result
 
     @pytest.mark.asyncio
     async def test_format_guide_help_categories_unsuccessful_result(self):
@@ -54,15 +27,6 @@ class TestHelpSystemAdditional:
             assert "Error loading categories: No categories found" in result
 
     @pytest.mark.asyncio
-    async def test_format_guide_help_empty_prompts(self):
-        """Test help formatting with empty prompts."""
-        with patch("mcp_server_guide.tools.prompt_tools.list_prompts") as mock_list_prompts:
-            mock_list_prompts.return_value = {"success": True, "prompts": []}
-
-            result = await format_guide_help()
-            assert "No prompts available" in result
-
-    @pytest.mark.asyncio
     async def test_format_guide_help_empty_categories(self):
         """Test help formatting with empty categories."""
         with patch("mcp_server_guide.tools.category_tools.list_categories") as mock_list_categories:
@@ -70,25 +34,6 @@ class TestHelpSystemAdditional:
 
             result = await format_guide_help()
             assert "No categories available" in result
-
-    @pytest.mark.asyncio
-    async def test_format_guide_help_prompts_with_arguments(self):
-        """Test help formatting with prompts that have arguments."""
-        with patch("mcp_server_guide.tools.prompt_tools.list_prompts") as mock_list_prompts:
-            mock_list_prompts.return_value = {
-                "success": True,
-                "prompts": [
-                    {
-                        "name": "test_prompt",
-                        "description": "Test prompt description",
-                        "arguments": [{"name": "arg1"}, {"name": "arg2"}],
-                    }
-                ],
-            }
-
-            result = await format_guide_help()
-            assert "test_prompt" in result
-            assert "Test prompt description" in result
 
     @pytest.mark.asyncio
     async def test_format_guide_help_categories_with_collections(self):

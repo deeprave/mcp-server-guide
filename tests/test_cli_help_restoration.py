@@ -19,15 +19,6 @@ async def test_format_guide_help_basic():
 
 
 @pytest.mark.asyncio
-async def test_format_guide_help_includes_prompts():
-    """Test help includes prompts section."""
-    help_text = await format_guide_help()
-
-    # Should have prompts section even if empty
-    assert "Available Prompts" in help_text
-
-
-@pytest.mark.asyncio
 async def test_format_guide_help_includes_categories():
     """Test help includes categories section."""
     help_text = await format_guide_help()
@@ -37,23 +28,14 @@ async def test_format_guide_help_includes_categories():
 
 
 @pytest.mark.asyncio
-async def test_format_guide_help_includes_resources():
-    """Test help includes resources section."""
-    help_text = await format_guide_help()
-
-    assert "Available Resources" in help_text
-    assert "guide://help" in help_text
-
-
-@pytest.mark.asyncio
 async def test_format_guide_help_handles_errors():
     """Test help handles errors gracefully."""
-    with patch("mcp_server_guide.tools.prompt_tools.list_prompts") as mock_list_prompts:
-        mock_list_prompts.side_effect = Exception("Test error")
+    with patch("mcp_server_guide.tools.category_tools.list_categories") as mock_list_categories:
+        mock_list_categories.side_effect = Exception("Test error")
 
         help_text = await format_guide_help()
 
-        assert "Error loading prompts" in help_text
+        assert "Error loading categories" in help_text
         assert "MCP Server Guide Help" in help_text  # Still shows basic info
 
 

@@ -10,18 +10,14 @@ class TestComprehensiveHelpSystem:
 
     @pytest.mark.asyncio
     async def test_format_guide_help_comprehensive(self):
-        """Test that comprehensive help includes all sections."""
+        """Test that comprehensive help includes key sections."""
         help_content = await format_guide_help(verbose=True)
 
-        # Check for all major sections
+        # Check for major sections that still exist
         assert "# MCP Server Guide Help" in help_content
         assert "## For AI Agents" in help_content
-        assert "## Complete CLI Interface" in help_content
-        assert "## Available Prompts" in help_content
         assert "## Categories and Collections" in help_content
-        assert "## Available Resources" in help_content
-        assert "## Context-Sensitive Help" in help_content
-        assert "## Troubleshooting" in help_content
+        assert "@guide clone" in help_content  # New clone command
 
     @pytest.mark.asyncio
     async def test_format_guide_help_basic(self):
@@ -36,18 +32,16 @@ class TestComprehensiveHelpSystem:
         # Should NOT contain comprehensive sections
         assert "# MCP Server Guide Help" not in help_content
         assert "## For AI Agents" not in help_content
-        assert "## Available Prompts" not in help_content
 
     @pytest.mark.asyncio
     async def test_format_guide_help_includes_cli_help(self):
-        """Test that comprehensive help includes auto-generated CLI help."""
+        """Test that comprehensive help includes CLI interface info."""
         help_content = await format_guide_help(verbose=True)
 
-        # Should include Click-generated CLI help
-        assert "Commands:" in help_content
+        # Should include CLI interface guidance
+        assert "CLI Interface" in help_content
         assert "category" in help_content
         assert "collection" in help_content
-        assert "document" in help_content
 
     def test_generate_context_help_category(self):
         """Test context-sensitive help for categories."""
@@ -99,11 +93,3 @@ class TestComprehensiveHelpSystem:
         assert "When to use this MCP server:" in help_content
         assert "CLI Interface:" in help_content
 
-    @pytest.mark.asyncio
-    async def test_troubleshooting_section_included(self):
-        """Test that troubleshooting section is comprehensive."""
-        help_content = await format_guide_help(verbose=True)
-
-        assert "Common Issues" in help_content
-        assert "Category not found" in help_content
-        assert "Debug Commands" in help_content

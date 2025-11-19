@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 from mcp.server.fastmcp import Context
 from pathlib import Path
 
+from .config_paths import get_default_docroot
 from .path_resolver import LazyPath
 from .project_config import ProjectConfigManager, ProjectConfig
 from .models.collection import Collection
@@ -166,6 +167,10 @@ class SessionManager:
 
     async def load_config(self, project_name: str) -> Optional[ProjectConfig]:
         return await self._config_manager.load_config(project_name)
+
+    async def save_config(self, project_name: str, config: ProjectConfig) -> None:
+        """Save configuration for a specific project."""
+        await self._config_manager.save_config(project_name, config)
 
     def set_project_name(self, project_name: str) -> None:
         if not project_name or not isinstance(project_name, str):
@@ -398,11 +403,12 @@ class SessionManager:
                 description="Context information for AI assistants",
                 url=None,
             ),
+            "prompt": Category(dir="prompt/", patterns=[], description="Project prompts", url=None),
         }
 
     @property
     def docroot(self) -> Optional[LazyPath]:
-        return self._config_manager.docroot or LazyPath(".")
+        return self._config_manager.docroot or LazyPath(get_default_docroot())
 
     async def get_speckit_config(self) -> Optional["SpecKitConfig"]:
         """Get SpecKit configuration - delegates to service."""
