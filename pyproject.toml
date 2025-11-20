@@ -22,6 +22,7 @@ dependencies = [
 [project.scripts]
 mcp-server-guide = "mcp_server_guide.main:cli_main"
 mcp-server-guide-install = "mcp_install:cli_main"
+mcp-server-guide-kiro-install = "kiro_install:main"
 # check for vulnerabilities
 osvcheck = "osvcheck:main"
 
@@ -37,16 +38,18 @@ package = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_guide"]
-# Include templates as package data
-include = ["templates/**/*"]
+# Include templates and kiro as package data
+include = ["templates/**/*", "kiro/**/*"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "templates" = "templates"
+"kiro" = "kiro"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "src/mcp_server_guide",
     "templates",
+    "kiro",
 ]
 
 [tool.pytest.ini_options]

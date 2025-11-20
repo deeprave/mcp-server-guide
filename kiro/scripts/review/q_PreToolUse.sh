@@ -6,14 +6,16 @@ set -o pipefail
 hook_data=$(cat)
 
 if [[ -f .hook_log ]]; then
-  log_file="$HOME/.aws/amazonq/logs/hook.log"
+  log_dir=$HOME/.kiro/logs
+  mkdir -p $log_dir
+  log_file="${log_dir}/hook.log"
   mkdir -p "$(dirname "$log_file")"
   json_data=$(jq -c '.' <<<"$hook_data" || true)
   function logger() {
     local data="$*"
     echo "$(date '+%Y-%m-%d %H:%M:%S')" "$data" >> "$log_file"
   }
-  logger "$json_data"
+  logger "review :$json_data"
 else
   function logger() {
     # shellcheck disable=SC2317

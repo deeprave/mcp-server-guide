@@ -20,25 +20,25 @@
     "@SequentialThinking/*",
     "@ClaudeDesktop/*",
     "@Fetch/*",
+    "@WebSearch/*",
     "@YouTrack/*",
     "@Atlassian/*",
-    "@WebSearch/*",
     "@Trello/*"
   ],
   "hooks": {
     "agentSpawn": [
       {
-        "command": "~/.aws/amazonq/scripts/consent/q_AgentSpawn.sh"
+        "command": "~/.kiro/scripts/consent/q_AgentSpawn.sh"
       }
     ],
     "userPromptSubmit": [
       {
-        "command": "~/.aws/amazonq/scripts/consent/q_UserPromptSubmit.sh"
+        "command": "~/.kiro/scripts/consent/q_UserPromptSubmit.sh"
       }
     ],
     "preToolUse": [
       {
-        "command": "~/.aws/amazonq/scripts/consent/q_PreToolUse.sh",
+        "command": "~/.kiro/scripts/consent/q_PreToolUse.sh",
         "matcher": "*"
       }
     ]
