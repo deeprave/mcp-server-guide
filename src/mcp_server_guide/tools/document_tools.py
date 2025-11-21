@@ -339,7 +339,7 @@ async def list_mcp_documents(
 
                 # Use birth time if available (macOS/BSD), fall back to ctime
                 try:
-                    created_at = stat.st_birthtime  # macOS/BSD
+                    created_at = getattr(stat, "st_birthtime", stat.st_ctime)  # type: ignore[attr-defined]
                 except AttributeError:
                     created_at = stat.st_ctime  # Linux/other Unix (inode change time)
 
