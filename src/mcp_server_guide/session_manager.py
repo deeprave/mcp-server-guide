@@ -144,6 +144,14 @@ class SessionManager:
         """Get the full project configuration."""
         return self._session_state.get_project_config()
 
+    async def list_all_projects(self) -> list[str]:
+        """List all project names from config file."""
+        return await self._config_manager.list_all_projects()
+
+    async def load_project_config(self, project_name: str) -> Optional[ProjectConfig]:
+        """Load configuration for a specific project."""
+        return await self._config_manager.load_config(project_name)
+
     def set_full_project_config(self, config: Dict[str, Any] | ProjectConfig) -> None:
         """Set the full project configuration."""
         if isinstance(config, dict):

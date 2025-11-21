@@ -39,7 +39,7 @@ class GuidePromptHandler:
         command = parse_command(args)
 
         # Import all handlers
-        from .prompts import implement_prompt, plan_prompt, discuss_prompt, check_prompt, status_prompt
+        from .prompts import implement_prompt, plan_prompt, discuss_prompt, check_prompt, status_prompt, config_prompt
         from .help_system import format_guide_help, generate_context_help
 
         # Direct dispatch with match
@@ -54,6 +54,11 @@ class GuidePromptHandler:
                 return await check_prompt(command.data)
             case "status":
                 return await status_prompt(command.data)
+            case "config":
+                project = command.data.get("project") if command.data else None
+                list_projects = command.data.get("list_projects", False) if command.data else False
+                verbose = command.data.get("verbose", False) if command.data else False
+                return await config_prompt(project=project, list_projects=list_projects, verbose=verbose)
             case "search":
                 return f"Search functionality not yet implemented. Query: {command.data}"
             case "clone":

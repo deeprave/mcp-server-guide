@@ -83,7 +83,9 @@ async def clone_project(
             }
 
     # Create new config with cloned content
-    new_config = ProjectConfig(categories=deepcopy(source_config.categories), collections=deepcopy(source_config.collections))
+    new_config = ProjectConfig(
+        categories=deepcopy(source_config.categories), collections=deepcopy(source_config.collections)
+    )
 
     # Save target config
     await session.save_config(target_project, new_config)
