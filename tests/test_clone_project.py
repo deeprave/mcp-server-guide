@@ -152,4 +152,3 @@ async def test_clone_project_creates_independent_copies(isolated_config_file):
     await switch_project("source-proj")
     source_config_after = session.session_state.get_project_config()
     assert source_config_after.categories["custom"].patterns == ["*.txt"]
-

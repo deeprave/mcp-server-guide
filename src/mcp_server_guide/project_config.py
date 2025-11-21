@@ -97,6 +97,26 @@ class ProjectConfigManager:
         """
         return self._docroot
 
+    async def list_all_projects(self) -> list[str]:
+        """List all project names from config file."""
+        config_file = self.get_config_filename()
+
+        async def _load_projects(file_path: Path) -> list[str]:
+            if not file_path.exists():
+                return []
+            try:
+                import aiofiles
+
+                async with aiofiles.open(file_path, "r") as f:
+                    content = await f.read()
+                    data = yaml.safe_load(content) or {}
+                config_data = ConfigFile(**data)
+                return list(config_data.projects.keys())
+            except Exception:
+                return []
+
+        return await lock_update(config_file, _load_projects)
+
     async def get_speckit_config(self) -> Optional["SpecKitConfig"]:
         """Get SpecKit configuration from global config file."""
         from .file_lock import lock_update

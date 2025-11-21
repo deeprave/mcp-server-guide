@@ -87,6 +87,16 @@ def status(ctx: click.Context, text: tuple[str, ...]) -> None:
 
 
 @guide.command()
+@click.argument("project", required=False)
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed information")
+@click.option("--projects", is_flag=True, help="List all projects")
+@click.pass_context
+def config(ctx: click.Context, project: Optional[str], verbose: bool, projects: bool) -> None:
+    """Display project configuration."""
+    _set_result(ctx, Command(type="config", data={"project": project, "list_projects": projects, "verbose": verbose}))
+
+
+@guide.command()
 @click.argument("query", nargs=-1)
 @click.pass_context
 def search(ctx: click.Context, query: tuple[str, ...]) -> None:
@@ -398,6 +408,7 @@ def parse_command(args: List[str]) -> Command:
             "check",
             "status",
             "search",
+            "config",
         ]
     ):
         return Command(type="category_access", category=args[0])

@@ -91,4 +91,3 @@ class TestComprehensiveHelpSystem:
         help_content = await format_guide_help(verbose=True)
 
         assert "Commands:" in help_content
-

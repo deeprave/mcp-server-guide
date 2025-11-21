@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP, Context
 
@@ -14,7 +14,65 @@ from .services.speckit_manager import enable_speckit, is_speckit_enabled, update
 # Category tools are now accessed through guide integration
 from .tools.content_tools import get_content
 
+if TYPE_CHECKING:
+    from .models.project_config import ProjectConfig
+
 logger = get_logger(__name__)
+
+
+def _format_projects_list(project_names: List[str]) -> str:
+    """Format project names as simple list."""
+    return "\n".join(project_names)
+
+
+async def _list_category_documents(category_name: str) -> List[str]:
+    """List document names for a category."""
+    from .tools.document_tools import list_mcp_documents
+
+    result = await list_mcp_documents(category_name)
+    if result.get("success"):
+        return [doc["name"] for doc in result.get("documents", [])]
+    return []
+
+
+async def _format_project_config(project_name: str, config: "ProjectConfig", verbose: bool = False) -> str:
+    """Format project configuration."""
+    lines = [f"**Project**: {project_name}", "**Categories**"]
+
+    # Batch fetch all documents if verbose (avoid N+1 queries)
+    category_docs: dict[str, list[str]] = {}
+    if verbose and config.categories:
+        import asyncio
+
+        # Fetch all category documents concurrently
+        tasks = {cat_name: _list_category_documents(cat_name) for cat_name in config.categories.keys()}
+        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        # Type-safe processing of results
+        for cat_name, result in zip(tasks.keys(), results):
+            if isinstance(result, Exception):
+                logger.warning(f"Failed to list documents for category '{cat_name}': {result}")
+                category_docs[cat_name] = []
+            elif isinstance(result, list):
+                category_docs[cat_name] = result
+            else:
+                category_docs[cat_name] = []
+
+    for cat_name, cat in config.categories.items():
+        patterns = ", ".join(cat.patterns or [])
+        lines.append(f" - {cat_name} {cat.dir} [{patterns}]")
+
+        if verbose:
+            docs = category_docs.get(cat_name, [])
+            for doc in docs:
+                lines.append(f"   - {doc}")
+
+    if config.collections:
+        lines.append("**Collections**")
+        for coll_name, coll in config.collections.items():
+            categories = ", ".join(coll.categories)
+            lines.append(f" - {coll_name} [{categories}]")
+
+    return "\n".join(lines)
 
 
 async def execute_prompt_with_guide(
@@ -169,6 +227,59 @@ async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None)
 🔄 **Next Step:** DISCUSSION - return to discussion mode (discuss/plan)"""
 
     return await execute_prompt_with_guide("check", base_response, None, pre_text, content)
+
+
+async def config_prompt(project: Optional[str] = None, list_projects: bool = False, verbose: bool = False) -> str:
+    """Handle config prompt."""
+    from .help_system import _wrap_display_content
+    from .session_manager import SessionManager
+
+    session_manager = SessionManager()
+
+    # Validate project name if provided
+    if project is not None:
+        project = project.strip()
+        if not project:
+            return _wrap_display_content("Error: Project name cannot be empty")
+        if len(project) > 255:
+            return _wrap_display_content("Error: Project name too long (max 255 characters)")
+        if any(c in project for c in ["/", "\\", "..", "\0"]):
+            return _wrap_display_content("Error: Invalid characters in project name")
+
+    if list_projects:
+        projects = await session_manager.list_all_projects()
+
+        if not verbose:
+            # Simple list
+            content = _format_projects_list(projects)
+        else:
+            # Full config for each project (no documents)
+            parts = []
+            for proj_name in projects:
+                config = await session_manager.load_project_config(proj_name)
+                if config:
+                    formatted = await _format_project_config(proj_name, config, verbose=False)
+                    parts.append(formatted)
+                else:
+                    # Include error message for projects that failed to load
+                    parts.append(f"**Project**: {proj_name}\n**Error**: Failed to load configuration")
+            content = "\n\n".join(parts)
+
+        return _wrap_display_content(content)
+
+    # Show specific or current project
+    if project:
+        config = await session_manager.load_project_config(project)
+        project_name = project
+    else:
+        config = session_manager.get_full_project_config()
+        project_name = session_manager.project_name or "unknown"
+
+    if not config:
+        return _wrap_display_content(f"Project '{project_name}' not found")
+
+    content = await _format_project_config(project_name, config, verbose=verbose)
+    return _wrap_display_content(content)
 
 
 async def spec_prompt(arg: Optional[str] = None, ctx: Optional["Context[Any, Any]"] = None) -> str:
