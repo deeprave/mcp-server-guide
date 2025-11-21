@@ -48,8 +48,11 @@ async def test_project_config_to_dict_excludes_empty():
 
 async def test_project_config_manager_load_config_default():
     """Test ProjectConfigManager.load_config returns default when no file exists."""
-    with tempfile.TemporaryDirectory():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Use isolated temp config file
+        config_file = Path(temp_dir) / "config.yaml"
         manager = ProjectConfigManager()
+        manager.set_config_filename(config_file)
 
         # Should return None when no config file exists
         config = await manager.load_config("nonexistent-project")
