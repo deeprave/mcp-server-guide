@@ -112,7 +112,8 @@ class ProjectConfigManager:
                     data = yaml.safe_load(content) or {}
                 config_data = ConfigFile(**data)
                 return list(config_data.projects.keys())
-            except Exception:
+            except Exception as e:
+                logger.exception(f"Failed to load projects from config file {file_path}: {e}")
                 return []
 
         return await lock_update(config_file, _load_projects)

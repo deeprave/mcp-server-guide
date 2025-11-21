@@ -22,6 +22,17 @@ def test_format_projects_list_empty():
 
 
 @pytest.mark.asyncio
+async def test_format_project_config_empty():
+    """Format empty project config with no categories or collections."""
+    config = ProjectConfig(categories={}, collections={})
+    result = await _format_project_config("empty-project", config)
+
+    assert "**Project**: empty-project" in result
+    assert "**Categories**" in result
+    assert "**Collections**" not in result
+
+
+@pytest.mark.asyncio
 async def test_format_project_config_basic():
     """Format basic project config without verbose."""
     config = ProjectConfig(categories={"cat1": Category(name="cat1", dir="dir1", patterns=["*.md"])}, collections={})
