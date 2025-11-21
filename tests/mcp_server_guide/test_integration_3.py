@@ -16,19 +16,27 @@ async def test_search_content_with_matches():
         "context": {"success": True, "content": "Another search term match"},
     }
 
-    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
+    # Mock SessionManager to provide isolated test categories
+    mock_session = Mock()
+    mock_config = Mock()
+    mock_config.categories = {"guide": Mock(), "lang": Mock(), "context": Mock()}
+    mock_session.get_project_name.return_value = "test-project"
+    mock_session.get_or_create_project_config = AsyncMock(return_value=mock_config)
 
-        def side_effect(category):
-            return mock_results.get(category, {"success": False})
+    with patch("mcp_server_guide.session_manager.SessionManager", return_value=mock_session):
+        with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
 
-        mock_get.side_effect = side_effect
+            def side_effect(category):
+                return mock_results.get(category, {"success": False})
 
-        results = await search_content("search term", "test-project")
+            mock_get.side_effect = side_effect
 
-        # Should find matches in guide and context categories
-        assert len(results) == 2
-        assert any("guide" in str(result) for result in results)
-        assert any("context" in str(result) for result in results)
+            results = await search_content("search term", "test-project")
+
+            # Should find matches in guide and context categories
+            assert len(results) == 2
+            assert any("guide" in str(result) for result in results)
+            assert any("context" in str(result) for result in results)
 
 
 async def test_search_content_no_matches():
@@ -40,14 +48,22 @@ async def test_search_content_no_matches():
         "context": {"success": True, "content": "Also different"},
     }
 
-    with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
+    # Mock SessionManager to provide isolated test categories
+    mock_session = Mock()
+    mock_config = Mock()
+    mock_config.categories = {"guide": Mock(), "lang": Mock(), "context": Mock()}
+    mock_session.get_project_name.return_value = "test-project"
+    mock_session.get_or_create_project_config = AsyncMock(return_value=mock_config)
 
-        def side_effect(category):
-            return mock_results.get(category, {"success": False})
+    with patch("mcp_server_guide.session_manager.SessionManager", return_value=mock_session):
+        with patch("mcp_server_guide.tools.content_tools.get_category_content") as mock_get:
 
-        mock_get.side_effect = side_effect
+            def side_effect(category):
+                return mock_results.get(category, {"success": False})
 
-        results = await search_content("nonexistent", "test-project")
+            mock_get.side_effect = side_effect
+
+            results = await search_content("nonexistent", "test-project")
 
         # Should find no matches
         assert len(results) == 0
