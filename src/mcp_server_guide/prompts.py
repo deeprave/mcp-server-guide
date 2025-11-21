@@ -63,8 +63,7 @@ async def _format_project_config(project_name: str, config: "ProjectConfig", ver
 
         if verbose:
             docs = category_docs.get(cat_name, [])
-            for doc in docs:
-                lines.append(f"   - {doc}")
+            lines.extend(f"   - {doc}" for doc in docs)
 
     if config.collections:
         lines.append("**Collections**")
