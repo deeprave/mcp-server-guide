@@ -104,26 +104,32 @@ class GuidePromptHandler:
         """Handle agent-info command to display detected agent information."""
         try:
             from .server import get_current_server
+            import json
 
             server = await get_current_server()
             if not server:
-                return "❌ Server not available"
+                return json.dumps({"success": False, "error": "Server not available"})
 
             # Check cache
             if server.extensions.agent_info:
                 agent_info = server.extensions.agent_info
-                return format_agent_info(agent_info, server.name, markdown=True)
+                markdown_output = format_agent_info(agent_info, server.name, markdown=True)
+                return json.dumps({"success": True, "value": markdown_output})
             else:
                 # Not cached - instruct to call tool
-                return """Agent information not yet captured.
-
-Please call the `guide_get_agent_info` tool to fetch and cache agent information.
-
-After calling the tool, you can use `@guide agent-info` again to see the cached result.
-"""
+                # Prompts may not have valid session context, so tool must be called
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": "Agent information not yet captured",
+                        "remediation": "Call the get_agent_info tool to fetch and cache agent information",
+                    }
+                )
         except Exception as e:
+            import json
+
             logger.error(f"Failed to get agent info: {e}")
-            return f"❌ Could not access agent info: {str(e)}"
+            return json.dumps({"success": False, "error": f"Could not access agent info: {str(e)}"})
 
     async def _handle_crud_command(self, command: Command) -> str:
         """Handle CRUD operations using the JSON tool factory."""
