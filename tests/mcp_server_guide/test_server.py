@@ -1,6 +1,6 @@
 """Tests for MCP server functionality."""
 
-from unittest.mock import patch
+from unittest.mock import patch, Mock, AsyncMock
 from mcp_server_guide import server
 from mcp_server_guide.session_manager import SessionManager
 from mcp_server_guide import tools
@@ -14,8 +14,10 @@ async def test_server_tool_functions(isolated_config_file):
     session_manager._set_config_filename(isolated_config_file)
 
     # Test get_current_project via tools
-    result = await tools.get_current_project()
-    assert isinstance(result, (dict, str, type(None)))
+    mock_ctx = Mock()
+    mock_ctx.error = AsyncMock()
+    result = await tools.get_current_project(mock_ctx)
+    assert isinstance(result, str)
 
     # Test switch_project via tools
     result = await tools.switch_project("test_project")
@@ -24,15 +26,18 @@ async def test_server_tool_functions(isolated_config_file):
 
 async def test_get_current_project_no_project_set():
     """Test get_current_project when no project is set."""
-    # Test get_current_project returns None
-    with patch("mcp_server_guide.tools.get_current_project", return_value=None):
-        result = await tools.get_current_project()
-        assert result is None
+    mock_ctx = Mock()
+    mock_ctx.error = AsyncMock()
+
+    # Test get_current_project returns empty string
+    with patch("mcp_server_guide.tools.get_current_project", return_value=""):
+        result = await tools.get_current_project(mock_ctx)
+        assert result == ""
 
     # Test get_current_project returns error dictionary
     error_dict = {"success": False, "error": "No project set"}
     with patch("mcp_server_guide.tools.get_current_project", return_value=error_dict):
-        result = await tools.get_current_project()
+        result = await tools.get_current_project(mock_ctx)
         assert isinstance(result, dict)
         assert result["success"] is False
         assert "No project set" in result["error"]

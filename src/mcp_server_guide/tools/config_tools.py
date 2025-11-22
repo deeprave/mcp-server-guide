@@ -5,12 +5,18 @@ from typing import Dict, Any, Optional
 
 async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:
     """Get project configuration settings and values.
-    This is a read-only operation that displays current configuration without making changes."""
+    This is a read-only operation that displays current configuration without making changes.
+
+    If project cannot be determined, returns null project with instructions to fix."""
     from ..session_manager import SessionManager
 
     session = SessionManager()
-    if project is None:
-        project = session.get_project_name()
+    if not project:  # Treat None and "" the same
+        try:
+            project = session.get_project_name()
+        except ValueError as e:
+            # Return null project with error message containing fix instructions
+            return {"success": False, "project": None, "error": str(e)}
 
     config = await session.get_or_create_project_config(project)
     return {"success": True, "project": project, "config": config.to_dict()}

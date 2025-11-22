@@ -45,6 +45,13 @@ def help(ctx: click.Context, verbose: bool) -> None:
     _set_result(ctx, Command(type="help", data={"verbose": verbose}))
 
 
+@guide.command("agent-info")
+@click.pass_context
+def agent_info(ctx: click.Context) -> None:
+    """Show detected agent information."""
+    _set_result(ctx, Command(type="agent-info", data=None))
+
+
 # Phase commands
 @guide.command()
 @click.argument("text", nargs=-1)
@@ -399,6 +406,7 @@ def parse_command(args: List[str]) -> Command:
         and args[0]
         not in [
             "help",
+            "agent-info",
             "category",
             "collection",
             "document",

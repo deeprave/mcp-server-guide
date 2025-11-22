@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional
 from .operation_base import BaseOperation
 from ..tools.config_tools import get_project_config, set_project_config, set_project_config_values
-from ..tools.project_tools import get_current_project, switch_project
+from ..tools.project_tools import switch_project
 from ..models.project_config import ProjectConfig
 
 
@@ -11,7 +11,15 @@ class GetCurrentProjectOperation(BaseOperation):
     """Get current project."""
 
     async def execute(self, config: ProjectConfig) -> Dict[str, Any]:
-        project = await get_current_project()
+        from ..session_manager import SessionManager
+
+        session = SessionManager()
+        try:
+            project = session.get_project_name()
+        except ValueError as e:
+            # Return error in operation result format
+            return {"success": False, "error": str(e), "project": None}
+
         return {"success": True, "project": project}
 
 

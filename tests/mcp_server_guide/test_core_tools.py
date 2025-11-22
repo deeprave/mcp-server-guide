@@ -1,24 +1,29 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, AsyncMock
 from mcp_server_guide.tools import get_current_project, get_project_config, switch_project, get_guide
 
 
 async def test_get_current_project():
     """Test getting current project name."""
-    result = await get_current_project()
-    assert isinstance(result, str) or result is None  # Can be None if not set
+    mock_ctx = Mock()
+    mock_ctx.error = AsyncMock()
+    result = await get_current_project(mock_ctx)
+    assert isinstance(result, str)  # Always returns string (empty if not set)
 
 
 async def test_get_current_project_none():
-    """Test get_current_project returns None when no project is set."""
+    """Test get_current_project returns empty string when no project is set."""
     with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
         mock_session = Mock()
-        mock_session.get_project_name = Mock(return_value=None)  # NOT async
+        mock_session.get_project_name = Mock(side_effect=ValueError("No project"))
         mock_session_class.return_value = mock_session
 
-        result = await get_current_project()
-        assert result is None
+        mock_ctx = Mock()
+        mock_ctx.error = AsyncMock()
+        result = await get_current_project(mock_ctx)
+        assert result == ""
+        mock_ctx.error.assert_called_once()
 
 
 async def test_get_project_config_default():
@@ -48,7 +53,9 @@ async def test_switch_project(isolated_config_file):
     assert result["project"] == "test-project"
 
     # Verify the switch worked
-    current = await get_current_project()
+    mock_ctx = Mock()
+    mock_ctx.error = AsyncMock()
+    current = await get_current_project(mock_ctx)
     assert current == "test-project"
 
 

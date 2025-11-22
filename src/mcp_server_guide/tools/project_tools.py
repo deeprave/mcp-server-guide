@@ -2,19 +2,27 @@
 
 from typing import Dict, Any, Optional
 from copy import deepcopy
+from mcp.server.fastmcp import Context
 from ..logging_config import get_logger
 
 logger = get_logger()
 
 
-async def get_current_project() -> Optional[str]:
+async def get_current_project(ctx: Context) -> str:
     """Get the active project name."""
     from ..session_manager import SessionManager
 
-    session = SessionManager()
-    result = session.get_project_name()
-    logger.debug(f"get_project_name returned type: {type(result)}, value: {result}")
-    return result
+    try:
+        session = SessionManager()
+        result = session.get_project_name()
+        logger.debug(f"get_project_name returned type: {type(result)}, value: {result}")
+        return result
+    except ValueError as e:
+        await ctx.error(str(e))
+        return ""
+    except Exception as e:
+        await ctx.error(f"Failed to get current project: {e}")
+        raise
 
 
 async def switch_project(name: str) -> Dict[str, Any]:

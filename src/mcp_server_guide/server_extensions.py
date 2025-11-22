@@ -2,8 +2,9 @@
 
 import asyncio
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
+from .agent_detection import AgentInfo
 from .file_source import FileAccessor
 from .session_manager import SessionManager
 
@@ -14,6 +15,7 @@ class ServerExtensions:
 
     _session_manager: SessionManager  # Session and project configuration management
     file_accessor: FileAccessor  # File reading and caching functionality
+    agent_info: Optional[AgentInfo] = None  # Cached agent detection info
     _prompts_registered: bool = False
     _tools_registered: bool = field(default=False)
     _registration_lock: asyncio.Lock = field(default_factory=asyncio.Lock)

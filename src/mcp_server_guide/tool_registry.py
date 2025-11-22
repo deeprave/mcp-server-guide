@@ -19,6 +19,7 @@ from .tools.document_tools import create_mcp_document, update_mcp_document, dele
 from .tools.category_tools import add_category, remove_category, update_category, list_categories, get_category_content
 from .tools.collection_tools import add_collection, update_collection, list_collections, remove_collection
 from .tools.prompt_tools import list_prompts
+from .tools.agent_tools import guide_get_agent_info
 
 # Import JSON-based consolidated tools
 from .tools.category_tools_json import guide_categories
@@ -78,6 +79,9 @@ def register_tools(mcp: FastMCP, log_tool_usage: Callable[..., Any]) -> None:
 
     # Prompt Tools
     guide_decorator.tool("list_prompts")(log_tool_usage(list_prompts))
+
+    # Agent Detection Tools
+    guide_decorator.tool("get_agent_info")(log_tool_usage(guide_get_agent_info))
 
     # JSON-based Consolidated Tools (Phase 2 implementation)
     guide_decorator.tool("categories")(log_tool_usage(guide_categories))

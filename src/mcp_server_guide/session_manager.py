@@ -18,6 +18,9 @@ from .models.speckit_config import SpecKitConfig
 
 logger = get_logger()
 
+# Instruction for when project name cannot be determined
+PROJECT_NAME_FIX_INSTRUCTION = "To fix: Call switch_project with the basename of the current working directory."
+
 # Global session manager instance (singleton)
 _session_manager_instance: Optional["SessionManager"] = None
 
@@ -266,7 +269,8 @@ class SessionManager:
         if not pwd:
             logger.error("No project name available from session, context, or PWD environment variable")
             raise ValueError(
-                "Cannot determine project name: no session state, context resolution, or PWD environment variable available"
+                f"Cannot determine project name: no session state, context resolution, or PWD environment variable available.\n"
+                f"{PROJECT_NAME_FIX_INSTRUCTION}"
             )
 
         project_name = Path(pwd).name

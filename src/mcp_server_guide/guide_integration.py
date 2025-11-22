@@ -4,6 +4,7 @@ from typing import List, Optional, Any
 
 from mcp.server.fastmcp import Context
 
+from .agent_detection import format_agent_info
 from .logging_config import get_logger
 from .utils.error_handler import ErrorHandler
 from .tools.category_tools import get_category_content
@@ -86,6 +87,8 @@ class GuidePromptHandler:
                     # General help - use verbose flag from CLI parser, default to False for basic help
                     verbose = command.data.get("verbose", False) if command.data else False
                     return await format_guide_help(verbose)
+            case "agent-info":
+                return await self._handle_agent_info(ctx)
             case "crud":
                 return await self._handle_crud_command(command)
             case "content":
@@ -96,6 +99,31 @@ class GuidePromptHandler:
                     return await self._get_content(args[0])
                 else:
                     return f"Error: Unknown command format: {' '.join(args)}"
+
+    async def _handle_agent_info(self, ctx: Optional["Context[Any, Any]"]) -> str:
+        """Handle agent-info command to display detected agent information."""
+        try:
+            from .server import get_current_server
+
+            server = await get_current_server()
+            if not server:
+                return "❌ Server not available"
+
+            # Check cache
+            if server.extensions.agent_info:
+                agent_info = server.extensions.agent_info
+                return format_agent_info(agent_info, server.name, markdown=True)
+            else:
+                # Not cached - instruct to call tool
+                return """Agent information not yet captured.
+
+Please call the `guide_get_agent_info` tool to fetch and cache agent information.
+
+After calling the tool, you can use `@guide agent-info` again to see the cached result.
+"""
+        except Exception as e:
+            logger.error(f"Failed to get agent info: {e}")
+            return f"❌ Could not access agent info: {str(e)}"
 
     async def _handle_crud_command(self, command: Command) -> str:
         """Handle CRUD operations using the JSON tool factory."""
