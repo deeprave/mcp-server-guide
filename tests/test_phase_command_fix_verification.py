@@ -15,9 +15,9 @@ class TestPhaseCommandFixVerification:
     @pytest.mark.asyncio
     async def test_plan_command_with_quoted_text_end_to_end(self, handler):
         """Test the complete flow from MCP prompt to phase handler."""
-        # Simulate the MCP prompt call: @guide -p "Now let's work on document-specific-access-spec.md"
+        # Simulate the MCP prompt call: @guide :plan "Now let's work on document-specific-access-spec.md"
         # This is what gets passed to _guide_prompt as the category parameter
-        category_arg = '-p "Now let\'s work on document-specific-access-spec.md"'
+        category_arg = ':plan "Now let\'s work on document-specific-access-spec.md"'
 
         # Simulate what _guide_prompt does with shlex parsing
         import shlex
@@ -25,7 +25,7 @@ class TestPhaseCommandFixVerification:
         args = shlex.split(category_arg)
 
         # Verify shlex parsing works correctly
-        assert args == ["-p", "Now let's work on document-specific-access-spec.md"]
+        assert args == [":plan", "Now let's work on document-specific-access-spec.md"]
 
         # Call the handler with the properly parsed arguments
         result = await handler.handle_guide_request(args)
@@ -40,11 +40,11 @@ class TestPhaseCommandFixVerification:
     async def test_all_phase_commands_with_quoted_text(self, handler):
         """Test all phase commands preserve quoted text."""
         test_cases = [
-            ('-d "Discussion about the issue"', "Discussion about the issue"),
-            ('-p "Planning the implementation"', "Planning the implementation"),
-            ('-i "Implementing the solution"', "Implementing the solution"),
-            ('-c "Checking the results"', "Checking the results"),
-            ('-s "Status of the project"', "Status of the project"),
+            (':discuss "Discussion about the issue"', "Discussion about the issue"),
+            (':plan "Planning the implementation"', "Planning the implementation"),
+            (':implement "Implementing the solution"', "Implementing the solution"),
+            (':check "Checking the results"', "Checking the results"),
+            (':status "Status of the project"', "Status of the project"),
         ]
 
         for category_arg, expected_text in test_cases:
@@ -60,7 +60,7 @@ class TestPhaseCommandFixVerification:
     async def test_malformed_quotes_fallback(self, handler):
         """Test that malformed quotes fall back to simple split."""
         # Test with unmatched quotes
-        category_arg = '-p "unmatched quote'
+        category_arg = ':plan "unmatched quote'
 
         # This should not crash and should fall back to simple split
         import shlex
@@ -82,10 +82,10 @@ class TestPhaseCommandFixVerification:
         """Test that single word arguments still work without quotes."""
         import shlex
 
-        category_arg = "-p topic"
+        category_arg = ":plan topic"
         args = shlex.split(category_arg)
 
-        assert args == ["-p", "topic"]
+        assert args == [":plan", "topic"]
 
         result = await handler.handle_guide_request(args)
         assert "topic" in result
@@ -95,10 +95,10 @@ class TestPhaseCommandFixVerification:
         """Test that phase commands without additional text still work."""
         import shlex
 
-        category_arg = "-p"
+        category_arg = ":plan"
         args = shlex.split(category_arg)
 
-        assert args == ["-p"]
+        assert args == [":plan"]
 
         result = await handler.handle_guide_request(args)
         assert result is not None

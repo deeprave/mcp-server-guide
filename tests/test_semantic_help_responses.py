@@ -24,8 +24,8 @@ async def test_user_focused_language():
     """Test that help content uses user-focused language."""
     help_content = await format_guide_help()
 
-    # Should contain user-focused language
-    assert "you can" in help_content.lower() or "cli interface" in help_content.lower()
+    # Should contain user-focused language and command information
+    assert "Phase Commands:" in help_content or "Utility Commands:" in help_content
 
     # Should not contain agent-focused language
     assert "agents should" not in help_content.lower()

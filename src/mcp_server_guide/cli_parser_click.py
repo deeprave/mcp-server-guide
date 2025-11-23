@@ -6,6 +6,7 @@ from typing import Any, List, Optional
 import click
 
 from .commands import (
+    ALL_COMMANDS,
     CMD_AGENT_INFO,
     CMD_CATEGORY,
     CMD_CHECK,
@@ -366,30 +367,60 @@ def detect_help_request(args: List[str]) -> Optional[Command]:
     # Check if --help or -h appears anywhere in args
     if "--help" not in args and "-h" not in args:
         # No help flag, check for "help" command
-        if args[0] not in [CMD_HELP, "show", "get"]:
+        first_arg = strip_command_prefix(args[0]) if has_command_prefix(args[0]) else args[0]
+        if first_arg not in [CMD_HELP, "show", "get"]:
             return None
-        if args[0] in ["show", "get"] and (len(args) < 2 or args[1] != CMD_HELP):
+        if first_arg in ["show", "get"] and (len(args) < 2 or args[1] != CMD_HELP):
             return None
 
     # Detect semantic intent from first word
+    first_arg = strip_command_prefix(args[0]) if has_command_prefix(args[0]) else args[0]
     semantic_intent_map = {
         "show": "display",
         "get": "retrieve",
     }
-    semantic_intent = semantic_intent_map.get(args[0])
+    semantic_intent = semantic_intent_map.get(first_arg)
 
     # Check for verbose flag
     verbose = "--verbose" in args or "-v" in args
 
     # Determine target from first non-flag arg (if it's a management target)
+    # Strip prefix from args when checking
     target = None
     for arg in args:
-        if arg in [CMD_CATEGORY, CMD_COLLECTION, CMD_DOCUMENT]:
-            target = arg
+        stripped_arg = strip_command_prefix(arg) if has_command_prefix(arg) else arg
+        if stripped_arg in [CMD_CATEGORY, CMD_COLLECTION, CMD_DOCUMENT]:
+            target = stripped_arg
             break
 
     data = {"verbose": verbose}
     return Command(type=CMD_HELP, target=target, semantic_intent=semantic_intent, data=data)
+
+
+def has_command_prefix(arg: str) -> bool:
+    """Check if argument has command prefix (: or ;).
+
+    Args:
+        arg: Argument to check
+
+    Returns:
+        True if arg starts with : or ;, False otherwise
+    """
+    return arg.startswith(":") or arg.startswith(";")
+
+
+def strip_command_prefix(arg: str) -> str:
+    """Strip command prefix from argument.
+
+    Args:
+        arg: Argument to strip prefix from
+
+    Returns:
+        Argument without prefix if it had one, otherwise unchanged
+    """
+    if has_command_prefix(arg):
+        return arg[1:]
+    return arg
 
 
 def parse_command(args: List[str]) -> Command:
@@ -410,35 +441,14 @@ def parse_command(args: List[str]) -> Command:
     if help_command:
         return help_command
 
-    # Handle legacy short form commands first
-    if args[0] in ["-d", "-p", "-i", "-c", "-s"]:
-        command_map = {"-d": CMD_DISCUSS, "-p": CMD_PLAN, "-i": CMD_IMPLEMENT, "-c": CMD_CHECK, "-s": CMD_STATUS}
-        command_type = command_map[args[0]]
-        data = " ".join(args[1:]) if len(args) > 1 else None
-        return Command(type=command_type, data=data)
-
-    # Handle direct category/collection access (legacy behavior)
-    if (
-        len(args) == 1
-        and not args[0].startswith("-")
-        and args[0]  # Ensure not empty string
-        and args[0]
-        not in [
-            CMD_HELP,
-            CMD_AGENT_INFO,
-            CMD_CATEGORY,
-            CMD_COLLECTION,
-            CMD_DOCUMENT,
-            CMD_DISCUSS,
-            CMD_PLAN,
-            CMD_IMPLEMENT,
-            CMD_CHECK,
-            CMD_STATUS,
-            CMD_SEARCH,
-            CMD_CONFIG,
-        ]
-    ):
+    # Phase 2.3: Handle direct category/collection access BEFORE prefix stripping
+    # If no prefix and single arg, treat as category access (even if name matches command)
+    if len(args) == 1 and not args[0].startswith("-") and not has_command_prefix(args[0]) and args[0]:
         return Command(type="category_access", category=args[0])
+
+    # Phase 2.1: Check for command prefix (: or ;) and strip it
+    if has_command_prefix(args[0]):
+        args = [strip_command_prefix(args[0])] + args[1:]
 
     try:
         # Create a Click context and parse the arguments
@@ -455,35 +465,53 @@ def parse_command(args: List[str]) -> Command:
 
 
 def get_cli_commands() -> dict[str, Any]:
-    """Extract command information from the actual Click command structure."""
+    """Extract command information from commands.py metadata."""
+    from .commands import COMMANDS
+
     commands = {}
-    for name, command in guide.commands.items():
-        # Get the help text from the command's docstring (full description)
-        help_text = command.help or "No description available."
-        commands[name] = help_text
+    for name, info in COMMANDS.items():
+        # Use description from CommandInfo
+        commands[f":{name}"] = info.description
     return commands
 
 
 def generate_basic_cli_help() -> str:
     """Generate basic CLI usage help."""
-    commands = get_cli_commands()
+    from .commands import COMMANDS, MANAGEMENT_COMMANDS, PHASE_COMMANDS, UTILITY_COMMANDS
 
-    # Build commands section dynamically
-    commands_section = "\n".join(f"  {name:<11} {desc}" for name, desc in sorted(commands.items()))
+    # Group commands by category
+    phase_cmds = {f":{k}": v.description for k, v in COMMANDS.items() if k in PHASE_COMMANDS}
+    utility_cmds = {f":{k}": v.description for k, v in COMMANDS.items() if k in UTILITY_COMMANDS}
+    mgmt_cmds = {f":{k}": v.description for k, v in COMMANDS.items() if k in MANAGEMENT_COMMANDS}
 
-    return f"""Usage:  [OPTIONS] COMMAND [ARGS]...
+    # Build sections
+    sections = []
 
-  MCP Server Guide - Project documentation and guidelines.
+    sections.append("Usage: @guide [OPTIONS] COMMAND [ARGS]...")
+    sections.append("")
+    sections.append("MCP Server Guide - Project documentation and guidelines.")
+    sections.append("")
+    sections.append("Phase Commands:")
+    for name, desc in sorted(phase_cmds.items()):
+        sections.append(f"  {name:<15} {desc}")
 
-  You can use the CLI interface to manage documentation, categories, and collections.
+    sections.append("")
+    sections.append("Utility Commands:")
+    for name, desc in sorted(utility_cmds.items()):
+        sections.append(f"  {name:<15} {desc}")
 
-Options:
-  --help  Show this message and exit.
+    sections.append("")
+    sections.append("Management Commands:")
+    for name, desc in sorted(mgmt_cmds.items()):
+        sections.append(f"  {name:<15} {desc}")
 
-Commands:
-{commands_section}
+    sections.append("")
+    sections.append("Category/Collection Access:")
+    sections.append("  <name>          Access category or collection content")
+    sections.append("")
+    sections.append("Use :help for more information")
 
-Use --verbose or -v for more detailed information"""
+    return "\n".join(sections)
 
 
 def generate_cli_help() -> str:

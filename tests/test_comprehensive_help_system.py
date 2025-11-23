@@ -25,9 +25,9 @@ class TestComprehensiveHelpSystem:
         help_content = await format_guide_help(verbose=False)
 
         # Check for basic CLI content
-        assert "Usage:  [OPTIONS] COMMAND [ARGS]..." in help_content
+        assert "Usage: @guide [OPTIONS] COMMAND [ARGS]..." in help_content
         assert "MCP Server Guide - Project documentation and guidelines." in help_content
-        assert "Use --verbose or -v for more detailed information" in help_content
+        assert "Use :help for more information" in help_content
 
         # Should NOT contain comprehensive sections
         assert "# MCP Server Guide Help" not in help_content
@@ -75,14 +75,14 @@ class TestComprehensiveHelpSystem:
 
         # Test general help (basic)
         result = await handler.handle_guide_request(["--help"])
-        assert "Use --verbose or -v for more detailed information" in result
+        assert "Use :help for more information" in result
 
         # Test verbose help (comprehensive)
         result = await handler.handle_guide_request(["--help", "--verbose"])
         assert "MCP Server Guide Help" in result
 
         # Test context-sensitive help
-        result = await handler.handle_guide_request(["category", "--help"])
+        result = await handler.handle_guide_request([":category", "--help"])
         assert "Category management operations" in result
 
     @pytest.mark.asyncio
