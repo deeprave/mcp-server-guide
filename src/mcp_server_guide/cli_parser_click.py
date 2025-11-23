@@ -32,7 +32,6 @@ class Command:
     operation: Optional[str] = None
     category: Optional[str] = None
     data: Optional[Any] = None
-    semantic_intent: Optional[str] = None
 
 
 def _set_result(ctx: click.Context, command: Command) -> None:
@@ -359,44 +358,6 @@ def document_delete(ctx: click.Context, name: str) -> None:
     _set_result(ctx, Command(type="crud", target=CMD_DOCUMENT, operation="delete", data={"name": name}))
 
 
-def detect_help_request(args: List[str]) -> Optional[Command]:
-    """Detect help requests before Click processing to avoid exceptions."""
-    if not args or not all(isinstance(arg, str) for arg in args):
-        return None
-
-    # Check if --help or -h appears anywhere in args
-    if "--help" not in args and "-h" not in args:
-        # No help flag, check for "help" command
-        first_arg = strip_command_prefix(args[0]) if has_command_prefix(args[0]) else args[0]
-        if first_arg not in [CMD_HELP, "show", "get"]:
-            return None
-        if first_arg in ["show", "get"] and (len(args) < 2 or args[1] != CMD_HELP):
-            return None
-
-    # Detect semantic intent from first word
-    first_arg = strip_command_prefix(args[0]) if has_command_prefix(args[0]) else args[0]
-    semantic_intent_map = {
-        "show": "display",
-        "get": "retrieve",
-    }
-    semantic_intent = semantic_intent_map.get(first_arg)
-
-    # Check for verbose flag
-    verbose = "--verbose" in args or "-v" in args
-
-    # Determine target from first non-flag arg (if it's a management target)
-    # Strip prefix from args when checking
-    target = None
-    for arg in args:
-        stripped_arg = strip_command_prefix(arg) if has_command_prefix(arg) else arg
-        if stripped_arg in [CMD_CATEGORY, CMD_COLLECTION, CMD_DOCUMENT]:
-            target = stripped_arg
-            break
-
-    data = {"verbose": verbose}
-    return Command(type=CMD_HELP, target=target, semantic_intent=semantic_intent, data=data)
-
-
 def has_command_prefix(arg: str) -> bool:
     """Check if argument has command prefix (: or ;).
 
@@ -418,9 +379,7 @@ def strip_command_prefix(arg: str) -> str:
     Returns:
         Argument without prefix if it had one, otherwise unchanged
     """
-    if has_command_prefix(arg):
-        return arg[1:]
-    return arg
+    return arg[1:] if has_command_prefix(arg) else arg
 
 
 def parse_command(args: List[str]) -> Command:
@@ -436,31 +395,22 @@ def parse_command(args: List[str]) -> Command:
     if not all(isinstance(arg, str) for arg in args):
         return Command(type=CMD_HELP)
 
-    # PRE-PARSE: Detect help requests before Click processing
-    help_command = detect_help_request(args)
-    if help_command:
-        return help_command
+    # Strip prefix if present
+    had_prefix = has_command_prefix(args[0])
+    args = [strip_command_prefix(args[0])] + args[1:]
 
-    # Phase 2.3: Handle direct category/collection access BEFORE prefix stripping
-    # If no prefix and single arg, treat as category access (even if name matches command)
-    if len(args) == 1 and not args[0].startswith("-") and not has_command_prefix(args[0]) and args[0]:
+    # If no prefix and single arg → category/collection access
+    if not had_prefix and len(args) == 1 and not args[0].startswith("-") and args[0]:
         return Command(type="category_access", category=args[0])
 
-    # Phase 2.1: Check for command prefix (: or ;) and strip it
-    if has_command_prefix(args[0]):
-        args = [strip_command_prefix(args[0])] + args[1:]
-
+    # Otherwise let Click handle everything
     try:
-        # Create a Click context and parse the arguments
         ctx = guide.make_context("guide", args, resilient_parsing=True)
         guide.invoke(ctx)
-        # Return the command stored in context, or default to help
         return ctx.obj or Command(type=CMD_HELP)
     except (click.ClickException, AssertionError, SystemExit, click.exceptions.Exit):
-        # If parsing fails or command not found, return help command
         return Command(type=CMD_HELP)
     except Exception:
-        # Any other error, return help
         return Command(type=CMD_HELP)
 
 
@@ -485,31 +435,40 @@ def generate_basic_cli_help() -> str:
     mgmt_cmds = {f":{k}": v.description for k, v in COMMANDS.items() if k in MANAGEMENT_COMMANDS}
 
     # Build sections
-    sections = []
+    sections = [
+        "Usage: @guide [OPTIONS] COMMAND [ARGS]...",
+        "",
+        "MCP Server Guide - Project documentation and guidelines.",
+        "",
+        "Phase Commands:",
+    ]
 
-    sections.append("Usage: @guide [OPTIONS] COMMAND [ARGS]...")
-    sections.append("")
-    sections.append("MCP Server Guide - Project documentation and guidelines.")
-    sections.append("")
-    sections.append("Phase Commands:")
     for name, desc in sorted(phase_cmds.items()):
         sections.append(f"  {name:<15} {desc}")
 
-    sections.append("")
-    sections.append("Utility Commands:")
+    sections.extend([
+        "",
+        "Utility Commands:",
+    ])
+
     for name, desc in sorted(utility_cmds.items()):
         sections.append(f"  {name:<15} {desc}")
 
-    sections.append("")
-    sections.append("Management Commands:")
+    sections.extend([
+        "",
+        "Management Commands:",
+    ])
+
     for name, desc in sorted(mgmt_cmds.items()):
         sections.append(f"  {name:<15} {desc}")
 
-    sections.append("")
-    sections.append("Category/Collection Access:")
-    sections.append("  <name>          Access category or collection content")
-    sections.append("")
-    sections.append("Use :help for more information")
+    sections.extend([
+        "",
+        "Category/Collection Access:",
+        "  <name>          Access category or collection content",
+        "",
+        "Use :help for more information",
+    ])
 
     return "\n".join(sections)
 
