@@ -1,7 +1,7 @@
 """Test CLI help generation specifically."""
 
-import pytest
 import click
+import pytest
 from src.mcp_server_guide.cli_parser_click import generate_cli_help, generate_context_help
 from src.mcp_server_guide.help_system import format_guide_help
 
@@ -43,7 +43,7 @@ class TestCliHelpGeneration:
 
     def test_click_context_creation_safe(self):
         """Test that Click context creation is safe."""
-        from src.mcp_server_guide.cli_parser_click import guide, category, collection, document
+        from src.mcp_server_guide.cli_parser_click import category, collection, document, guide
 
         commands = [guide, category, collection, document]
 

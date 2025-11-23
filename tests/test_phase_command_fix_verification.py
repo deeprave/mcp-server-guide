@@ -1,6 +1,7 @@
 """Test to verify the phase command argument handling fix."""
 
 import pytest
+
 from mcp_server_guide.guide_integration import GuidePromptHandler
 
 

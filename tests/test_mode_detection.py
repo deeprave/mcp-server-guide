@@ -1,7 +1,9 @@
 """Tests for mode detection functionality - Updated for instruction-based approach."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from mcp_server_guide.prompts import status_prompt
 
 

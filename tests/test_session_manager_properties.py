@@ -30,6 +30,7 @@ def test_session_manager_pwd_required():
 def test_session_manager_pwd_required_not_set():
     """Test SessionManager requires PWD environment variable."""
     import os
+
     import pytest
 
     session_manager = SessionManager()

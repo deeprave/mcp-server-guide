@@ -17,7 +17,7 @@ def test_document_subdir_constant_exists():
 
 def test_constants_are_strings():
     """Test that both constants are strings."""
-    from mcp_server_guide.constants import METADATA_SUFFIX, DOCUMENT_SUBDIR
+    from mcp_server_guide.constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
 
     assert isinstance(METADATA_SUFFIX, str)
     assert isinstance(DOCUMENT_SUBDIR, str)

@@ -1,8 +1,9 @@
 """Tests for kiro_install script."""
 
-import pytest
 import stat
 from unittest.mock import patch
+
+import pytest
 from anyio import Path as AsyncPath
 from click.testing import CliRunner
 

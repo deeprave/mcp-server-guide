@@ -1,7 +1,9 @@
 """Test the safe_save_session functionality."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from mcp_server_guide.session_manager import SessionManager
 
 

@@ -1,7 +1,8 @@
 """Tests for spec prompt functionality."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from mcp_server_guide.prompts import register_prompts
 
@@ -142,8 +143,9 @@ class TestSpecPrompt:
     @pytest.mark.asyncio
     async def test_spec_init_command_basic(self):
         """Test basic spec init command functionality."""
-        from mcp_server_guide.prompts import spec_prompt
         from unittest.mock import AsyncMock
+
+        from mcp_server_guide.prompts import spec_prompt
 
         mock_init = AsyncMock(return_value="✅ SpecKit initialized successfully!")
         with patch("mcp_server_guide.prompts.is_speckit_enabled", return_value=False):
@@ -155,8 +157,9 @@ class TestSpecPrompt:
     @pytest.mark.asyncio
     async def test_spec_init_with_parameters(self):
         """Test spec init command with url and version parameters."""
-        from mcp_server_guide.prompts import spec_prompt
         from unittest.mock import AsyncMock
+
+        from mcp_server_guide.prompts import spec_prompt
 
         mock_init = AsyncMock(return_value="✅ SpecKit initialized with custom settings!")
         with patch("mcp_server_guide.prompts.is_speckit_enabled", return_value=False):
@@ -194,8 +197,9 @@ class TestSpecPrompt:
     @pytest.mark.asyncio
     async def test_spec_upgrade_basic_functionality(self):
         """Test basic spec upgrade command functionality."""
-        from mcp_server_guide.prompts import spec_prompt
         from unittest.mock import AsyncMock
+
+        from mcp_server_guide.prompts import spec_prompt
 
         # Mock enabled state and upgrade function
         mock_upgrade = AsyncMock(return_value="✅ SpecKit upgraded successfully!")
@@ -208,8 +212,9 @@ class TestSpecPrompt:
     @pytest.mark.asyncio
     async def test_spec_upgrade_with_version_parameter(self):
         """Test spec upgrade with version parameter."""
-        from mcp_server_guide.prompts import spec_prompt
         from unittest.mock import AsyncMock
+
+        from mcp_server_guide.prompts import spec_prompt
 
         # Mock enabled state and upgrade function
         mock_upgrade = AsyncMock(return_value="✅ SpecKit upgraded to v2.0.0!")
@@ -225,8 +230,8 @@ class TestSpecPrompt:
     @pytest.mark.asyncio
     async def test_spec_upgrade_github_integration(self):
         """Test spec upgrade GitHub API integration."""
-        from mcp_server_guide.prompts import handle_spec_upgrade
         from mcp_server_guide.models.speckit_config import SpecKitConfig
+        from mcp_server_guide.prompts import handle_spec_upgrade
 
         # Mock current configuration with older version
         mock_speckit_config = SpecKitConfig(enabled=True, url="https://github.com/spec-kit/spec-kit", version="v1.0.0")

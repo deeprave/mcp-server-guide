@@ -1,7 +1,8 @@
 """Tests for new prompt system - Updated for instruction-based approach."""
 
 import pytest
-from mcp_server_guide.prompts import discuss_prompt, plan_prompt, implement_prompt, check_prompt, status_prompt
+
+from mcp_server_guide.prompts import check_prompt, discuss_prompt, implement_prompt, plan_prompt, status_prompt
 
 
 class TestDiscussPrompt:

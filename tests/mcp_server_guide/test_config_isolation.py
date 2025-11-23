@@ -1,8 +1,9 @@
 """Tests for configuration file isolation (prevent tests from affecting working files)."""
 
 import tempfile
-import yaml
 from pathlib import Path
+
+import yaml
 
 from mcp_server_guide.session_manager import SessionManager
 from mcp_server_guide.tools.config_tools import set_project_config

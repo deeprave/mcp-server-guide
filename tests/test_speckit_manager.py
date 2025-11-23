@@ -1,13 +1,14 @@
 """Tests for SpecKit manager service."""
 
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
+
+from mcp_server_guide.models.speckit_config import SpecKitConfig
 from mcp_server_guide.services.speckit_manager import (
-    is_speckit_enabled,
-    get_speckit_config,
     enable_speckit,
+    get_speckit_config,
+    is_speckit_enabled,
     update_speckit_config,
 )
-from mcp_server_guide.models.speckit_config import SpecKitConfig
 
 
 class TestIsSpeckitEnabled:

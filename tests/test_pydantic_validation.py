@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from mcp_server_guide.project_config import ProjectConfig, ConfigFile
 from mcp_server_guide.models.category import Category
+from mcp_server_guide.project_config import ConfigFile, ProjectConfig
 
 
 def test_category_empty_dir():

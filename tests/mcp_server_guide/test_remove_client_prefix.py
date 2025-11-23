@@ -1,6 +1,7 @@
 """Test removal of client:// prefix support."""
 
 import pytest
+
 from mcp_server_guide.file_source import FileSource
 
 

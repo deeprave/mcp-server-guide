@@ -1,9 +1,10 @@
 """Tests for category_tools.py error handling and edge cases."""
 
-import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+import pytest
 
 from mcp_server_guide.tools.category_tools import _safe_glob_search, add_category, get_category_content
 
@@ -58,8 +59,8 @@ class TestAddCategoryErrors:
     @pytest.mark.asyncio
     async def test_duplicate_category_error(self):
         """Test duplicate category name error."""
-        from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
+        from mcp_server_guide.project_config import ProjectConfig
 
         category_config = {"dir": "test", "patterns": ["*.md"], "description": "Test category"}
 
@@ -99,8 +100,8 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_no_patterns_defined(self):
         """Test error when category has no patterns."""
-        from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
+        from mcp_server_guide.project_config import ProjectConfig
 
         # Mock SessionManager properly
         with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
@@ -125,8 +126,8 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_empty_patterns_list(self):
         """Test error when category has empty patterns list."""
-        from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
+        from mcp_server_guide.project_config import ProjectConfig
 
         # Mock SessionManager properly
         with patch("mcp_server_guide.session_manager.SessionManager") as mock_session_class:
@@ -151,9 +152,9 @@ class TestGetCategoryContentErrors:
     @pytest.mark.asyncio
     async def test_category_directory_not_exists(self):
         """Test error when category directory doesn't exist."""
+        from mcp_server_guide.models.category import Category
         from mcp_server_guide.path_resolver import LazyPath
         from mcp_server_guide.project_config import ProjectConfig
-        from mcp_server_guide.models.category import Category
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Mock SessionManager properly
@@ -203,8 +204,8 @@ class TestGetCategoryContentErrors:
                 mock_session.get_project_name = Mock(return_value="test_project")
 
                 # Create ProjectConfig
-                from mcp_server_guide.project_config import ProjectConfig
                 from mcp_server_guide.models.category import Category
+                from mcp_server_guide.project_config import ProjectConfig
 
                 config_data = ProjectConfig(
                     categories={"test_cat": Category(dir="test", patterns=["*.md"], description="")}
@@ -250,8 +251,8 @@ class TestGetCategoryContentErrors:
                 mock_session.get_current_project_safe = Mock(return_value="test_project")
                 mock_session.get_project_name = Mock(return_value="test_project")
                 # Create ProjectConfig
-                from mcp_server_guide.project_config import ProjectConfig
                 from mcp_server_guide.models.category import Category
+                from mcp_server_guide.project_config import ProjectConfig
 
                 config_data = ProjectConfig(
                     categories={"test_cat": Category(dir="test", patterns=["*.md"], description="")}
@@ -296,8 +297,8 @@ class TestGetCategoryContentErrors:
                 mock_session.get_project_name = Mock(return_value="test_project")
 
                 # Create ProjectConfig
-                from mcp_server_guide.project_config import ProjectConfig
                 from mcp_server_guide.models.category import Category
+                from mcp_server_guide.project_config import ProjectConfig
 
                 config_data = ProjectConfig(
                     categories={"test_cat": Category(dir="test", patterns=["*.nonexistent"], description="")}

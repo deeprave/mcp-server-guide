@@ -1,7 +1,8 @@
 """Tests for FileSource functionality."""
 
 import pytest
-from mcp_server_guide.file_source import FileSource, FileAccessor, FileSourceType
+
+from mcp_server_guide.file_source import FileAccessor, FileSource, FileSourceType
 
 
 def test_file_source_creation():

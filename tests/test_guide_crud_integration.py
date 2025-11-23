@@ -1,8 +1,8 @@
 """Tests for guide CRUD integration functionality."""
 
-import pytest
 from unittest.mock import patch
 
+import pytest
 from src.mcp_server_guide.guide_integration import GuidePromptHandler
 
 

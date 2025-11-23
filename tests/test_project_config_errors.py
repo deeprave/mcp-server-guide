@@ -1,11 +1,12 @@
 """Tests for error handling in project_config.py"""
 
-import tempfile
 import os
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
+
 import pytest
 import yaml
-from pathlib import Path
 
 from mcp_server_guide.project_config import ProjectConfig, _save_config_locked
 

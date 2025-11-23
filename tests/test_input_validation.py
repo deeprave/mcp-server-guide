@@ -1,8 +1,9 @@
 """Tests for input validation framework."""
 
 import pytest
-from mcp_server_guide.validation import ValidationRule, InputValidator, validate_input, ValidationRules, RULES
+
 from mcp_server_guide.exceptions import ValidationError
+from mcp_server_guide.validation import RULES, InputValidator, ValidationRule, ValidationRules, validate_input
 
 
 class TestValidationRule:

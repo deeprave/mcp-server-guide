@@ -1,7 +1,9 @@
 """Tests for @plan prompt functionality."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from mcp_server_guide.prompts import plan_prompt
 
 

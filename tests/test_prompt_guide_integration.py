@@ -1,11 +1,13 @@
 """Tests for prompt guide integration system."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 from mcp.types import GetPromptResult, PromptMessage
+
+from mcp_server_guide.document_cache import CategoryDocumentCache
 from mcp_server_guide.server import create_server_with_config
 from mcp_server_guide.session_manager import SessionManager
-from mcp_server_guide.document_cache import CategoryDocumentCache
 
 
 class TestPromptGuideIntegration:

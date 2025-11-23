@@ -1,7 +1,9 @@
 """Tests for server logging and tool decoration functionality."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.server import log_tool_usage
 
 
@@ -97,8 +99,9 @@ def test_log_tool_usage_handles_system_exit():
 
 def test_ext_mcp_tool_decorator_initialization():
     """Test ExtMcpToolDecorator initializes with correct attributes."""
-    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
     from mcp.server.fastmcp import FastMCP
+
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     mcp_instance = FastMCP("test")
     decorator = ExtMcpToolDecorator(mcp_instance, prefix="test_")

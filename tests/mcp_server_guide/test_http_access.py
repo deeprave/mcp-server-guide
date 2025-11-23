@@ -1,9 +1,11 @@
 """Tests for HTTP access functionality."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 import requests.exceptions
-from mcp_server_guide.http_client import HttpClient, HttpResponse, HttpError
+
+from mcp_server_guide.http_client import HttpClient, HttpError, HttpResponse
 
 
 async def test_http_client_basic():

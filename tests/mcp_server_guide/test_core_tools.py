@@ -1,7 +1,8 @@
 """Tests for core P0 tools (Issue 005 Phase 2)."""
 
-from unittest.mock import patch, Mock, AsyncMock
-from mcp_server_guide.tools import get_current_project, get_project_config, switch_project, get_guide
+from unittest.mock import AsyncMock, Mock, patch
+
+from mcp_server_guide.tools import get_current_project, get_guide, get_project_config, switch_project
 
 
 async def test_get_current_project():

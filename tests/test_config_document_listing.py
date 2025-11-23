@@ -1,7 +1,8 @@
 """Tests for config document listing."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 from src.mcp_server_guide.prompts import _list_category_documents
 
 

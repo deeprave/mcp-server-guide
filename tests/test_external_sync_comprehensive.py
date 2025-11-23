@@ -3,12 +3,14 @@
 import asyncio
 import tempfile
 from pathlib import Path
+
 import pytest
+
 from mcp_server_guide.constants import DOCUMENT_SUBDIR
 from mcp_server_guide.services.external_sync import (
-    validate_document_integrity,
-    sync_document_metadata,
     get_recent_changes,
+    sync_document_metadata,
+    validate_document_integrity,
 )
 
 
@@ -91,8 +93,8 @@ async def test_category_processing_missing_directory():
 @pytest.mark.asyncio
 async def test_category_processing_with_valid_documents():
     """Test category processing with valid documents through queue."""
-    from mcp_server_guide.tools.document_tools import create_mcp_document
     from mcp_server_guide.queue.category_queue import add_category
+    from mcp_server_guide.tools.document_tools import create_mcp_document
 
     with tempfile.TemporaryDirectory() as temp_dir:
         category_dir = Path(temp_dir)

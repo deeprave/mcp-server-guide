@@ -1,12 +1,13 @@
 """Test server parameter functionality."""
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
-from mcp_server_guide.server import create_server, GuideMCP
+import pytest
+
+from mcp_server_guide.server import GuideMCP, create_server
 
 
 class TestServerParameters:

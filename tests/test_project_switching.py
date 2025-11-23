@@ -1,7 +1,7 @@
 """Tests for project switching and built-in category creation."""
 
-from mcp_server_guide.tools.project_tools import switch_project
 from mcp_server_guide.session_manager import SessionManager
+from mcp_server_guide.tools.project_tools import switch_project
 
 
 async def test_switch_to_new_project_creates_builtin_categories(isolated_config_file):

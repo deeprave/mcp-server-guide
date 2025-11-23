@@ -1,7 +1,9 @@
 """Tests for async main conversion."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from mcp_server_guide.main import main
 
 

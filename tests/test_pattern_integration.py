@@ -2,9 +2,10 @@
 
 import tempfile
 from pathlib import Path
-from mcp_server_guide.tools.category_tools import _safe_glob_search
-from mcp_server_guide.constants import METADATA_SUFFIX, DOCUMENT_SUBDIR
+
+from mcp_server_guide.constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
 from mcp_server_guide.services.document_discovery import get_category_documents_by_path
+from mcp_server_guide.tools.category_tools import _safe_glob_search
 
 
 def test_safe_glob_search_excludes_metadata_files():

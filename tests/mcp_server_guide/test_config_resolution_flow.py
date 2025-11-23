@@ -2,6 +2,7 @@
 
 import os
 from unittest.mock import patch
+
 from mcp_server_guide.main import resolve_config_file_path, resolve_config_path
 from mcp_server_guide.path_resolver import LazyPath
 

@@ -1,10 +1,12 @@
 """Tests for SecureHTTPClient error handling and edge cases."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 import requests
-from mcp_server_guide.http.secure_client import SecureHTTPClient, get_default_client, RateLimiter
-from mcp_server_guide.exceptions import SecurityError, NetworkError
+
+from mcp_server_guide.exceptions import NetworkError, SecurityError
+from mcp_server_guide.http.secure_client import RateLimiter, SecureHTTPClient, get_default_client
 
 
 class TestSecureHTTPClientErrors:

@@ -1,11 +1,11 @@
 """Tests for context variables."""
 
 from mcp_server_guide.context import (
-    get_current_project_context,
-    set_current_project_context,
-    get_session_id_context,
-    set_session_id_context,
     clear_context,
+    get_current_project_context,
+    get_session_id_context,
+    set_current_project_context,
+    set_session_id_context,
 )
 
 

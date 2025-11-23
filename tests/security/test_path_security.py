@@ -1,8 +1,10 @@
 """Tests for path traversal security and file path validation."""
 
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
+
 from mcp_server_guide.security.path_validator import PathValidator, SecurityError
 
 

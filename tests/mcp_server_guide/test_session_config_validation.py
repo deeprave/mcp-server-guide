@@ -1,6 +1,7 @@
 """Tests for session config validation using Pydantic."""
 
 import pytest
+
 from mcp_server_guide.session import SessionState
 
 

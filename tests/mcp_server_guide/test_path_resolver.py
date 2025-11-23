@@ -1,9 +1,10 @@
 """Tests for path_resolver module."""
 
 import os
-import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 
 from mcp_server_guide.path_resolver import LazyPath
 

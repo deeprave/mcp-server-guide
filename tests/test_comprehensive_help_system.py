@@ -1,8 +1,8 @@
 """Tests for comprehensive help system."""
 
 import pytest
-from src.mcp_server_guide.help_system import format_guide_help, generate_context_help
 from src.mcp_server_guide.guide_integration import GuidePromptHandler
+from src.mcp_server_guide.help_system import format_guide_help, generate_context_help
 
 
 class TestComprehensiveHelpSystem:

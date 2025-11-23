@@ -1,12 +1,13 @@
 """Tests for docroot handling in ProjectConfigManager."""
 
-import yaml
 from pathlib import Path
 from unittest.mock import patch
 
-from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+import yaml
+
 from mcp_server_guide.models.category import Category
 from mcp_server_guide.path_resolver import LazyPath
+from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
 
 class TestDocrootInitialization:

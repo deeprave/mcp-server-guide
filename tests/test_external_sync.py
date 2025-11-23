@@ -1,12 +1,14 @@
 """Tests for external sync service."""
 
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
+
 from mcp_server_guide.services.external_sync import (
-    validate_document_integrity,
-    sync_document_metadata,
     get_recent_changes,
+    sync_document_metadata,
+    validate_document_integrity,
 )
 
 

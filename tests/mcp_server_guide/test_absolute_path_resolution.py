@@ -1,6 +1,7 @@
 """Tests for docroot property in SessionManager."""
 
 import pytest
+
 from mcp_server_guide.session_manager import SessionManager
 
 

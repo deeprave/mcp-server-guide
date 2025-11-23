@@ -1,8 +1,10 @@
 """Tests for HTTP client error handling."""
 
+from unittest.mock import patch
+
 import pytest
 import requests
-from unittest.mock import patch
+
 from mcp_server_guide.http_client import HttpClient, HttpError
 
 

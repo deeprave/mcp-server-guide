@@ -1,10 +1,12 @@
 """Tests for CLI help system restoration."""
 
-import pytest
 from unittest.mock import patch
-from mcp_server_guide.help_system import format_guide_help
+
+import pytest
+
 from mcp_server_guide.cli_parser_click import parse_command
 from mcp_server_guide.guide_integration import GuidePromptHandler
+from mcp_server_guide.help_system import format_guide_help
 
 
 @pytest.mark.asyncio

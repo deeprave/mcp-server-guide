@@ -1,9 +1,9 @@
 """Tests for extension normalization and validation."""
 
 from src.mcp_server_guide.utils.document_utils import (
+    detect_mime_type_from_content,
     get_extension_for_mime_type,
     normalize_document_name,
-    detect_mime_type_from_content,
 )
 
 

@@ -1,8 +1,10 @@
 """Tests for path validator error handling."""
 
-import pytest
-from unittest.mock import patch
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.security.path_validator import PathValidator, SecurityError
 
 

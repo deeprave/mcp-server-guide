@@ -1,7 +1,9 @@
 """Additional tests for help_system.py to improve coverage."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.help_system import format_guide_help, generate_context_help
 
 

@@ -1,9 +1,9 @@
 """Tests for MCP server functionality."""
 
-from unittest.mock import patch, Mock, AsyncMock
-from mcp_server_guide import server
+from unittest.mock import AsyncMock, Mock, patch
+
+from mcp_server_guide import server, tools
 from mcp_server_guide.session_manager import SessionManager
-from mcp_server_guide import tools
 
 
 async def test_server_tool_functions(isolated_config_file):
@@ -123,6 +123,7 @@ def test_tool_registration_error_handling():
     """Test error handling during server creation."""
     # Verify that server creation functions exist in server.py
     import inspect
+
     from mcp_server_guide import server
 
     source = inspect.getsource(server)

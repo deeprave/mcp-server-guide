@@ -1,6 +1,7 @@
 """Test SessionManager config file update behavior (Issue 012 Phase 2)."""
 
 import os
+
 import yaml
 
 from mcp_server_guide.session_manager import SessionManager

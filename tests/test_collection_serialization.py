@@ -1,9 +1,10 @@
 """Tests for collection serialization via model_dump()."""
 
-from mcp_server_guide.project_config import ProjectConfig
-from mcp_server_guide.models.collection import Collection
-from mcp_server_guide.models.category import Category
 from datetime import datetime, timezone
+
+from mcp_server_guide.models.category import Category
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.project_config import ProjectConfig
 
 
 class TestCollectionSerialization:

@@ -1,15 +1,15 @@
 """Tests for sidecar metadata operations."""
 
 import json
-import tempfile
 import os
+import tempfile
 from pathlib import Path
 
 
 def test_create_sidecar_metadata():
     """Test creating sidecar metadata file."""
-    from mcp_server_guide.utils.sidecar_operations import create_sidecar_metadata
     from mcp_server_guide.models.document_metadata import DocumentMetadata
+    from mcp_server_guide.utils.sidecar_operations import create_sidecar_metadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
         doc_path = Path(temp_dir) / "test.md"

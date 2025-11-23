@@ -1,11 +1,13 @@
 """Tests for category descriptions functionality."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+
 from mcp_server_guide.tools.category_tools import (
     add_category,
-    update_category,
     list_categories,
+    update_category,
 )
 
 
@@ -48,8 +50,8 @@ async def test_add_category_without_description_defaults_empty(mock_session):
 
 async def test_update_category_with_description(mock_session):
     """Test updating category with description."""
-    from mcp_server_guide.project_config import ProjectConfig
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig
 
     # Setup existing category
     config_data = ProjectConfig(
@@ -66,8 +68,8 @@ async def test_update_category_with_description(mock_session):
 
 async def test_list_categories_includes_descriptions(mock_session):
     """Test that list_categories includes descriptions."""
-    from mcp_server_guide.project_config import ProjectConfig
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig
 
     # Setup categories with descriptions
     config_data = ProjectConfig(
@@ -88,8 +90,8 @@ async def test_list_categories_includes_descriptions(mock_session):
 
 async def test_list_categories_handles_missing_descriptions(mock_session):
     """Test that list_categories handles categories without descriptions."""
-    from mcp_server_guide.project_config import ProjectConfig
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig
 
     # Setup category without description (empty string is the default)
     config_data = ProjectConfig(categories={"testing": Category(dir="test/", patterns=["*.md"], description="")})

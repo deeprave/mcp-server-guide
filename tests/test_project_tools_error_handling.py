@@ -1,7 +1,9 @@
 """Tests for project tools error handling."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+
 from mcp_server_guide.tools.project_tools import switch_project
 
 

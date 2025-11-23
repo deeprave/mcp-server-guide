@@ -1,13 +1,15 @@
 """Tests for category management tools."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+
 from mcp_server_guide.tools.category_tools import (
     add_category,
+    get_category_content,
+    list_categories,
     remove_category,
     update_category,
-    list_categories,
-    get_category_content,
 )
 
 
@@ -15,9 +17,9 @@ from mcp_server_guide.tools.category_tools import (
 def mock_session():
     """Mock session manager."""
     with patch("mcp_server_guide.session_manager.SessionManager") as mock:
+        from mcp_server_guide.models.category import Category
         from mcp_server_guide.path_resolver import LazyPath
         from mcp_server_guide.project_config import ProjectConfig
-        from mcp_server_guide.models.category import Category
 
         session_instance = Mock()
         mock.return_value = session_instance
@@ -122,8 +124,8 @@ async def test_get_category_content_no_files(mock_session):
     test_dir.mkdir(exist_ok=True)
 
     # Add categories to config
-    from mcp_server_guide.project_config import ProjectConfig
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig
 
     test_config = ProjectConfig(categories={"testing": Category(dir="test/", patterns=["*.md"], description="")})
     mock_session.get_or_create_project_config = AsyncMock(return_value=test_config)

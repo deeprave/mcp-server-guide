@@ -3,8 +3,9 @@
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock
-from mcp_server_guide.file_cache import FileCache, CacheEntry
+from unittest.mock import AsyncMock, Mock, patch
+
+from mcp_server_guide.file_cache import CacheEntry, FileCache
 
 
 async def test_cache_entry_with_http_headers():
@@ -130,7 +131,7 @@ async def test_file_cache_with_validation():
 
 async def test_file_accessor_with_http_caching():
     """Test FileAccessor using HTTP-aware caching."""
-    from mcp_server_guide.file_source import FileSource, FileAccessor
+    from mcp_server_guide.file_source import FileAccessor, FileSource
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -171,7 +172,7 @@ async def test_file_accessor_with_http_caching():
 
 async def test_file_accessor_cache_invalidation():
     """Test cache invalidation when remote content changes."""
-    from mcp_server_guide.file_source import FileSource, FileAccessor, FileSourceType
+    from mcp_server_guide.file_source import FileAccessor, FileSource, FileSourceType
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch("mcp_server_guide.http.async_client.AsyncHTTPClient") as mock_client_class:
@@ -233,7 +234,7 @@ async def test_cache_respects_cache_control():
 
 async def test_fallback_to_cache_on_network_error():
     """Test falling back to cache when network fails."""
-    from mcp_server_guide.file_source import FileSource, FileAccessor, FileSourceType
+    from mcp_server_guide.file_source import FileAccessor, FileSource, FileSourceType
     from mcp_server_guide.http_client import HttpError
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -286,8 +287,8 @@ async def test_file_cache_edge_cases():
 
 async def test_file_cache_permission_error_fallback():
     """Test that FileCache falls back to temp directory on permission error."""
-    from unittest.mock import patch
     import tempfile
+    from unittest.mock import patch
 
     # Mock Path.mkdir to raise PermissionError on first call, succeed on second
     original_mkdir = Path.mkdir

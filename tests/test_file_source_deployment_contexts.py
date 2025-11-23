@@ -1,8 +1,10 @@
 """Tests for file source path handling and HTTP edge cases."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
-from mcp_server_guide.file_source import FileSource, FileSourceType, FileAccessor
+
+from mcp_server_guide.file_source import FileAccessor, FileSource, FileSourceType
 
 
 class TestSessionPathParsing:

@@ -1,6 +1,7 @@
 """Test removal of current_file properties."""
 
 import pytest
+
 from mcp_server_guide.session_manager import SessionManager
 
 

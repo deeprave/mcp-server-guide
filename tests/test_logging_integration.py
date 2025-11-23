@@ -1,9 +1,9 @@
 """Integration tests for logging fix to ensure no conflicts."""
 
 import logging
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from src.mcp_server_guide.logging_config import setup_consolidated_logging, _configure_fastmcp_logging
+from src.mcp_server_guide.logging_config import _configure_fastmcp_logging, setup_consolidated_logging
 
 
 class TestLoggingIntegration:

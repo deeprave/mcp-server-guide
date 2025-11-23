@@ -1,7 +1,9 @@
 """Tests for @discuss prompt functionality."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from mcp_server_guide.prompts import discuss_prompt
 
 

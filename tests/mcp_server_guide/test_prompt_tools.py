@@ -1,8 +1,9 @@
 """Tests for prompt tools functionality."""
 
 import pytest
-from mcp_server_guide.tools.prompt_tools import list_prompts, list_resources
+
 from mcp_server_guide.server import create_server_with_config
+from mcp_server_guide.tools.prompt_tools import list_prompts, list_resources
 
 
 @pytest.fixture

@@ -1,8 +1,10 @@
 """Tests for category updates on former builtin categories (Phase 1)."""
 
-import pytest
 from unittest.mock import Mock, patch
-from mcp_server_guide.tools.category_tools import update_category, remove_category
+
+import pytest
+
+from mcp_server_guide.tools.category_tools import remove_category, update_category
 
 
 @pytest.fixture

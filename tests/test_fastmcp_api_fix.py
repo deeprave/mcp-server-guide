@@ -1,7 +1,9 @@
 """Test FastMCP API compatibility fix."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from mcp_server_guide.main import start_mcp_server
 
 

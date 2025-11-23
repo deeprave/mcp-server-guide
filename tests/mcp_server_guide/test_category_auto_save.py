@@ -1,18 +1,20 @@
 """Tests for category auto-save functionality."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import patch, Mock, AsyncMock
-from mcp_server_guide.tools.category_tools import add_category, update_category, remove_category
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
 from mcp_server_guide.session_manager import SessionManager
+from mcp_server_guide.tools.category_tools import add_category, remove_category, update_category
 
 
 @pytest.fixture
 def mock_session_with_save():
     """Mock session manager with save functionality."""
     with patch("mcp_server_guide.session_manager.SessionManager") as mock:
-        from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
+        from mcp_server_guide.project_config import ProjectConfig
 
         session_instance = Mock()
         mock.return_value = session_instance
@@ -114,8 +116,8 @@ async def test_auto_save_default(mock_session_with_save):
 async def test_auto_save_errors():
     """Test that category operations succeed even if auto-save fails."""
     with patch("mcp_server_guide.session_manager.SessionManager") as mock:
-        from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
+        from mcp_server_guide.project_config import ProjectConfig
 
         session_instance = Mock()
         mock.return_value = session_instance

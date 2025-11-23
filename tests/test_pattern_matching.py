@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+
 from mcp_server_guide.tools.category_tools import _safe_glob_search
 
 

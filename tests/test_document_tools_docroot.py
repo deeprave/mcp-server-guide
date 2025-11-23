@@ -1,9 +1,10 @@
 """Tests for document tools docroot functionality."""
 
-import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 
 from mcp_server_guide.constants import DOCUMENT_SUBDIR
 
@@ -14,8 +15,8 @@ class TestDocumentToolsDocroot:
     @pytest.mark.asyncio
     async def test_create_mcp_document_uses_docroot(self):
         """Test that create_mcp_document uses docroot to resolve category paths."""
-        from mcp_server_guide.tools.document_tools import create_mcp_document
         from mcp_server_guide.path_resolver import LazyPath
+        from mcp_server_guide.tools.document_tools import create_mcp_document
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Set up docroot and category structure
@@ -92,8 +93,8 @@ class TestDocumentToolsDocroot:
     @pytest.mark.asyncio
     async def test_update_mcp_document_uses_docroot(self):
         """Test that update_mcp_document uses docroot to resolve category paths."""
-        from mcp_server_guide.tools.document_tools import create_mcp_document, update_mcp_document
         from mcp_server_guide.path_resolver import LazyPath
+        from mcp_server_guide.tools.document_tools import create_mcp_document, update_mcp_document
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Set up docroot and category structure
@@ -138,8 +139,8 @@ class TestDocumentToolsDocroot:
     @pytest.mark.asyncio
     async def test_delete_mcp_document_uses_docroot(self):
         """Test that delete_mcp_document uses docroot to resolve category paths."""
-        from mcp_server_guide.tools.document_tools import create_mcp_document, delete_mcp_document
         from mcp_server_guide.path_resolver import LazyPath
+        from mcp_server_guide.tools.document_tools import create_mcp_document, delete_mcp_document
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Set up docroot and category structure
@@ -180,8 +181,8 @@ class TestDocumentToolsDocroot:
     @pytest.mark.asyncio
     async def test_list_mcp_documents_uses_docroot(self):
         """Test that list_mcp_documents uses docroot to resolve category paths."""
-        from mcp_server_guide.tools.document_tools import create_mcp_document, list_mcp_documents
         from mcp_server_guide.path_resolver import LazyPath
+        from mcp_server_guide.tools.document_tools import create_mcp_document, list_mcp_documents
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Set up docroot and category structure

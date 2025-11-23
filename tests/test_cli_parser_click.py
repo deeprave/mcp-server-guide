@@ -1,6 +1,6 @@
 """Tests for Click-based CLI parser."""
 
-from src.mcp_server_guide.cli_parser_click import parse_command, generate_cli_help, generate_context_help
+from src.mcp_server_guide.cli_parser_click import generate_cli_help, generate_context_help, parse_command
 
 
 class TestClickCommandParser:

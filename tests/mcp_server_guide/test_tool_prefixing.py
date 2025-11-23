@@ -97,8 +97,9 @@ async def test_ext_mcp_tool_decorator_kwargs_passthrough():
 
 async def test_guide_decorator_instance_exists():
     """Test that guide decorator can be created with proper prefix."""
-    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
     from unittest.mock import Mock
+
+    from mcp_server_guide.tool_decoration import ExtMcpToolDecorator
 
     # Create a mock server
     mock_server = Mock()

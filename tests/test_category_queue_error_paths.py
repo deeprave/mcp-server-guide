@@ -1,10 +1,12 @@
 """Tests for category queue error handling paths."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import patch, Mock
+
 from mcp_server_guide.queue.category_queue import (
-    get_next_category,
     add_category,
+    get_next_category,
     get_queue,
 )
 

@@ -2,9 +2,10 @@
 
 import pytest
 from pydantic import ValidationError
-from mcp_server_guide.models.project_config import ProjectConfig
+
 from mcp_server_guide.models.category import Category
 from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.project_config import ProjectConfig
 
 
 class TestProjectConfigValidation:

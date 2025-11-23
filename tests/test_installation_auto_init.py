@@ -1,9 +1,10 @@
 """Tests for auto_initialize_new_installation function."""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from mcp_server_guide.installation import auto_initialize_new_installation
 

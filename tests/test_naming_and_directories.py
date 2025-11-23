@@ -37,8 +37,8 @@ class TestDirectoryCreationFixes:
 
     def test_global_config_path_uses_mcp_name_function(self):
         """Test that global config path uses centralized mcp_name() function."""
-        from mcp_server_guide.project_config import ProjectConfigManager
         from mcp_server_guide.naming import mcp_name
+        from mcp_server_guide.project_config import ProjectConfigManager
 
         manager = ProjectConfigManager()
         config_path = manager.get_config_filename()
@@ -49,7 +49,7 @@ class TestDirectoryCreationFixes:
 
     def test_user_agent_uses_version_constant(self):
         """Test that user_agent() uses centralized version constant."""
-        from mcp_server_guide.naming import user_agent, MCP_GUIDE_VERSION
+        from mcp_server_guide.naming import MCP_GUIDE_VERSION, user_agent
 
         expected_user_agent = f"mcp-server-guide/{MCP_GUIDE_VERSION}"
         assert user_agent() == expected_user_agent

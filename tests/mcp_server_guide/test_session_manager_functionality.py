@@ -1,12 +1,14 @@
 """Tests for SessionManager functionality and project configuration management."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+
 from mcp_server_guide.session_manager import (
     SessionManager,
-    set_project_config,
     get_project_config,
     reset_project_config,
+    set_project_config,
     switch_project,
 )
 

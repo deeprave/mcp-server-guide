@@ -3,8 +3,8 @@
 import os
 from unittest.mock import patch
 
-from mcp_server_guide.main import resolve_cli_config
 from mcp_server_guide.config import Config
+from mcp_server_guide.main import resolve_cli_config
 
 
 class TestConfigResolution:
