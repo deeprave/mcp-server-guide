@@ -87,6 +87,16 @@ class GuidePromptHandler:
             return await self._handle_clone_command(command)
 
         async def handle_help() -> str:
+            import json
+
+            # If Click captured help text, wrap it in JSON response
+            if command.data and "help_text" in command.data:
+                return json.dumps({
+                    "success": True,
+                    "value": str(command.data["help_text"]),
+                    "instruction": "Present this information to the user, take no action and return to the prompt"
+                })
+            # Otherwise generate help
             if command.target:
                 return generate_context_help(command.target)
             else:

@@ -384,6 +384,8 @@ def strip_command_prefix(arg: str) -> str:
 
 def parse_command(args: List[str]) -> Command:
     """Parse command line arguments using Click-based parser."""
+    from click.testing import CliRunner
+
     # Validate input arguments
     if args is None:
         return Command(type=CMD_HELP)
@@ -403,12 +405,23 @@ def parse_command(args: List[str]) -> Command:
     if not had_prefix and len(args) == 1 and not args[0].startswith("-") and args[0]:
         return Command(type="category_access", category=args[0])
 
+    # Use CliRunner to capture help output
+    is_help_request = "--help" in args or "-h" in args
+    if is_help_request:
+        runner = CliRunner()
+        result = runner.invoke(guide, args)
+        if result.output:
+            return Command(type=CMD_HELP, data={"help_text": result.output})
+
     # Otherwise let Click handle everything
     try:
-        ctx = guide.make_context("guide", args, resilient_parsing=True)
-        guide.invoke(ctx)
+        ctx = guide.make_context("guide", args, resilient_parsing=False)
+        try:
+            guide.invoke(ctx)
+        except (SystemExit, click.exceptions.Exit):
+            pass
         return ctx.obj or Command(type=CMD_HELP)
-    except (click.ClickException, AssertionError, SystemExit, click.exceptions.Exit):
+    except click.ClickException:
         return Command(type=CMD_HELP)
     except Exception:
         return Command(type=CMD_HELP)

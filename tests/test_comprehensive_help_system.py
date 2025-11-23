@@ -73,14 +73,17 @@ class TestComprehensiveHelpSystem:
         """Test guide integration handles help commands."""
         handler = GuidePromptHandler()
 
-        # Test general help (basic)
+        # Test general help - Click now provides this
         result = await handler.handle_guide_request(["--help"])
-        assert "Use :help for more information" in result
+        assert "Usage: guide" in result
+        assert "Commands:" in result
 
         # Test context-sensitive help - Click handles this automatically
         result = await handler.handle_guide_request([":category", "--help"])
-        # Click shows help and exits, we catch it and return help command
-        assert result is not None
+        # Click shows help and exits; ensure we got category-specific help content back
+        assert isinstance(result, str)
+        assert "category" in result.lower()
+        assert "Usage:" in result
 
     @pytest.mark.asyncio
     async def test_prompts_section_included(self):
