@@ -91,11 +91,13 @@ class GuidePromptHandler:
 
             # If Click captured help text, wrap it in JSON response
             if command.data and "help_text" in command.data:
-                return json.dumps({
-                    "success": True,
-                    "value": str(command.data["help_text"]),
-                    "instruction": "Present this information to the user, take no action and return to the prompt"
-                })
+                return json.dumps(
+                    {
+                        "success": True,
+                        "value": str(command.data["help_text"]),
+                        "instruction": "Present this information to the user, take no action and return to the prompt",
+                    }
+                )
             # Otherwise generate help
             if command.target:
                 return generate_context_help(command.target)
