@@ -12,11 +12,13 @@ logger = get_logger()
 
 def _format_help_response(content: str) -> str:
     """Format help content as JSON response with instruction."""
-    return json.dumps({
-        "success": True,
-        "value": content,
-        "instruction": "Present this information to the user, take no action and return to the prompt"
-    })
+    return json.dumps(
+        {
+            "success": True,
+            "value": content,
+            "instruction": "Present this information to the user, take no action and return to the prompt",
+        }
+    )
 
 
 # Alias for backward compatibility - all display content should use JSON format

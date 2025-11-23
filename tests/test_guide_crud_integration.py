@@ -17,11 +17,13 @@ class TestGuideCRUDIntegration:
 
     def _wrap_expected_output(self, content: str) -> str:
         """Helper to wrap expected output with JSON format."""
-        return json.dumps({
-            "success": True,
-            "value": content,
-            "instruction": "Present this information to the user, take no action and return to the prompt"
-        })
+        return json.dumps(
+            {
+                "success": True,
+                "value": content,
+                "instruction": "Present this information to the user, take no action and return to the prompt",
+            }
+        )
 
     @pytest.mark.asyncio
     async def test_category_list_crud_operation(self, handler):
