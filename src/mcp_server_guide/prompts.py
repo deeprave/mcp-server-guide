@@ -1,5 +1,7 @@
 """MCP prompt handlers for the developer guide system."""
 
+from mcp_server_guide.commands import CMD_CHECK, CMD_DISCUSS, CMD_IMPLEMENT, CMD_PLAN, CMD_STATUS
+
 import json
 import re
 from typing import Optional, Dict, Any, List, TYPE_CHECKING
@@ -124,7 +126,7 @@ async def status_prompt(arg: Optional[str] = None) -> str:
     → if `.issue` file exists and is non empty → PLAN mode
     → otherwise → DISCUSSION mode
 """
-    return await execute_prompt_with_guide("status", base_response, None, pre_text)
+    return await execute_prompt_with_guide(CMD_STATUS, base_response, None, pre_text)
 
 
 async def discuss_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
@@ -149,7 +151,7 @@ async def discuss_prompt(arg: Optional[str] = None, content: Optional[str] = Non
 📍 Next step will be PLANNING and task and specification creation
   - You will still not be able to make code changes"""
 
-    return await execute_prompt_with_guide("discuss", base_response, None, pre_text, content)
+    return await execute_prompt_with_guide(CMD_DISCUSS, base_response, None, pre_text, content)
 
 
 async def plan_prompt(arg: Optional[str] = None) -> str:
@@ -173,7 +175,7 @@ async def plan_prompt(arg: Optional[str] = None) -> str:
 
 🔄 **Next Step:** IMPLEMENTATION (requires user consent)"""
 
-    return await execute_prompt_with_guide("plan", base_response, None, pre_text)
+    return await execute_prompt_with_guide(CMD_PLAN, base_response, None, pre_text)
 
 
 async def implement_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
@@ -196,7 +198,7 @@ async def implement_prompt(arg: Optional[str] = None, content: Optional[str] = N
 
 🔄 **Next Step:** CHECK when ready for verification (update .consent file content to 'check')"""
 
-    return await execute_prompt_with_guide("implement", base_response, None, pre_text, content)
+    return await execute_prompt_with_guide(CMD_IMPLEMENT, base_response, None, pre_text, content)
 
 
 async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None) -> str:
@@ -225,7 +227,7 @@ async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None)
 
 🔄 **Next Step:** DISCUSSION - return to discussion mode (discuss/plan)"""
 
-    return await execute_prompt_with_guide("check", base_response, None, pre_text, content)
+    return await execute_prompt_with_guide(CMD_CHECK, base_response, None, pre_text, content)
 
 
 async def config_prompt(project: Optional[str] = None, list_projects: bool = False, verbose: bool = False) -> str:

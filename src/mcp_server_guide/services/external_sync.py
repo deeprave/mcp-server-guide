@@ -1,5 +1,7 @@
 """External change detection and async cleanup service."""
 
+from mcp_server_guide.commands import CMD_CATEGORY
+
 import asyncio
 import hashlib
 import json
@@ -71,7 +73,7 @@ class ChangesCache:
                 del self._cache[k]
 
             if category_dir:
-                return {k: v.copy() for k, v in self._cache.items() if v.get("category") == category_dir}
+                return {k: v.copy() for k, v in self._cache.items() if v.get(CMD_CATEGORY) == category_dir}
             return {k: v.copy() for k, v in self._cache.items()}
 
 

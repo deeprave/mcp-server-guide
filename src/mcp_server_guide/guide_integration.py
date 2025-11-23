@@ -5,6 +5,21 @@ from typing import List, Optional, Any
 from mcp.server.fastmcp import Context
 
 from .agent_detection import format_agent_info
+from .commands import (
+    CMD_AGENT_INFO,
+    CMD_CATEGORY,
+    CMD_CHECK,
+    CMD_CLONE,
+    CMD_COLLECTION,
+    CMD_CONFIG,
+    CMD_DISCUSS,
+    CMD_DOCUMENT,
+    CMD_HELP,
+    CMD_IMPLEMENT,
+    CMD_PLAN,
+    CMD_SEARCH,
+    CMD_STATUS,
+)
 from .logging_config import get_logger
 from .utils.error_handler import ErrorHandler
 from .tools.category_tools import get_category_content
@@ -43,62 +58,90 @@ class GuidePromptHandler:
         from .prompts import implement_prompt, plan_prompt, discuss_prompt, check_prompt, status_prompt, config_prompt
         from .help_system import format_guide_help, generate_context_help
 
-        # Direct dispatch with match
-        match command.type:
-            case "implement":
-                return await implement_prompt(command.data)
-            case "plan":
-                return await plan_prompt(command.data)
-            case "discuss":
-                return await discuss_prompt(command.data)
-            case "check":
-                return await check_prompt(command.data)
-            case "status":
-                return await status_prompt(command.data)
-            case "config":
-                project = command.data.get("project") if command.data else None
-                list_projects = command.data.get("list_projects", False) if command.data else False
+        # Command dispatch handlers
+        async def handle_implement() -> str:
+            return await implement_prompt(command.data)
+
+        async def handle_plan() -> str:
+            return await plan_prompt(command.data)
+
+        async def handle_discuss() -> str:
+            return await discuss_prompt(command.data)
+
+        async def handle_check() -> str:
+            return await check_prompt(command.data)
+
+        async def handle_status() -> str:
+            return await status_prompt(command.data)
+
+        async def handle_config() -> str:
+            project = command.data.get("project") if command.data else None
+            list_projects = command.data.get("list_projects", False) if command.data else False
+            verbose = command.data.get("verbose", False) if command.data else False
+            return await config_prompt(project=project, list_projects=list_projects, verbose=verbose)
+
+        async def handle_search() -> str:
+            return f"Search functionality not yet implemented. Query: {command.data}"
+
+        async def handle_clone() -> str:
+            return await self._handle_clone_command(command)
+
+        async def handle_help() -> str:
+            if command.target:
+                return generate_context_help(command.target)
+            else:
                 verbose = command.data.get("verbose", False) if command.data else False
-                return await config_prompt(project=project, list_projects=list_projects, verbose=verbose)
-            case "search":
-                return f"Search functionality not yet implemented. Query: {command.data}"
-            case "clone":
-                return await self._handle_clone_command(command)
-            case "category_access":
-                # Handle category access
-                if command.category:
-                    result = await get_category_content(command.category)
-                    if result.get("success"):
-                        return str(result.get("content", ""))
+                return await format_guide_help(verbose)
+
+        async def handle_agent_info() -> str:
+            return await self._handle_agent_info(ctx)
+
+        async def handle_category_access() -> str:
+            if command.category:
+                result = await get_category_content(command.category)
+                if result.get("success"):
+                    return str(result.get("content", ""))
+                else:
+                    collection_result = await get_collection_content(command.category)
+                    if collection_result.get("success"):
+                        return str(collection_result.get("content", ""))
                     else:
-                        # Try collection fallback
-                        collection_result = await get_collection_content(command.category)
-                        if collection_result.get("success"):
-                            return str(collection_result.get("content", ""))
-                        else:
-                            return f"Category or collection '{command.category}' not found."
-                else:
-                    return "No category specified."
-            case "help":
-                if command.target:
-                    # Context-sensitive help
-                    return generate_context_help(command.target)
-                else:
-                    # General help - use verbose flag from CLI parser, default to False for basic help
-                    verbose = command.data.get("verbose", False) if command.data else False
-                    return await format_guide_help(verbose)
-            case "agent-info":
-                return await self._handle_agent_info(ctx)
-            case "crud":
-                return await self._handle_crud_command(command)
-            case "content":
-                return await self._handle_content_command(command)
-            case _:
-                # Handle unknown commands - try content lookup
-                if len(args) == 1 and not args[0].startswith("-"):
-                    return await self._get_content(args[0])
-                else:
-                    return f"Error: Unknown command format: {' '.join(args)}"
+                        return f"Category or collection '{command.category}' not found."
+            else:
+                return "No category specified."
+
+        async def handle_crud() -> str:
+            return await self._handle_crud_command(command)
+
+        # Dispatch table
+        handlers = {
+            CMD_IMPLEMENT: handle_implement,
+            CMD_PLAN: handle_plan,
+            CMD_DISCUSS: handle_discuss,
+            CMD_CHECK: handle_check,
+            CMD_STATUS: handle_status,
+            CMD_CONFIG: handle_config,
+            CMD_SEARCH: handle_search,
+            CMD_CLONE: handle_clone,
+            CMD_HELP: handle_help,
+            CMD_AGENT_INFO: handle_agent_info,
+            "category_access": handle_category_access,
+            "crud": handle_crud,
+        }
+
+        handler = handlers.get(command.type)
+        if handler:
+            return await handler()
+
+        # Handle content command
+        if command.type == "content":
+            return await self._handle_content_command(command)
+
+        # Handle unknown commands - try content lookup
+        if len(args) == 1 and not args[0].startswith("-"):
+            return await self._get_content(args[0])
+        else:
+            return f"Error: Unknown command format: {' '.join(args)}"
 
     async def _handle_agent_info(self, ctx: Optional["Context[Any, Any]"]) -> str:
         """Handle agent-info command to display detected agent information."""
@@ -153,7 +196,7 @@ class GuidePromptHandler:
                 # For list operations, format the output nicely
                 if command.operation == "list":
                     # Handle different result formats based on target type
-                    if command.target == "category":
+                    if command.target == CMD_CATEGORY:
                         # Categories are returned as a dict under 'categories' key
                         categories_dict = result.get("categories", {})
                         if not categories_dict:
@@ -173,7 +216,7 @@ class GuidePromptHandler:
                                 output.append(f"  - {name}")
                         return _wrap_display_content("\n".join(output))
 
-                    elif command.target == "collection":
+                    elif command.target == CMD_COLLECTION:
                         # Collections are returned as a dict under 'collections' key
                         collections_dict = result.get("collections", {})
                         if not collections_dict:
@@ -193,7 +236,7 @@ class GuidePromptHandler:
                                 output.append(f"  - {name}")
                         return _wrap_display_content("\n".join(output))
 
-                    elif command.target == "document":
+                    elif command.target == CMD_DOCUMENT:
                         # Documents are returned as a list under 'documents' key
                         documents_list = result.get("documents", [])
                         if not documents_list:

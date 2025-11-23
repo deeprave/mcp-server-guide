@@ -4,6 +4,22 @@ import click
 from typing import List, Optional, Any
 from dataclasses import dataclass
 
+from mcp_server_guide.commands import (
+    CMD_AGENT_INFO,
+    CMD_CATEGORY,
+    CMD_CHECK,
+    CMD_CLONE,
+    CMD_COLLECTION,
+    CMD_CONFIG,
+    CMD_DISCUSS,
+    CMD_DOCUMENT,
+    CMD_HELP,
+    CMD_IMPLEMENT,
+    CMD_PLAN,
+    CMD_SEARCH,
+    CMD_STATUS,
+)
+
 
 @dataclass
 class Command:
@@ -34,7 +50,7 @@ def _set_result(ctx: click.Context, command: Command) -> None:
 def guide(ctx: click.Context) -> None:
     """MCP Server Guide - Project documentation and guidelines."""
     if ctx.invoked_subcommand is None:
-        _set_result(ctx, Command(type="help"))
+        _set_result(ctx, Command(type=CMD_HELP))
 
 
 @guide.command()
@@ -42,14 +58,14 @@ def guide(ctx: click.Context) -> None:
 @click.pass_context
 def help(ctx: click.Context, verbose: bool) -> None:
     """Show help information."""
-    _set_result(ctx, Command(type="help", data={"verbose": verbose}))
+    _set_result(ctx, Command(type=CMD_HELP, data={"verbose": verbose}))
 
 
 @guide.command("agent-info")
 @click.pass_context
 def agent_info(ctx: click.Context) -> None:
     """Show detected agent information."""
-    _set_result(ctx, Command(type="agent-info", data=None))
+    _set_result(ctx, Command(type=CMD_AGENT_INFO, data=None))
 
 
 # Phase commands
@@ -58,7 +74,7 @@ def agent_info(ctx: click.Context) -> None:
 @click.pass_context
 def discuss(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start discussion phase with optional text."""
-    _set_result(ctx, Command(type="discuss", data=" ".join(text) if text else None))
+    _set_result(ctx, Command(type=CMD_DISCUSS, data=" ".join(text) if text else None))
 
 
 @guide.command()
@@ -66,7 +82,7 @@ def discuss(ctx: click.Context, text: tuple[str, ...]) -> None:
 @click.pass_context
 def plan(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start planning phase with optional text."""
-    _set_result(ctx, Command(type="plan", data=" ".join(text) if text else None))
+    _set_result(ctx, Command(type=CMD_PLAN, data=" ".join(text) if text else None))
 
 
 @guide.command()
@@ -74,7 +90,7 @@ def plan(ctx: click.Context, text: tuple[str, ...]) -> None:
 @click.pass_context
 def implement(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start implementation phase with optional text."""
-    _set_result(ctx, Command(type="implement", data=" ".join(text) if text else None))
+    _set_result(ctx, Command(type=CMD_IMPLEMENT, data=" ".join(text) if text else None))
 
 
 @guide.command()
@@ -82,7 +98,7 @@ def implement(ctx: click.Context, text: tuple[str, ...]) -> None:
 @click.pass_context
 def check(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Start check phase with optional text."""
-    _set_result(ctx, Command(type="check", data=" ".join(text) if text else None))
+    _set_result(ctx, Command(type=CMD_CHECK, data=" ".join(text) if text else None))
 
 
 @guide.command()
@@ -90,7 +106,7 @@ def check(ctx: click.Context, text: tuple[str, ...]) -> None:
 @click.pass_context
 def status(ctx: click.Context, text: tuple[str, ...]) -> None:
     """Show status with optional text."""
-    _set_result(ctx, Command(type="status", data=" ".join(text) if text else None))
+    _set_result(ctx, Command(type=CMD_STATUS, data=" ".join(text) if text else None))
 
 
 @guide.command()
@@ -100,7 +116,7 @@ def status(ctx: click.Context, text: tuple[str, ...]) -> None:
 @click.pass_context
 def config(ctx: click.Context, project: Optional[str], verbose: bool, projects: bool) -> None:
     """Display project configuration."""
-    _set_result(ctx, Command(type="config", data={"project": project, "list_projects": projects, "verbose": verbose}))
+    _set_result(ctx, Command(type=CMD_CONFIG, data={"project": project, "list_projects": projects, "verbose": verbose}))
 
 
 @guide.command()
@@ -108,7 +124,7 @@ def config(ctx: click.Context, project: Optional[str], verbose: bool, projects: 
 @click.pass_context
 def search(ctx: click.Context, query: tuple[str, ...]) -> None:
     """Search with query."""
-    _set_result(ctx, Command(type="search", data=" ".join(query) if query else None))
+    _set_result(ctx, Command(type=CMD_SEARCH, data=" ".join(query) if query else None))
 
 
 @guide.command()
@@ -121,7 +137,7 @@ def clone(ctx: click.Context, source_project: str, target_project: Optional[str]
     _set_result(
         ctx,
         Command(
-            type="clone",
+            type=CMD_CLONE,
             data={"source_project": source_project, "target_project": target_project, "force": force},
         ),
     )
@@ -139,7 +155,7 @@ def category() -> None:
 @click.pass_context
 def category_list(ctx: click.Context, verbose: bool) -> None:
     """List all categories."""
-    _set_result(ctx, Command(type="crud", target="category", operation="list", data={"verbose": verbose}))
+    _set_result(ctx, Command(type="crud", target=CMD_CATEGORY, operation="list", data={"verbose": verbose}))
 
 
 @category.command("add")
@@ -153,7 +169,7 @@ def category_add(ctx: click.Context, name: str, patterns: tuple[str, ...], descr
         ctx,
         Command(
             type="crud",
-            target="category",
+            target=CMD_CATEGORY,
             operation="add",
             data={"name": name, "patterns": list(patterns), "description": description},
         ),
@@ -165,7 +181,7 @@ def category_add(ctx: click.Context, name: str, patterns: tuple[str, ...], descr
 @click.pass_context
 def category_remove(ctx: click.Context, name: str) -> None:
     """Remove a category."""
-    _set_result(ctx, Command(type="crud", target="category", operation="remove", data={"name": name}))
+    _set_result(ctx, Command(type="crud", target=CMD_CATEGORY, operation="remove", data={"name": name}))
 
 
 @category.command("update")
@@ -180,7 +196,7 @@ def category_update(ctx: click.Context, name: str, description: Optional[str], p
         data["description"] = description
     if patterns:
         data["patterns"] = [p.strip() for p in patterns.split(",")]
-    _set_result(ctx, Command(type="crud", target="category", operation="update", data=data))
+    _set_result(ctx, Command(type="crud", target=CMD_CATEGORY, operation="update", data=data))
 
 
 @category.command("add-to")
@@ -191,7 +207,7 @@ def category_add_to(ctx: click.Context, name: str, patterns: tuple[str, ...]) ->
     """Add patterns to existing category."""
     _set_result(
         ctx,
-        Command(type="crud", target="category", operation="add-to", data={"name": name, "patterns": list(patterns)}),
+        Command(type="crud", target=CMD_CATEGORY, operation="add-to", data={"name": name, "patterns": list(patterns)}),
     )
 
 
@@ -204,7 +220,7 @@ def category_remove_from(ctx: click.Context, name: str, patterns: tuple[str, ...
     _set_result(
         ctx,
         Command(
-            type="crud", target="category", operation="remove-from", data={"name": name, "patterns": list(patterns)}
+            type="crud", target=CMD_CATEGORY, operation="remove-from", data={"name": name, "patterns": list(patterns)}
         ),
     )
 
@@ -221,7 +237,7 @@ def collection() -> None:
 @click.pass_context
 def collection_list(ctx: click.Context, verbose: bool) -> None:
     """List all collections."""
-    _set_result(ctx, Command(type="crud", target="collection", operation="list", data={"verbose": verbose}))
+    _set_result(ctx, Command(type="crud", target=CMD_COLLECTION, operation="list", data={"verbose": verbose}))
 
 
 @collection.command("add")
@@ -235,7 +251,7 @@ def collection_add(ctx: click.Context, name: str, categories: tuple[str, ...], d
         ctx,
         Command(
             type="crud",
-            target="collection",
+            target=CMD_COLLECTION,
             operation="add",
             data={"name": name, "categories": list(categories), "description": description},
         ),
@@ -247,7 +263,7 @@ def collection_add(ctx: click.Context, name: str, categories: tuple[str, ...], d
 @click.pass_context
 def collection_remove(ctx: click.Context, name: str) -> None:
     """Remove a collection."""
-    _set_result(ctx, Command(type="crud", target="collection", operation="remove", data={"name": name}))
+    _set_result(ctx, Command(type="crud", target=CMD_COLLECTION, operation="remove", data={"name": name}))
 
 
 @collection.command("update")
@@ -258,7 +274,9 @@ def collection_update(ctx: click.Context, name: str, description: Optional[str])
     """Update a collection description."""
     _set_result(
         ctx,
-        Command(type="crud", target="collection", operation="update", data={"name": name, "description": description}),
+        Command(
+            type="crud", target=CMD_COLLECTION, operation="update", data={"name": name, "description": description}
+        ),
     )
 
 
@@ -271,7 +289,7 @@ def collection_add_to(ctx: click.Context, name: str, categories: tuple[str, ...]
     _set_result(
         ctx,
         Command(
-            type="crud", target="collection", operation="add-to", data={"name": name, "categories": list(categories)}
+            type="crud", target=CMD_COLLECTION, operation="add-to", data={"name": name, "categories": list(categories)}
         ),
     )
 
@@ -286,7 +304,7 @@ def collection_remove_from(ctx: click.Context, name: str, categories: tuple[str,
         ctx,
         Command(
             type="crud",
-            target="collection",
+            target=CMD_COLLECTION,
             operation="remove-from",
             data={"name": name, "categories": list(categories)},
         ),
@@ -304,7 +322,7 @@ def document() -> None:
 @click.pass_context
 def document_list(ctx: click.Context) -> None:
     """List all documents."""
-    _set_result(ctx, Command(type="crud", target="document", operation="list"))
+    _set_result(ctx, Command(type="crud", target=CMD_DOCUMENT, operation="list"))
 
 
 @document.command("create")
@@ -317,7 +335,7 @@ def document_create(ctx: click.Context, name: str, content: str, mime_type: Opti
     data: dict[str, Any] = {"name": name, "content": content}
     if mime_type:
         data["mime_type"] = mime_type
-    _set_result(ctx, Command(type="crud", target="document", operation="create", data=data))
+    _set_result(ctx, Command(type="crud", target=CMD_DOCUMENT, operation="create", data=data))
 
 
 @document.command("update")
@@ -327,7 +345,7 @@ def document_create(ctx: click.Context, name: str, content: str, mime_type: Opti
 def document_update(ctx: click.Context, name: str, content: str) -> None:
     """Update an existing document."""
     _set_result(
-        ctx, Command(type="crud", target="document", operation="update", data={"name": name, "content": content})
+        ctx, Command(type="crud", target=CMD_DOCUMENT, operation="update", data={"name": name, "content": content})
     )
 
 
@@ -336,7 +354,7 @@ def document_update(ctx: click.Context, name: str, content: str) -> None:
 @click.pass_context
 def document_delete(ctx: click.Context, name: str) -> None:
     """Delete a document."""
-    _set_result(ctx, Command(type="crud", target="document", operation="delete", data={"name": name}))
+    _set_result(ctx, Command(type="crud", target=CMD_DOCUMENT, operation="delete", data={"name": name}))
 
 
 def detect_help_request(args: List[str]) -> Optional[Command]:
@@ -347,44 +365,44 @@ def detect_help_request(args: List[str]) -> Optional[Command]:
     # Check if --help or -h appears anywhere in args
     if "--help" not in args and "-h" not in args:
         # No help flag, check for "help" command
-        if args[0] not in ["help", "show", "get"]:
+        if args[0] not in [CMD_HELP, "show", "get"]:
             return None
-        if args[0] in ["show", "get"] and (len(args) < 2 or args[1] != "help"):
+        if args[0] in ["show", "get"] and (len(args) < 2 or args[1] != CMD_HELP):
             return None
 
     # Detect semantic intent from first word
-    semantic_intent = None
-    if args[0] == "show":
-        semantic_intent = "display"
-    elif args[0] == "get":
-        semantic_intent = "retrieve"
+    semantic_intent_map = {
+        "show": "display",
+        "get": "retrieve",
+    }
+    semantic_intent = semantic_intent_map.get(args[0])
 
     # Check for verbose flag
     verbose = "--verbose" in args or "-v" in args
 
-    # Determine target from first non-flag arg (if it's a CRUD target)
+    # Determine target from first non-flag arg (if it's a management target)
     target = None
     for arg in args:
-        if arg in ["category", "collection", "document"]:
+        if arg in [CMD_CATEGORY, CMD_COLLECTION, CMD_DOCUMENT]:
             target = arg
             break
 
     data = {"verbose": verbose}
-    return Command(type="help", target=target, semantic_intent=semantic_intent, data=data)
+    return Command(type=CMD_HELP, target=target, semantic_intent=semantic_intent, data=data)
 
 
 def parse_command(args: List[str]) -> Command:
     """Parse command line arguments using Click-based parser."""
     # Validate input arguments
     if args is None:
-        return Command(type="help")
+        return Command(type=CMD_HELP)
 
     if not args:
-        return Command(type="help")
+        return Command(type=CMD_HELP)
 
     # Validate all arguments are strings
     if not all(isinstance(arg, str) for arg in args):
-        return Command(type="help")
+        return Command(type=CMD_HELP)
 
     # PRE-PARSE: Detect help requests before Click processing
     help_command = detect_help_request(args)
@@ -393,7 +411,7 @@ def parse_command(args: List[str]) -> Command:
 
     # Handle legacy short form commands first
     if args[0] in ["-d", "-p", "-i", "-c", "-s"]:
-        command_map = {"-d": "discuss", "-p": "plan", "-i": "implement", "-c": "check", "-s": "status"}
+        command_map = {"-d": CMD_DISCUSS, "-p": CMD_PLAN, "-i": CMD_IMPLEMENT, "-c": CMD_CHECK, "-s": CMD_STATUS}
         command_type = command_map[args[0]]
         data = " ".join(args[1:]) if len(args) > 1 else None
         return Command(type=command_type, data=data)
@@ -405,18 +423,18 @@ def parse_command(args: List[str]) -> Command:
         and args[0]  # Ensure not empty string
         and args[0]
         not in [
-            "help",
-            "agent-info",
-            "category",
-            "collection",
-            "document",
-            "discuss",
-            "plan",
-            "implement",
-            "check",
-            "status",
-            "search",
-            "config",
+            CMD_HELP,
+            CMD_AGENT_INFO,
+            CMD_CATEGORY,
+            CMD_COLLECTION,
+            CMD_DOCUMENT,
+            CMD_DISCUSS,
+            CMD_PLAN,
+            CMD_IMPLEMENT,
+            CMD_CHECK,
+            CMD_STATUS,
+            CMD_SEARCH,
+            CMD_CONFIG,
         ]
     ):
         return Command(type="category_access", category=args[0])
@@ -426,13 +444,13 @@ def parse_command(args: List[str]) -> Command:
         ctx = guide.make_context("guide", args, resilient_parsing=True)
         guide.invoke(ctx)
         # Return the command stored in context, or default to help
-        return ctx.obj or Command(type="help")
+        return ctx.obj or Command(type=CMD_HELP)
     except (click.ClickException, AssertionError, SystemExit, click.exceptions.Exit):
         # If parsing fails or command not found, return help command
-        return Command(type="help")
+        return Command(type=CMD_HELP)
     except Exception:
         # Any other error, return help
-        return Command(type="help")
+        return Command(type=CMD_HELP)
 
 
 def get_cli_commands() -> dict[str, Any]:
@@ -484,17 +502,18 @@ def generate_cli_help() -> str:
 def generate_context_help(target: Optional[str] = None, operation: Optional[str] = None) -> str:
     """Generate context-sensitive help for specific operations."""
     try:
-        if target == "category":
-            ctx = click.Context(category)
-            return category.get_help(ctx)
-        elif target == "collection":
-            ctx = click.Context(collection)
-            return collection.get_help(ctx)
-        elif target == "document":
-            ctx = click.Context(document)
-            return document.get_help(ctx)
-        else:
-            return generate_cli_help()
+        target_handlers = {
+            CMD_CATEGORY: category,
+            CMD_COLLECTION: collection,
+            CMD_DOCUMENT: document,
+        }
+
+        if target in target_handlers:
+            handler = target_handlers[target]
+            ctx = click.Context(handler)
+            return handler.get_help(ctx)
+
+        return generate_cli_help()
     except (SystemExit, click.exceptions.Exit):
         # Catch Click exit exceptions that might cause server shutdown
         return f"Help for {target or 'general'} (Click exit handled safely)"
