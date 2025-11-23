@@ -1,12 +1,13 @@
 """Project configuration models."""
 
 import re
-from typing import Dict, Any
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import Any, Dict
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from ..logging_config import get_logger
 from .category import Category
 from .collection import Collection
-from ..logging_config import get_logger
 
 logger = get_logger(__name__)
 

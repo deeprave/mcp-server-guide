@@ -1,19 +1,19 @@
 """MCP server creation and management."""
 
 import asyncio
-from typing import Dict, Any, Optional, List
 from collections.abc import Mapping
+from typing import Any, Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from .server_extensions import ServerExtensions
-from .server_lifecycle import server_lifespan
-from .logging_config import get_logger
-from .tool_decoration import log_tool_usage
-from .naming import mcp_name, MCP_GUIDE_VERSION
 from .file_cache import FileCache
 from .file_source import FileAccessor
+from .logging_config import get_logger
+from .naming import MCP_GUIDE_VERSION, mcp_name
+from .server_extensions import ServerExtensions
+from .server_lifecycle import server_lifespan
 from .session_manager import SessionManager
+from .tool_decoration import log_tool_usage
 from .tool_registry import register_tools
 
 logger = get_logger()

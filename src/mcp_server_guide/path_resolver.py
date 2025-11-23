@@ -2,7 +2,8 @@
 
 import os
 from pathlib import Path
-from typing import Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
+
 from .logging_config import get_logger
 
 if TYPE_CHECKING:

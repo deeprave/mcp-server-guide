@@ -1,13 +1,15 @@
 """Server lifecycle management for MCP server."""
 
-from typing import Any
 from contextlib import asynccontextmanager
+from typing import Any
+
 from mcp.server.fastmcp import FastMCP
-from .session_manager import SessionManager
+
 from .logging_config import get_logger
-from .utils.error_handler import ErrorHandler
-from .resource_registry import register_resources
 from .prompts import register_prompts
+from .resource_registry import register_resources
+from .session_manager import SessionManager
+from .utils.error_handler import ErrorHandler
 
 logger = get_logger()
 error_handler = ErrorHandler()

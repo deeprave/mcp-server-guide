@@ -1,10 +1,11 @@
 """Guide prompt integration with Click-based CLI parsing support."""
 
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from mcp.server.fastmcp import Context
 
 from .agent_detection import format_agent_info
+from .cli_parser_click import Command, parse_command
 from .commands import (
     CMD_AGENT_INFO,
     CMD_CATEGORY,
@@ -21,10 +22,9 @@ from .commands import (
     CMD_STATUS,
 )
 from .logging_config import get_logger
-from .utils.error_handler import ErrorHandler
 from .tools.category_tools import get_category_content
 from .tools.collection_tools import get_collection_content
-from .cli_parser_click import parse_command, Command
+from .utils.error_handler import ErrorHandler
 
 logger = get_logger(__name__)
 
@@ -55,8 +55,8 @@ class GuidePromptHandler:
         command = parse_command(args)
 
         # Import all handlers
-        from .prompts import implement_prompt, plan_prompt, discuss_prompt, check_prompt, status_prompt, config_prompt
         from .help_system import format_guide_help, generate_context_help
+        from .prompts import check_prompt, config_prompt, discuss_prompt, implement_prompt, plan_prompt, status_prompt
 
         # Command dispatch handlers
         async def handle_implement() -> str:
@@ -146,8 +146,9 @@ class GuidePromptHandler:
     async def _handle_agent_info(self, ctx: Optional["Context[Any, Any]"]) -> str:
         """Handle agent-info command to display detected agent information."""
         try:
-            from .server import get_current_server
             import json
+
+            from .server import get_current_server
 
             server = await get_current_server()
             if not server:
@@ -178,8 +179,8 @@ class GuidePromptHandler:
         """Handle CRUD operations using the JSON tool factory."""
         try:
             # Import the JSON operation executor and display wrapper
-            from .operations.base import execute_json_operation
             from .help_system import _wrap_display_content
+            from .operations.base import execute_json_operation
 
             # Prepare data for the operation
             data = command.data or {}
@@ -305,8 +306,8 @@ class GuidePromptHandler:
 
     async def _handle_clone_command(self, command: Command) -> str:
         """Handle project clone command."""
-        from .tools.project_tools import clone_project
         from .help_system import _wrap_display_content
+        from .tools.project_tools import clone_project
 
         if not command.data:
             return _wrap_display_content("Error: No clone parameters provided")

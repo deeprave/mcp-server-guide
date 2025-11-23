@@ -1,7 +1,8 @@
 """Base operation class without circular dependencies."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pydantic import BaseModel
 
 

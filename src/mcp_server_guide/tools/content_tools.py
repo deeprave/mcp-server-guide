@@ -2,10 +2,10 @@
 
 import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from ..logging_config import get_logger
 from ..document_cache import CategoryDocumentCache
+from ..logging_config import get_logger
 from .category_tools import get_category_content
 from .collection_tools import get_collection_document
 

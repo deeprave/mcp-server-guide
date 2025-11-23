@@ -1,13 +1,13 @@
 """Shared installation module for both auto-init and manual install."""
 
-import yaml
 from pathlib import Path
 
 import aiofiles
+import yaml
 
-from .utils.installation_utils import get_templates_dir, copy_templates
 from .exceptions import ConfigurationError
 from .models.config_file import get_default_docroot
+from .utils.installation_utils import copy_templates, get_templates_dir
 
 
 async def auto_initialize_new_installation(config_file: Path) -> None:

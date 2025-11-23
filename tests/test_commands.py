@@ -1,42 +1,77 @@
 """Tests for commands module."""
 
+import pytest
 
-def test_commands_registry_structure():
-    """Test that COMMANDS registry has expected structure."""
-    from mcp_server_guide.commands import COMMANDS, CommandInfo
 
-    # Verify COMMANDS is a dict
-    assert isinstance(COMMANDS, dict)
+@pytest.mark.parametrize(
+    "cmd_constant,expected_pattern,expected_has_prompt,expected_category",
+    [
+        ("CMD_DISCUSS", ":discuss", True, "phase"),
+        ("CMD_PLAN", ":plan", True, "phase"),
+        ("CMD_IMPLEMENT", ":implement", True, "phase"),
+        ("CMD_CHECK", ":check", True, "phase"),
+        ("CMD_STATUS", ":status", True, "utility"),
+        ("CMD_SEARCH", ":search", False, "utility"),
+        ("CMD_HELP", ":help", True, "utility"),
+        ("CMD_CONFIG", ":config", False, "utility"),
+        ("CMD_CLONE", ":clone", False, "utility"),
+        ("CMD_AGENT_INFO", ":agent-info", False, "utility"),
+        ("CMD_CATEGORY", ":category", False, "management"),
+        ("CMD_COLLECTION", ":collection", False, "management"),
+        ("CMD_DOCUMENT", ":document", False, "management"),
+    ],
+)
+def test_command_metadata(cmd_constant, expected_pattern, expected_has_prompt, expected_category):
+    """Test individual command metadata is correct."""
+    # Import the constant dynamically
+    import mcp_server_guide.commands as cmds
+    from mcp_server_guide.commands import COMMANDS
 
-    # Verify it's not empty
-    assert len(COMMANDS) > 0
+    cmd_value = getattr(cmds, cmd_constant)
+    cmd_info = COMMANDS[cmd_value]
 
-    # Verify all keys are strings
-    assert all(isinstance(k, str) for k in COMMANDS.keys())
+    # Verify name matches constant value
+    assert cmd_info.name == cmd_value
 
-    # Verify all values are CommandInfo instances
-    assert all(isinstance(v, CommandInfo) for v in COMMANDS.values())
+    # Verify usage_pattern uses actual command value
+    assert cmd_info.usage_pattern == expected_pattern
 
-    # Verify each CommandInfo has required fields
-    for cmd_name, cmd_info in COMMANDS.items():
-        assert cmd_info.name == cmd_name
-        assert isinstance(cmd_info.description, str)
-        assert isinstance(cmd_info.usage, str)
-        assert isinstance(cmd_info.help_text, str)
-        assert cmd_info.category in {"phase", "utility", "management"}
-        assert isinstance(cmd_info.usage_pattern, str)
-        assert isinstance(cmd_info.accepts_user_content, bool)
-        assert isinstance(cmd_info.has_prompt_document, bool)
+    # Verify has_prompt_document matches implementation
+    assert cmd_info.has_prompt_document == expected_has_prompt
+
+    # Verify category is correct
+    assert cmd_info.category == expected_category
+
+    # Verify required fields are present and correct types
+    assert isinstance(cmd_info.description, str)
+    assert isinstance(cmd_info.usage, str)
+    assert isinstance(cmd_info.help_text, str)
+
+
+@pytest.mark.parametrize(
+    "category,expected_commands",
+    [
+        ("phase", {"discuss", "plan", "implement", "check"}),
+        ("utility", {"status", "search", "help", "config", "clone", "agent-info"}),
+        ("management", {"category", "collection", "document"}),
+    ],
+)
+def test_command_categories(category, expected_commands):
+    """Test commands are correctly categorized."""
+    from mcp_server_guide.commands import COMMANDS
+
+    actual_commands = {name for name, info in COMMANDS.items() if info.category == category}
+    assert actual_commands == expected_commands
 
 
 def test_command_sets():
     """Test that command category sets are correct."""
     from mcp_server_guide.commands import (
         ALL_COMMANDS,
+        COMMANDS_WITH_PROMPTS,
+        MANAGEMENT_COMMANDS,
         PHASE_COMMANDS,
         UTILITY_COMMANDS,
-        MANAGEMENT_COMMANDS,
-        COMMANDS_WITH_PROMPTS,
     )
 
     # Verify all are sets
@@ -55,15 +90,23 @@ def test_command_sets():
     assert PHASE_COMMANDS | UTILITY_COMMANDS | MANAGEMENT_COMMANDS == ALL_COMMANDS
 
 
-def test_get_command_info():
+@pytest.mark.parametrize(
+    "command,should_exist",
+    [
+        ("discuss", True),
+        ("plan", True),
+        ("nonexistent", False),
+        ("invalid", False),
+    ],
+)
+def test_get_command_info(command, should_exist):
     """Test get_command_info helper function."""
-    from mcp_server_guide.commands import get_command_info, CMD_DISCUSS
+    from mcp_server_guide.commands import get_command_info
 
-    # Valid command
-    info = get_command_info(CMD_DISCUSS)
-    assert info is not None
-    assert info.name == CMD_DISCUSS
+    info = get_command_info(command)
 
-    # Invalid command
-    info = get_command_info("nonexistent")
-    assert info is None
+    if should_exist:
+        assert info is not None
+        assert info.name == command
+    else:
+        assert info is None

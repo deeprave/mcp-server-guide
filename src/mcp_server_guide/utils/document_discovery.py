@@ -5,8 +5,8 @@ from typing import List
 
 from ..constants import DOCUMENT_SUBDIR
 from ..models.document_info import DocumentInfo
-from ..utils.sidecar_operations import read_sidecar_metadata
 from ..utils.document_helpers import get_metadata_path, is_document_file
+from ..utils.sidecar_operations import read_sidecar_metadata
 
 
 def get_category_documents_by_path(category_dir: Path) -> List[DocumentInfo]:

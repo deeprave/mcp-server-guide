@@ -69,6 +69,12 @@ src = ["src"]
 target-version = "py313"
 line-length = 120
 
+[tool.ruff.lint]
+select = ["I"]  # Enable import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["mcp_server_guide"]
+
 [tool.mypy]
 python_version = "3.13"
 mypy_path = "src"

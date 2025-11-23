@@ -5,29 +5,31 @@ DO NOT USE @guide.tool() DECORATORS IN TOOL DEFINITIONS
 Tools are plain functions - decoration happens only during registration
 """
 
-from typing import Callable, Any
+from typing import Any, Callable
+
 from mcp.server.fastmcp import FastMCP
 
-# Import all tool functions
-from .tools.project_tools import get_current_project, switch_project
-from .tools.config_tools import get_project_config, set_project_config, set_project_config_values
-from .tools.content_tools import (
-    search_content,
-)
-from .tools.file_tools import get_file_content
-from .tools.document_tools import create_mcp_document, update_mcp_document, delete_mcp_document, list_mcp_documents
-from .tools.category_tools import add_category, remove_category, update_category, list_categories, get_category_content
-from .tools.collection_tools import add_collection, update_collection, list_collections, remove_collection
-from .tools.prompt_tools import list_prompts
 from .tools.agent_tools import guide_get_agent_info
+from .tools.category_tools import add_category, get_category_content, list_categories, remove_category, update_category
 
 # Import JSON-based consolidated tools
 from .tools.category_tools_json import guide_categories
+from .tools.collection_tools import add_collection, list_collections, remove_collection, update_collection
 from .tools.collection_tools_json import guide_collections
-from .tools.document_tools_json import guide_documents
-from .tools.content_tools_json import guide_content
+from .tools.config_tools import get_project_config, set_project_config, set_project_config_values
 from .tools.config_tools_json import guide_config
-from .tools.schema_tools import guide_get_schemas, guide_get_schema
+from .tools.content_tools import (
+    search_content,
+)
+from .tools.content_tools_json import guide_content
+from .tools.document_tools import create_mcp_document, delete_mcp_document, list_mcp_documents, update_mcp_document
+from .tools.document_tools_json import guide_documents
+from .tools.file_tools import get_file_content
+
+# Import all tool functions
+from .tools.project_tools import get_current_project, switch_project
+from .tools.prompt_tools import list_prompts
+from .tools.schema_tools import guide_get_schema, guide_get_schemas
 
 
 def register_tools(mcp: FastMCP, log_tool_usage: Callable[..., Any]) -> None:

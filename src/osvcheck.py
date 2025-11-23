@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import contextlib
-import urllib.request
 import json
-import subprocess
-import tomllib
-import re
 import random
+import re
+import subprocess
 import time
+import tomllib
+import urllib.request
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-
+from typing import Any, Dict, List, Optional
 
 CACHE_FILE = Path(".osvcheck")
 CACHE_MIN_TTL = 12 * 3600  # 12 hours in seconds

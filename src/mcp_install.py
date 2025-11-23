@@ -13,9 +13,9 @@ import click
 import yaml
 
 from mcp_server_guide.config_paths import get_default_config_file, get_default_docroot
-from mcp_server_guide.utils.installation_utils import get_templates_dir
-from mcp_server_guide.security.path_validator import PathValidator
 from mcp_server_guide.exceptions import SecurityError
+from mcp_server_guide.security.path_validator import PathValidator
+from mcp_server_guide.utils.installation_utils import get_templates_dir
 
 
 def prompt_install_location(default_location: Path, yes: bool = False) -> Path:

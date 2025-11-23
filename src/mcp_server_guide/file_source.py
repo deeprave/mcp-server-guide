@@ -3,7 +3,8 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
+
 import aiofiles
 
 if TYPE_CHECKING:

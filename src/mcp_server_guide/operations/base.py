@@ -1,6 +1,7 @@
 """Base operation classes for simplified architecture."""
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pydantic import ValidationError
 
 from .model_base import discover_models

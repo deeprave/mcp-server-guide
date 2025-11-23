@@ -1,8 +1,10 @@
 """Project management tools."""
 
-from typing import Dict, Any, Optional
 from copy import deepcopy
+from typing import Any, Dict, Optional
+
 from mcp.server.fastmcp import Context
+
 from ..logging_config import get_logger
 
 logger = get_logger()
@@ -60,8 +62,8 @@ async def clone_project(
     Returns:
         Dict with success status and error message if failed
     """
-    from ..session_manager import SessionManager
     from ..project_config import ProjectConfig
+    from ..session_manager import SessionManager
 
     session = SessionManager()
 

@@ -1,10 +1,11 @@
 """Config-specific operations."""
 
-from typing import Dict, Any, Optional
-from .operation_base import BaseOperation
+from typing import Any, Dict, Optional
+
+from ..models.project_config import ProjectConfig
 from ..tools.config_tools import get_project_config, set_project_config, set_project_config_values
 from ..tools.project_tools import switch_project
-from ..models.project_config import ProjectConfig
+from .operation_base import BaseOperation
 
 
 class GetCurrentProjectOperation(BaseOperation):

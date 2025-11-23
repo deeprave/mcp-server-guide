@@ -1,7 +1,8 @@
 """Document model with operation mappings."""
 
 from types import MappingProxyType
-from typing import Optional, ClassVar, Dict, Type
+from typing import ClassVar, Dict, Optional, Type
+
 from ..operations.model_base import BaseModelOperations
 from ..operations.operation_base import BaseOperation
 
@@ -18,9 +19,9 @@ class DocumentModel(BaseModelOperations):
             # Local imports to avoid circular dependency
             from ..operations.document_ops import (
                 DocumentCreateOperation,
-                DocumentUpdateOperation,
                 DocumentDeleteOperation,
                 DocumentListOperation,
+                DocumentUpdateOperation,
             )
 
             cls.operations = {

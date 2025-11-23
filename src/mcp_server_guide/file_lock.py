@@ -4,7 +4,7 @@ import asyncio
 import os
 import time
 from pathlib import Path
-from typing import Any, Callable, TypeVar, Awaitable
+from typing import Any, Awaitable, Callable, TypeVar
 
 T = TypeVar("T")
 STALE_LOCK_SECONDS = 600  # 10 minutes

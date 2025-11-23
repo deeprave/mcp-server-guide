@@ -2,13 +2,12 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from .session_manager import SessionManager
 
 from .project_config import ProjectConfig
-
 
 # Global session instance
 _session_manager: Optional["SessionManager"] = None

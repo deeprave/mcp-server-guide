@@ -1,14 +1,16 @@
 """Category management tools for custom document categories."""
 
-from typing import Dict, Any, List, Optional, Set
-from pathlib import Path
 import glob
 import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
+
 import aiofiles
-from ..models.category import Category
+
+from ..constants import METADATA_SUFFIX
 from ..document_cache import CategoryDocumentCache
 from ..logging_config import get_logger
-from ..constants import METADATA_SUFFIX
+from ..models.category import Category
 from ..utils.document_discovery import get_category_documents_by_path
 
 logger = get_logger()
@@ -554,6 +556,7 @@ async def get_category_content(name: str, file: Optional[str] = None) -> Dict[st
 async def _get_specific_document(category: Any, file: str, session: Any) -> Dict[str, Any]:
     """Get content of a specific document within a category."""
     from pathlib import Path
+
     from ..utils.file_extensions import try_file_with_extensions
 
     # Get docroot from session manager's config manager

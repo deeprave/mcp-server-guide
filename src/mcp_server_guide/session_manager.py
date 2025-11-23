@@ -2,19 +2,18 @@
 
 import asyncio
 import os
-from typing import Dict, Any, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import Context
-from pathlib import Path
 
 from .config_paths import get_default_docroot
-from .path_resolver import LazyPath
-from .project_config import ProjectConfigManager, ProjectConfig
-from .models.collection import Collection
-from .session import SessionState
 from .logging_config import get_logger
+from .models.collection import Collection
 from .models.speckit_config import SpecKitConfig
-
+from .path_resolver import LazyPath
+from .project_config import ProjectConfig, ProjectConfigManager
+from .session import SessionState
 
 logger = get_logger()
 

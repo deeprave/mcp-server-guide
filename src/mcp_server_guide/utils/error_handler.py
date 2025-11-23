@@ -1,6 +1,7 @@
 """Shared error handling utilities for consistent error responses."""
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from ..logging_config import get_logger
 
 logger = get_logger()

@@ -1,21 +1,22 @@
 """Document CRUD operations for managed documents."""
 
 from pathlib import Path
-from typing import Dict, Any, Optional, Literal
+from typing import Any, Dict, Literal, Optional
+
 from ..constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
-from ..models.document_metadata import DocumentMetadata
-from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
-from ..utils.document_helpers import get_metadata_path
-from ..logging_config import get_logger
-from ..utils.document_utils import (
-    generate_content_hash,
-    detect_mime_type,
-    normalize_document_name,
-    detect_best_mime_type,
-)
 from ..file_lock import lock_update
+from ..logging_config import get_logger
+from ..models.document_metadata import DocumentMetadata
 from ..queue.category_queue import add_category
+from ..utils.document_helpers import get_metadata_path
+from ..utils.document_utils import (
+    detect_best_mime_type,
+    detect_mime_type,
+    generate_content_hash,
+    normalize_document_name,
+)
 from ..utils.error_handler import handle_operation_error
+from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
 
 logger = get_logger()
 
