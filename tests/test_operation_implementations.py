@@ -1,15 +1,16 @@
 """Tests for operation implementations."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from src.mcp_server_guide.operations.collection_ops import (
-    CollectionAddOperation,
-    CollectionUpdateOperation,
-    CollectionRemoveOperation,
-    CollectionListOperation,
     AddToCollectionOperation,
-    RemoveFromCollectionOperation,
+    CollectionAddOperation,
+    CollectionListOperation,
+    CollectionRemoveOperation,
+    CollectionUpdateOperation,
     GetCollectionContentOperation,
+    RemoveFromCollectionOperation,
 )
 from src.mcp_server_guide.operations.config_ops import (
     GetCurrentProjectOperation,
@@ -20,14 +21,14 @@ from src.mcp_server_guide.operations.config_ops import (
 )
 from src.mcp_server_guide.operations.content_ops import (
     GetContentOperation,
-    SearchContentOperation,
     GetFileContentOperation,
+    SearchContentOperation,
 )
 from src.mcp_server_guide.operations.document_ops import (
     DocumentCreateOperation,
-    DocumentUpdateOperation,
     DocumentDeleteOperation,
     DocumentListOperation,
+    DocumentUpdateOperation,
 )
 
 

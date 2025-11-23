@@ -1,9 +1,9 @@
 """Tests for server startup fix to prevent hanging."""
 
 import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from src.mcp_server_guide.main import start_mcp_server
 
 

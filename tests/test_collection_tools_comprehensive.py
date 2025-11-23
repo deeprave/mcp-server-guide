@@ -1,19 +1,21 @@
 """Comprehensive tests for collection tools functionality."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+
+from mcp_server_guide.models.category import Category
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.project_config import ProjectConfig
 from mcp_server_guide.tools.collection_tools import (
     add_collection,
-    update_collection,
     add_to_collection,
-    remove_from_collection,
-    remove_collection,
-    list_collections,
     get_collection_content,
+    list_collections,
+    remove_collection,
+    remove_from_collection,
+    update_collection,
 )
-from mcp_server_guide.project_config import ProjectConfig
-from mcp_server_guide.models.collection import Collection
-from mcp_server_guide.models.category import Category
 
 
 class TestCollectionToolsComprehensive:

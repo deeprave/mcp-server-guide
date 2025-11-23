@@ -2,6 +2,7 @@
 
 import pytest
 from pydantic import ValidationError
+
 from mcp_server_guide.models.enhanced_instruction import EnhancedInstruction
 
 

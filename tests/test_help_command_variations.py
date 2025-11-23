@@ -1,9 +1,9 @@
 """Comprehensive tests for all help command variations."""
 
-import pytest
 import click
-from src.mcp_server_guide.guide_integration import GuidePromptHandler
+import pytest
 from src.mcp_server_guide.cli_parser_click import parse_command
+from src.mcp_server_guide.guide_integration import GuidePromptHandler
 from src.mcp_server_guide.help_system import format_guide_help, generate_context_help
 
 

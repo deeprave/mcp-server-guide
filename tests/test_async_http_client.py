@@ -1,9 +1,10 @@
 """Tests for AsyncHTTPClient."""
 
-import pytest
 import asyncio
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
+
 import aiohttp
+import pytest
 
 from mcp_server_guide.http.async_client import AsyncHTTPClient
 

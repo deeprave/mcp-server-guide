@@ -1,6 +1,7 @@
 """Tests for semantic help response handling."""
 
 import pytest
+
 from mcp_server_guide.cli_parser_click import detect_help_request
 from mcp_server_guide.help_system import format_guide_help
 

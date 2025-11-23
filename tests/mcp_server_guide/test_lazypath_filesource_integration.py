@@ -1,10 +1,11 @@
 """Tests for LazyPath-FileSource integration."""
 
-import pytest
 from pathlib import Path
 
-from mcp_server_guide.path_resolver import LazyPath
+import pytest
+
 from mcp_server_guide.file_source import FileSource, FileSourceType
+from mcp_server_guide.path_resolver import LazyPath
 
 
 class TestLazyPathFileSourceIntegration:

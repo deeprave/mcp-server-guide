@@ -1,18 +1,20 @@
 """Tests for modernized category API."""
 
-import pytest
 import asyncio
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+import pytest
+
+from mcp_server_guide.models.category import Category
+from mcp_server_guide.project_config import ProjectConfig
 from mcp_server_guide.tools.category_tools import (
     add_category,
-    update_category,
     add_to_category,
-    remove_from_category,
-    remove_category,
     list_categories,
+    remove_category,
+    remove_from_category,
+    update_category,
 )
-from mcp_server_guide.project_config import ProjectConfig
-from mcp_server_guide.models.category import Category
 
 
 @pytest.fixture(scope="function")

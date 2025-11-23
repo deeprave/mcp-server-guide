@@ -54,8 +54,9 @@ class TestSpecKitConfig:
 
     async def test_speckit_state_detection_disabled(self):
         """Test detection of disabled SpecKit state."""
+        from unittest.mock import AsyncMock, patch
+
         from mcp_server_guide.services.speckit_manager import is_speckit_enabled
-        from unittest.mock import patch, AsyncMock
 
         # Mock SessionManager to return disabled state
         with patch("mcp_server_guide.services.speckit_manager.SessionManager") as mock_session_class:
@@ -68,8 +69,9 @@ class TestSpecKitConfig:
 
     async def test_speckit_state_detection_enabled(self):
         """Test detection of enabled SpecKit state."""
+        from unittest.mock import AsyncMock, patch
+
         from mcp_server_guide.services.speckit_manager import is_speckit_enabled
-        from unittest.mock import patch, AsyncMock
 
         # Mock SessionManager to return enabled state
         with patch("mcp_server_guide.services.speckit_manager.SessionManager") as mock_session_class:
@@ -82,8 +84,9 @@ class TestSpecKitConfig:
 
     async def test_speckit_state_detection_explicitly_disabled(self):
         """Test detection when SpecKit is explicitly disabled."""
+        from unittest.mock import AsyncMock, patch
+
         from mcp_server_guide.services.speckit_manager import is_speckit_enabled
-        from unittest.mock import patch, AsyncMock
 
         # Mock SessionManager to return disabled state
         with patch("mcp_server_guide.services.speckit_manager.SessionManager") as mock_session_class:

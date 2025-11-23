@@ -1,7 +1,9 @@
 """Tests to verify that test collections don't leak to live config."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from mcp_server_guide.session_manager import SessionManager
 from mcp_server_guide.tools.collection_tools import add_collection
 

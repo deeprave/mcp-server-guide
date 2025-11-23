@@ -3,9 +3,10 @@
 import json
 import tempfile
 from pathlib import Path
+
 import pytest
 
-from mcp_server_guide.logging_config import setup_logging, get_logger, JSONFormatter
+from mcp_server_guide.logging_config import JSONFormatter, get_logger, setup_logging
 
 
 def test_json_logging_format():

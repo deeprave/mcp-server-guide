@@ -21,8 +21,8 @@ async def test_server_uses_hybrid_file_access():
 
 async def test_server_integration_with_session_paths():
     """Test server integration with Issue 002 session path resolution."""
-    from mcp_server_guide.project_config import ProjectConfig
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig
 
     with tempfile.TemporaryDirectory() as temp_dir:
         server = await create_server(cache_dir=temp_dir)

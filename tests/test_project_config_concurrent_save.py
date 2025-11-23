@@ -1,8 +1,9 @@
 """Tests for concurrent save operations and proper file locking."""
 
 from unittest.mock import patch
-from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+
 from mcp_server_guide.models.category import Category
+from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
 
 class TestConcurrentSave:

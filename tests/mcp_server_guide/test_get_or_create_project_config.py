@@ -1,7 +1,9 @@
 """Tests for get_or_create_project_config functionality."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
 from mcp_server_guide.tools.category_tools import list_categories
 
 
@@ -66,7 +68,8 @@ async def test_get_or_create_project_config_no_categories_key():
 async def test_get_or_create_project_config_auto_save_behavior():
     """Test that save_to_file is called when a new project is created."""
     import tempfile
-    from unittest.mock import patch, Mock
+    from unittest.mock import Mock, patch
+
     from mcp_server_guide.project_config import ProjectConfig
 
     with tempfile.TemporaryDirectory():

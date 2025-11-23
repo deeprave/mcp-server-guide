@@ -1,19 +1,20 @@
 """Tests for schema generation functionality."""
 
-import pytest
 import json
 from unittest.mock import Mock, patch
+
+import pytest
 from src.mcp_server_guide.operations.schema_generator import (
+    _extract_schema_info,
+    _generate_example_data,
     generate_tool_description,
     get_all_schemas,
     get_schema_for_context,
-    _extract_schema_info,
-    _generate_example_data,
 )
 from src.mcp_server_guide.tools.schema_tools import (
-    guide_get_schemas,
-    guide_get_schema,
     generate_description,
+    guide_get_schema,
+    guide_get_schemas,
 )
 
 

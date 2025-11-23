@@ -1,6 +1,6 @@
 """Tests for MCP server startup functionality."""
 
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
 from mcp_server_guide.main import start_mcp_server
 

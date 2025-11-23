@@ -1,8 +1,10 @@
 """Tests for PWD-based project detection."""
 
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.session_manager import SessionManager
 
 

@@ -1,6 +1,7 @@
 """Tests for server resource creation and configuration handling."""
 
 import pytest
+
 from mcp_server_guide.server import create_server_with_config
 
 

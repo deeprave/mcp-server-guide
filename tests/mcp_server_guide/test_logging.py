@@ -2,6 +2,7 @@
 
 import logging
 from unittest.mock import patch
+
 from mcp_server_guide.config import Config
 from mcp_server_guide.logging_config import setup_logging
 

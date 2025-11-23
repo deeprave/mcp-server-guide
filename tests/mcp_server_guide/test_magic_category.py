@@ -1,7 +1,8 @@
 """Tests for category name validation (formerly magic category tests)."""
 
 import pytest
-from mcp_server_guide.tools.category_tools import add_category, update_category, remove_category
+
+from mcp_server_guide.tools.category_tools import add_category, remove_category, update_category
 
 
 @pytest.mark.asyncio

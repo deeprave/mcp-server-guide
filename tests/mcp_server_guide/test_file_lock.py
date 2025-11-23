@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from mcp_server_guide.file_lock import lock_update, is_process_running
+from mcp_server_guide.file_lock import is_process_running, lock_update
 
 
 async def test_lock_update_creates_lock_file():
@@ -143,8 +143,8 @@ async def test_stale_lock_different_hostname_dead_process():
 
 async def test_project_config_save_uses_locking():
     """Test that ProjectConfigManager.save_config uses locking."""
-    from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
     with tempfile.TemporaryDirectory() as temp_dir:
         project_path = Path(temp_dir)
@@ -190,8 +190,9 @@ async def test_project_config_save_uses_locking():
 async def test_concurrent_config_updates_prevented():
     """Test that concurrent configuration updates are prevented by locking."""
     import threading
-    from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+
     from mcp_server_guide.models.category import Category
+    from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
     with tempfile.TemporaryDirectory() as temp_dir:
         project_path = Path(temp_dir)

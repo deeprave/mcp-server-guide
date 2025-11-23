@@ -1,8 +1,9 @@
 """Tests for shared installation module."""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import pytest
 import yaml
 
 from mcp_server_guide.installation import create_default_config

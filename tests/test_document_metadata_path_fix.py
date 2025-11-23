@@ -1,6 +1,7 @@
 """Test for document metadata path generation fix."""
 
 from pathlib import Path
+
 from src.mcp_server_guide.utils.document_helpers import get_metadata_path
 
 

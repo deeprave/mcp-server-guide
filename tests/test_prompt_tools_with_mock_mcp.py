@@ -1,8 +1,11 @@
 """Tests for prompt_tools using MockMCP."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import patch, Mock
+
 from mcp_server_guide.tools.prompt_tools import list_prompts, list_resources
+
 from .mock_mcp import MockMCP
 
 

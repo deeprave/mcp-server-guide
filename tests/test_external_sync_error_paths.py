@@ -1,12 +1,14 @@
 """Tests for external sync service error handling paths."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.services.external_sync import (
     _cache,
     _cleanup_category_documents,
-    validate_document_integrity,
     sync_document_metadata,
+    validate_document_integrity,
 )
 
 
@@ -111,8 +113,8 @@ class TestSyncDocumentMetadataErrors:
     @pytest.mark.asyncio
     async def test_sync_document_metadata_write_error(self):
         """Test sync with metadata write error."""
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
             tmp.write("test content")

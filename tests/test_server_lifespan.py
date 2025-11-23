@@ -1,8 +1,9 @@
 """Tests for server lifespan and deferred configuration."""
 
-import pytest
 import warnings
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestServerLifespan:

@@ -1,12 +1,13 @@
 """Tests for category file extension auto-addition functionality."""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import pytest
 
 from mcp_server_guide.tools.category_tools import _safe_glob_search
 from mcp_server_guide.tools.content_tools import _extract_document_from_content
-from mcp_server_guide.utils.file_extensions import try_file_with_extensions, get_extension_candidates
+from mcp_server_guide.utils.file_extensions import get_extension_candidates, try_file_with_extensions
 
 
 class TestPatternExtensionLogic:

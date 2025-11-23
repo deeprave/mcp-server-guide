@@ -3,8 +3,7 @@
 import tempfile
 from pathlib import Path
 
-
-from mcp_server_guide.logging_config import setup_logging, get_logger, setup_consolidated_logging
+from mcp_server_guide.logging_config import get_logger, setup_consolidated_logging, setup_logging
 
 
 class TestLoggingBasic:

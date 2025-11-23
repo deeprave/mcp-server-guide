@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+
 import pytest
 
 
@@ -134,8 +135,8 @@ async def test_list_mcp_documents_mixed_with_pattern_files():
 @pytest.mark.asyncio
 async def test_list_mcp_documents_corrupted_metadata():
     """Test document listing with corrupted metadata files."""
-    from mcp_server_guide.tools.document_tools import create_mcp_document, list_mcp_documents
     from mcp_server_guide.constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
+    from mcp_server_guide.tools.document_tools import create_mcp_document, list_mcp_documents
 
     with tempfile.TemporaryDirectory() as temp_dir:
         category_dir = Path(temp_dir)

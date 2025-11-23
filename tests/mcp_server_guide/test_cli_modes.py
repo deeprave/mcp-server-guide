@@ -2,6 +2,7 @@
 
 import pytest
 from click.testing import CliRunner
+
 from mcp_server_guide.main import main
 
 

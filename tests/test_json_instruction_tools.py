@@ -1,13 +1,13 @@
 """Tests for JSON instruction tools."""
 
-import pytest
-from unittest.mock import patch, Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
 from src.mcp_server_guide.tools.category_tools_json import guide_categories
 from src.mcp_server_guide.tools.collection_tools_json import guide_collections
-from src.mcp_server_guide.tools.document_tools_json import guide_documents
-from src.mcp_server_guide.tools.content_tools_json import guide_content
 from src.mcp_server_guide.tools.config_tools_json import guide_config
+from src.mcp_server_guide.tools.content_tools_json import guide_content
+from src.mcp_server_guide.tools.document_tools_json import guide_documents
 
 
 class TestJSONInstructionTools:

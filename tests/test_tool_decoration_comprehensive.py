@@ -2,8 +2,10 @@
 
 import os
 from unittest.mock import Mock, patch
+
 import pytest
-from mcp_server_guide.tool_decoration import log_tool_usage, get_tool_prefix, ExtMcpToolDecorator
+
+from mcp_server_guide.tool_decoration import ExtMcpToolDecorator, get_tool_prefix, log_tool_usage
 
 
 def test_log_tool_usage_sync_function():

@@ -5,9 +5,9 @@ def test_document_tools_have_guide_decorator():
     """Test all document tools are registered with @guide.tool decorator."""
     from mcp_server_guide.tools.document_tools import (
         create_mcp_document,
-        update_mcp_document,
         delete_mcp_document,
         list_mcp_documents,
+        update_mcp_document,
     )
 
     # Check functions are decorated (they should be callable)

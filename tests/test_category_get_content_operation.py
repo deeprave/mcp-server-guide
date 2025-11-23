@@ -1,10 +1,12 @@
 """Test category get_content operation for CRUD API consistency."""
 
-import pytest
 from unittest.mock import patch
-from mcp_server_guide.operations.category_ops import CategoryGetContentOperation
+
+import pytest
+
 from mcp_server_guide.models.category_model import CategoryModel
 from mcp_server_guide.models.project_config import ProjectConfig
+from mcp_server_guide.operations.category_ops import CategoryGetContentOperation
 
 
 class TestCategoryGetContentOperation:

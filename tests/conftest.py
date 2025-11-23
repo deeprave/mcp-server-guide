@@ -1,18 +1,18 @@
 """Test configuration and fixtures for proper isolation."""
 
-import tempfile
+import asyncio
+import atexit
 import os
 import shutil
-import atexit
-import asyncio
+import tempfile
 from pathlib import Path
 from typing import Generator, Union
-import pytest
 from unittest.mock import Mock
 
+import pytest
 from mcp.server.fastmcp import Context
-from mcp_server_guide.session_manager import SessionManager
 
+from mcp_server_guide.session_manager import SessionManager
 
 # Global session temp directory
 _session_temp_dir: Path | None = None

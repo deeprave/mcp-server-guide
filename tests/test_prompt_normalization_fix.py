@@ -1,6 +1,7 @@
 """Tests for prompt normalization preserving additional text."""
 
 import pytest
+
 from mcp_server_guide.guide_integration import GuidePromptHandler
 
 

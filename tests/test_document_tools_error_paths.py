@@ -1,13 +1,15 @@
 """Tests for document tools error handling paths."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.tools.document_tools import (
+    _validate_content_size,
     create_mcp_document,
-    update_mcp_document,
     delete_mcp_document,
     list_mcp_documents,
-    _validate_content_size,
+    update_mcp_document,
 )
 
 

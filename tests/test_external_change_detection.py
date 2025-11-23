@@ -2,7 +2,9 @@
 
 import tempfile
 from pathlib import Path
+
 import pytest
+
 from mcp_server_guide.constants import DOCUMENT_SUBDIR
 
 
@@ -33,8 +35,8 @@ async def test_cleanup_missing_metadata():
 @pytest.mark.asyncio
 async def test_content_hash_validation():
     """Test content hash validation for change detection."""
-    from mcp_server_guide.tools.document_tools import create_mcp_document
     from mcp_server_guide.services.external_sync import validate_document_integrity
+    from mcp_server_guide.tools.document_tools import create_mcp_document
 
     with tempfile.TemporaryDirectory() as temp_dir:
         category_dir = Path(temp_dir)
@@ -65,8 +67,8 @@ async def test_content_hash_validation():
 @pytest.mark.asyncio
 async def test_external_modification_detection():
     """Test external file modification updates content hash and mime-type."""
-    from mcp_server_guide.tools.document_tools import create_mcp_document
     from mcp_server_guide.services.external_sync import sync_document_metadata
+    from mcp_server_guide.tools.document_tools import create_mcp_document
     from mcp_server_guide.utils.sidecar_operations import read_sidecar_metadata
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -102,8 +104,8 @@ async def test_external_modification_detection():
 @pytest.mark.asyncio
 async def test_category_cleanup_trigger():
     """Test category access triggers async cleanup task."""
-    from mcp_server_guide.tools.document_tools import create_mcp_document
     from mcp_server_guide.queue.category_queue import add_category
+    from mcp_server_guide.tools.document_tools import create_mcp_document
 
     with tempfile.TemporaryDirectory() as temp_dir:
         category_dir = Path(temp_dir)

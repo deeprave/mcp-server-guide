@@ -1,10 +1,11 @@
 """Integration tests for mcp-server-guide CLI and configuration."""
 
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 from click.testing import CliRunner
 
-from mcp_server_guide.main import main
 from mcp_server_guide.config import Config
+from mcp_server_guide.main import main
 
 
 def test_complete_workflow_with_defaults():

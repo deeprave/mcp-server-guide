@@ -2,6 +2,7 @@
 
 import pytest
 from mcp.types import GetPromptResult, PromptMessage
+
 from mcp_server_guide.server import create_server
 from mcp_server_guide.session_manager import SessionManager
 

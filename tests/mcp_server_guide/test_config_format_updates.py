@@ -1,6 +1,7 @@
 """Test config format and structure."""
 
 import yaml
+
 from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
 

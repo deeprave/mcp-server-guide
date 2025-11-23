@@ -1,7 +1,7 @@
 """Tests for agent detection functionality."""
 
-from mcp.types import InitializeRequestParams, Implementation
-from src.mcp_server_guide.agent_detection import AgentInfo, normalize_agent_name, AGENT_PREFIX_MAP, detect_agent
+from mcp.types import Implementation, InitializeRequestParams
+from src.mcp_server_guide.agent_detection import AGENT_PREFIX_MAP, AgentInfo, detect_agent, normalize_agent_name
 
 
 def test_agent_info_creation():

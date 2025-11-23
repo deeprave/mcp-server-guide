@@ -1,7 +1,9 @@
 """Tests for minimal guide integration with document access."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.guide_integration import GuidePromptHandler
 
 

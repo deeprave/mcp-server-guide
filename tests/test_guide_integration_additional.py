@@ -1,9 +1,11 @@
 """Additional tests for guide_integration.py to improve coverage."""
 
-import pytest
 from unittest.mock import patch
-from mcp_server_guide.guide_integration import GuidePromptHandler
+
+import pytest
+
 from mcp_server_guide.cli_parser_click import Command
+from mcp_server_guide.guide_integration import GuidePromptHandler
 
 
 class TestGuideIntegrationAdditional:

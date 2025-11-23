@@ -1,8 +1,8 @@
 """Tests for unified CRUD handler."""
 
-import pytest
 from unittest.mock import Mock
 
+import pytest
 from src.mcp_server_guide.handlers.unified_crud_handler import UnifiedCrudHandler
 from src.mcp_server_guide.models.enhanced_instruction import EnhancedInstruction
 

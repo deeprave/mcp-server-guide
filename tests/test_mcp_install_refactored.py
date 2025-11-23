@@ -1,11 +1,11 @@
 """Tests for refactored mcp_install.py script."""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
-from src.mcp_install import main, copy_templates_with_interaction, create_or_update_config
+import pytest
+from src.mcp_install import copy_templates_with_interaction, create_or_update_config, main
 
 
 class TestMcpInstallRefactored:

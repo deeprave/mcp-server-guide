@@ -1,6 +1,7 @@
 """Tests for FileSourceType enum."""
 
 import pytest
+
 from mcp_server_guide.file_source import FileSourceType
 
 

@@ -53,8 +53,8 @@ async def test_clone_command_handler_integration(isolated_config_file):
     """Test full integration of clone command through handler."""
     from src.mcp_server_guide.guide_integration import GuidePromptHandler
     from src.mcp_server_guide.session_manager import SessionManager
-    from src.mcp_server_guide.tools.project_tools import switch_project
     from src.mcp_server_guide.tools.category_tools import add_category
+    from src.mcp_server_guide.tools.project_tools import switch_project
 
     session = SessionManager()
     session._set_config_filename(isolated_config_file)

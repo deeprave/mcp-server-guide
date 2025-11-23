@@ -1,11 +1,13 @@
 """Tests for collection validation edge cases."""
 
-import pytest
 from unittest.mock import Mock, patch
-from mcp_server_guide.tools.collection_tools import add_collection, remove_collection
-from mcp_server_guide.project_config import ProjectConfig
-from mcp_server_guide.models.collection import Collection
+
+import pytest
+
 from mcp_server_guide.models.category import Category
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.tools.collection_tools import add_collection, remove_collection
 
 
 class TestCollectionValidationEdgeCases:

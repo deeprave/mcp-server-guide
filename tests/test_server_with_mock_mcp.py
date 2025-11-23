@@ -1,7 +1,9 @@
 """Tests for server.py using MockMCP."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.server import create_server, create_server_with_config
 
 

@@ -1,11 +1,12 @@
 """Tests for config formatting functions."""
 
-import pytest
 from unittest.mock import patch
-from src.mcp_server_guide.prompts import _format_projects_list, _format_project_config
-from src.mcp_server_guide.models.project_config import ProjectConfig
+
+import pytest
 from src.mcp_server_guide.models.category import Category
 from src.mcp_server_guide.models.collection import Collection
+from src.mcp_server_guide.models.project_config import ProjectConfig
+from src.mcp_server_guide.prompts import _format_project_config, _format_projects_list
 
 
 def test_format_projects_list():

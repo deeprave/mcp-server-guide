@@ -1,10 +1,11 @@
 """Tests for generic category access without hardcoded builtin handlers."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from mcp_server_guide.tools.category_tools import get_category_content, add_category, remove_category
+import pytest
+
+from mcp_server_guide.tools.category_tools import add_category, get_category_content, remove_category
 
 
 class TestGenericCategoryAccess:

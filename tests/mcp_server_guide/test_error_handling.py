@@ -2,10 +2,10 @@
 
 import contextlib
 import tempfile
-from unittest.mock import patch, MagicMock, AsyncMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from mcp_server_guide.session_manager import SessionManager
-from mcp_server_guide.tools.config_tools import set_project_config_values, set_project_config
+from mcp_server_guide.tools.config_tools import set_project_config, set_project_config_values
 
 
 async def test_session_manager_read_error():

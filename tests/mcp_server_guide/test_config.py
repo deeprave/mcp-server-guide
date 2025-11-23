@@ -1,6 +1,7 @@
 """Tests for configuration module."""
 
 from unittest.mock import patch
+
 from mcp_server_guide.config import Config, ConfigOption
 
 

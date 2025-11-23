@@ -1,12 +1,12 @@
 """Tests for language detection functionality."""
 
+import json
 import tempfile
 from pathlib import Path
-import json
 
 from mcp_server_guide.language_detection import (
-    detect_project_language,
     count_source_files,
+    detect_project_language,
     should_auto_detect_language,
 )
 

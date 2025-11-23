@@ -1,7 +1,8 @@
 """Tests for document management helper functions."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 def test_get_metadata_path():

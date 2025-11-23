@@ -1,11 +1,13 @@
 """Tests for HTTP security hardening."""
 
-import pytest
 import time
 from unittest.mock import Mock, patch
+
+import pytest
 import requests
-from mcp_server_guide.http.secure_client import SecureHTTPClient, RateLimiter
+
 from mcp_server_guide.exceptions import NetworkError, SecurityError
+from mcp_server_guide.http.secure_client import RateLimiter, SecureHTTPClient
 
 
 class TestRateLimiter:

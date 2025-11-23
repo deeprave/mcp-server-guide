@@ -1,16 +1,18 @@
 """Tests for collection document search functionality."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from mcp_server_guide.tools.collection_tools import (
-    update_collection,
-    add_to_collection,
-    remove_from_collection,
-    get_collection_document,
-)
-from mcp_server_guide.models.project_config import ProjectConfig
-from mcp_server_guide.models.collection import Collection
+
 from mcp_server_guide.models.category import Category
+from mcp_server_guide.models.collection import Collection
+from mcp_server_guide.models.project_config import ProjectConfig
+from mcp_server_guide.tools.collection_tools import (
+    add_to_collection,
+    get_collection_document,
+    remove_from_collection,
+    update_collection,
+)
 
 
 class TestCollectionDocumentSearch:

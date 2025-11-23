@@ -1,7 +1,7 @@
 """Tests for session-scoped project configuration."""
 
-from mcp_server_guide.session import SessionState, ProjectContext
 from mcp_server_guide.project_config import ProjectConfig
+from mcp_server_guide.session import ProjectContext, SessionState
 
 
 async def test_session_state_creation():

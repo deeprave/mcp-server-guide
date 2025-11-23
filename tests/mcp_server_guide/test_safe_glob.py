@@ -1,10 +1,12 @@
 """Tests for safe glob functionality with limits and symlink detection."""
 
-import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-from mcp_server_guide.tools.category_tools import _safe_glob_search, MAX_GLOB_DEPTH, MAX_DOCUMENTS_PER_GLOB
+
+import pytest
+
+from mcp_server_guide.tools.category_tools import MAX_DOCUMENTS_PER_GLOB, MAX_GLOB_DEPTH, _safe_glob_search
 
 
 async def test_safe_glob_depth_limit():

@@ -1,7 +1,9 @@
 """Tests for document cache functionality."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from mcp_server_guide.document_cache import CategoryDocumentCache, DocumentCacheEntry
 from mcp_server_guide.tools.category_tools import update_category
 
@@ -165,9 +167,9 @@ class TestDocumentCacheIntegration:
     @pytest.mark.asyncio
     async def test_cache_invalidation_on_category_update(self, isolated_config_file):
         """Test that cache is invalidated when categories are updated."""
-        from mcp_server_guide.session_manager import SessionManager
-        from mcp_server_guide.project_config import ProjectConfig
         from mcp_server_guide.models.category import Category
+        from mcp_server_guide.project_config import ProjectConfig
+        from mcp_server_guide.session_manager import SessionManager
 
         # Setup session with a category
         session_manager = SessionManager()

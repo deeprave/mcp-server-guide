@@ -1,10 +1,12 @@
 """Tests for main module functionality."""
 
-import pytest
-from unittest.mock import patch, AsyncMock
-from click.testing import CliRunner
+from unittest.mock import AsyncMock, patch
+
 import click.exceptions
-from mcp_server_guide.main import main, validate_mode, start_mcp_server
+import pytest
+from click.testing import CliRunner
+
+from mcp_server_guide.main import main, start_mcp_server, validate_mode
 
 
 async def test_validate_mode_stdio():

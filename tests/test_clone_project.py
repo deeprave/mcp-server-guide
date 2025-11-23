@@ -73,8 +73,8 @@ async def test_clone_project_defaults_to_current(isolated_config_file):
 @pytest.mark.asyncio
 async def test_clone_project_rejects_target_with_custom_content(isolated_config_file):
     """Test that clone rejects target with custom content without force."""
-    from src.mcp_server_guide.tools.project_tools import clone_project, switch_project
     from src.mcp_server_guide.tools.category_tools import add_category
+    from src.mcp_server_guide.tools.project_tools import clone_project, switch_project
 
     session = SessionManager()
     session._set_config_filename(isolated_config_file)
@@ -97,8 +97,8 @@ async def test_clone_project_rejects_target_with_custom_content(isolated_config_
 @pytest.mark.asyncio
 async def test_clone_project_with_force_overwrites(isolated_config_file):
     """Test that force flag overwrites target with custom content."""
-    from src.mcp_server_guide.tools.project_tools import clone_project, switch_project
     from src.mcp_server_guide.tools.category_tools import add_category
+    from src.mcp_server_guide.tools.project_tools import clone_project, switch_project
 
     session = SessionManager()
     session._set_config_filename(isolated_config_file)
@@ -125,8 +125,8 @@ async def test_clone_project_with_force_overwrites(isolated_config_file):
 @pytest.mark.asyncio
 async def test_clone_project_creates_independent_copies(isolated_config_file):
     """Test that cloned categories are independent (deep copy, not shallow)."""
-    from src.mcp_server_guide.tools.project_tools import clone_project, switch_project
     from src.mcp_server_guide.tools.category_tools import add_category, update_category
+    from src.mcp_server_guide.tools.project_tools import clone_project, switch_project
 
     session = SessionManager()
     session._set_config_filename(isolated_config_file)

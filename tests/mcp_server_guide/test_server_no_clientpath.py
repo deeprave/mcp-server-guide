@@ -1,6 +1,7 @@
 """Test server functions without ClientPath dependency."""
 
 import pytest
+
 from mcp_server_guide import server
 
 

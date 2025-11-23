@@ -1,7 +1,9 @@
 """Tests for content_tools.py error paths using MockMCP."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock
+
 from mcp_server_guide.tools.content_tools import get_content
 
 

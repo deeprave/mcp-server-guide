@@ -1,11 +1,13 @@
 """Tests for ProjectConfig validation and ProjectConfigManager functionality."""
 
 import tempfile
-import yaml
 from pathlib import Path
+
 import pytest
-from mcp_server_guide.project_config import ProjectConfigManager, ProjectConfig
+import yaml
+
 from mcp_server_guide.models.category import Category
+from mcp_server_guide.project_config import ProjectConfig, ProjectConfigManager
 
 
 async def test_project_config_manager_save_config_corrupted_file(monkeypatch):

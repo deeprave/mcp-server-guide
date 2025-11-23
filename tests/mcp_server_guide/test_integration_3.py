@@ -2,9 +2,10 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, AsyncMock, Mock
-from mcp_server_guide.tools.content_tools import search_content
+from unittest.mock import AsyncMock, Mock, patch
+
 from mcp_server_guide.tools.category_tools import get_category_content
+from mcp_server_guide.tools.content_tools import search_content
 
 
 async def test_search_content_with_matches():
@@ -83,9 +84,9 @@ async def test_search_content_failed_category():
 
 async def test_category_content_directory_not_exists():
     """Test get_category_content when directory doesn't exist."""
+    from mcp_server_guide.models.category import Category
     from mcp_server_guide.path_resolver import LazyPath
     from mcp_server_guide.project_config import ProjectConfig
-    from mcp_server_guide.models.category import Category
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Set up session with non-existent directory

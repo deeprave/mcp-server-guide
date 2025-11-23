@@ -1,12 +1,14 @@
 """Tests for text/JSON conversion utilities."""
 
 import json
+
 import pytest
+
 from mcp_server_guide.utils.text_conversion import (
-    text_to_json_encoded,
-    json_encoded_to_text,
-    encode_data_array,
     decode_data_array,
+    encode_data_array,
+    json_encoded_to_text,
+    text_to_json_encoded,
 )
 
 

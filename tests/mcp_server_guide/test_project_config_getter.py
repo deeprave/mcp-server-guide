@@ -1,10 +1,12 @@
 """Test for ProjectConfigManager getter method."""
 
-from mcp_server_guide.project_config import ProjectConfigManager
-from mcp_server_guide.naming import mcp_name
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import yaml
+
+from mcp_server_guide.naming import mcp_name
+from mcp_server_guide.project_config import ProjectConfigManager
 
 
 async def test_project_config_manager_has_getter_method():
@@ -36,6 +38,7 @@ async def test_project_config_manager_getter_is_mockable():
 async def test_project_config_manager_uses_getter_internally():
     """Test that ProjectConfigManager uses getter method for file operations."""
     from unittest.mock import patch
+
     from mcp_server_guide.project_config import ProjectConfig
 
     manager = ProjectConfigManager()

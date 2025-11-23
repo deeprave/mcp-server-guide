@@ -1,9 +1,10 @@
 """Tests for base operation class."""
 
+from typing import Any, Dict
+
 import pytest
-from typing import Dict, Any
-from src.mcp_server_guide.operations.operation_base import BaseOperation
 from src.mcp_server_guide.models.project_config import ProjectConfig
+from src.mcp_server_guide.operations.operation_base import BaseOperation
 
 
 class MockOperation(BaseOperation):
