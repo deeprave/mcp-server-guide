@@ -24,7 +24,7 @@ class TestGuideCRUDIntegration:
         with patch("src.mcp_server_guide.operations.base.execute_json_operation") as mock_execute:
             mock_execute.return_value = {"success": True, "categories": {}}
 
-            result = await handler.handle_guide_request(["category", "list"])
+            result = await handler.handle_guide_request([":category", "list"])
 
             expected = self._wrap_expected_output("No categories found.")
             assert result == expected
@@ -39,7 +39,7 @@ class TestGuideCRUDIntegration:
                 "categories": {"docs": {"description": "Documentation files"}, "code": {"description": "Source code"}},
             }
 
-            result = await handler.handle_guide_request(["category", "list"])
+            result = await handler.handle_guide_request([":category", "list"])
 
             expected_content = "Categories:\n  - docs\n  - code"
             expected = self._wrap_expected_output(expected_content)
@@ -54,7 +54,7 @@ class TestGuideCRUDIntegration:
                 "categories": {"docs": {"description": "Documentation files"}, "code": {"description": "Source code"}},
             }
 
-            result = await handler.handle_guide_request(["category", "list", "--verbose"])
+            result = await handler.handle_guide_request([":category", "list", "--verbose"])
 
             expected_content = "Categories:\n  - docs: Documentation files\n  - code: Source code"
             expected = self._wrap_expected_output(expected_content)
@@ -66,7 +66,7 @@ class TestGuideCRUDIntegration:
         with patch("src.mcp_server_guide.operations.base.execute_json_operation") as mock_execute:
             mock_execute.return_value = {"success": True, "items": []}
 
-            result = await handler.handle_guide_request(["collection", "list"])
+            result = await handler.handle_guide_request([":collection", "list"])
 
             expected = self._wrap_expected_output("No collections found.")
             assert result == expected
@@ -78,7 +78,7 @@ class TestGuideCRUDIntegration:
         with patch("src.mcp_server_guide.operations.base.execute_json_operation") as mock_execute:
             mock_execute.return_value = {"success": True, "items": []}
 
-            result = await handler.handle_guide_request(["document", "list"])
+            result = await handler.handle_guide_request([":document", "list"])
 
             expected = self._wrap_expected_output("No documents found.")
             assert result == expected
@@ -91,7 +91,7 @@ class TestGuideCRUDIntegration:
             mock_execute.return_value = {"success": True, "message": "Category added successfully"}
 
             result = await handler.handle_guide_request(
-                ["category", "add", "test", "*.md", "--description", "Test category"]
+                [":category", "add", "test", "*.md", "--description", "Test category"]
             )
 
             expected = self._wrap_expected_output("Category added successfully")
@@ -106,7 +106,7 @@ class TestGuideCRUDIntegration:
         with patch("src.mcp_server_guide.operations.base.execute_json_operation") as mock_execute:
             mock_execute.return_value = {"success": False, "error": "Category not found"}
 
-            result = await handler.handle_guide_request(["category", "remove", "nonexistent"])
+            result = await handler.handle_guide_request([":category", "remove", "nonexistent"])
 
             expected = self._wrap_expected_output("Error: Category not found")
             assert result == expected
@@ -117,7 +117,7 @@ class TestGuideCRUDIntegration:
         with patch("src.mcp_server_guide.operations.base.execute_json_operation") as mock_execute:
             mock_execute.side_effect = Exception("Database error")
 
-            result = await handler.handle_guide_request(["category", "list"])
+            result = await handler.handle_guide_request([":category", "list"])
 
             assert "Error executing list on category: Database error" in result
 
@@ -127,7 +127,7 @@ class TestGuideCRUDIntegration:
         with patch("src.mcp_server_guide.operations.base.execute_json_operation") as mock_execute:
             mock_execute.return_value = {"success": True}
 
-            result = await handler.handle_guide_request(["category", "remove", "test"])
+            result = await handler.handle_guide_request([":category", "remove", "test"])
 
             expected = self._wrap_expected_output("Remove operation completed successfully.")
             assert result == expected

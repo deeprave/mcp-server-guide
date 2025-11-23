@@ -147,8 +147,8 @@ class TestPromptGuideIntegration:
         if consent_file.exists():
             consent_file.unlink()
 
-        # Act: Call @guide -p through guide prompt
-        result = await server.get_prompt("guide", {"arg1": "-p", "arg2": "test planning"})
+        # Act: Call @guide :plan through guide prompt
+        result = await server.get_prompt("guide", {"arg1": ":plan", "arg2": "test planning"})
 
         # Assert: Should work regardless of guide content
         assert isinstance(result, GetPromptResult)

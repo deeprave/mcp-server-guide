@@ -14,9 +14,9 @@ class TestPhaseCommandArguments:
 
     @pytest.mark.asyncio
     async def test_plan_command_with_quoted_text(self, handler):
-        """Test that @guide -p 'quoted text' passes text to plan_prompt."""
+        """Test that @guide :plan 'quoted text' passes text to plan_prompt."""
         # This should capture the quoted text and pass it to plan_prompt
-        args = ["-p", "Now let's work on document-specific-access-spec.md"]
+        args = [":plan", "Now let's work on document-specific-access-spec.md"]
         result = await handler.handle_guide_request(args)
 
         # The result should contain the additional text, not just the plan prompt
@@ -24,8 +24,8 @@ class TestPhaseCommandArguments:
 
     @pytest.mark.asyncio
     async def test_discuss_command_with_quoted_text(self, handler):
-        """Test that @guide -d 'quoted text' passes text to discuss_prompt."""
-        args = ["-d", "There is an issue with argument parsing"]
+        """Test that @guide :discuss 'quoted text' passes text to discuss_prompt."""
+        args = [":discuss", "There is an issue with argument parsing"]
         result = await handler.handle_guide_request(args)
 
         # The result should contain the additional text
@@ -33,8 +33,8 @@ class TestPhaseCommandArguments:
 
     @pytest.mark.asyncio
     async def test_implement_command_with_quoted_text(self, handler):
-        """Test that @guide -i 'quoted text' passes text to implement_prompt."""
-        args = ["-i", "Fix the parsing logic"]
+        """Test that @guide :implement 'quoted text' passes text to implement_prompt."""
+        args = [":implement", "Fix the parsing logic"]
         result = await handler.handle_guide_request(args)
 
         # The result should contain the additional text
@@ -42,8 +42,8 @@ class TestPhaseCommandArguments:
 
     @pytest.mark.asyncio
     async def test_check_command_with_quoted_text(self, handler):
-        """Test that @guide -c 'quoted text' passes text to check_prompt."""
-        args = ["-c", "Verify the implementation works"]
+        """Test that @guide :check 'quoted text' passes text to check_prompt."""
+        args = [":check", "Verify the implementation works"]
         result = await handler.handle_guide_request(args)
 
         # The result should contain the additional text
@@ -51,8 +51,8 @@ class TestPhaseCommandArguments:
 
     @pytest.mark.asyncio
     async def test_status_command_with_quoted_text(self, handler):
-        """Test that @guide -s 'quoted text' passes text to status_prompt."""
-        args = ["-s", "Check current progress"]
+        """Test that @guide :status 'quoted text' passes text to status_prompt."""
+        args = [":status", "Check current progress"]
         result = await handler.handle_guide_request(args)
 
         # The result should contain the additional text
@@ -61,7 +61,7 @@ class TestPhaseCommandArguments:
     @pytest.mark.asyncio
     async def test_phase_command_without_additional_text(self, handler):
         """Test that phase commands work without additional text."""
-        args = ["-p"]
+        args = [":plan"]
         result = await handler.handle_guide_request(args)
 
         # Should still work, just without additional context

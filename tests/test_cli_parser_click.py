@@ -15,35 +15,35 @@ class TestClickCommandParser:
     def test_phase_commands(self):
         """Test phase command parsing."""
         # Test discuss
-        result = parse_command(["discuss", "some", "text"])
+        result = parse_command([":discuss", "some", "text"])
         assert result.type == "discuss"
         assert result.data == "some text"
 
         # Test plan
-        result = parse_command(["plan"])
+        result = parse_command([":plan"])
         assert result.type == "plan"
         assert result.data is None
 
         # Test implement with text
-        result = parse_command(["implement", "feature", "xyz"])
+        result = parse_command([":implement", "feature", "xyz"])
         assert result.type == "implement"
         assert result.data == "feature xyz"
 
     def test_category_commands(self):
         """Test category command parsing."""
         # Test category list
-        result = parse_command(["category", "list"])
+        result = parse_command([":category", "list"])
         assert result.type == "crud"
         assert result.target == "category"
         assert result.operation == "list"
         assert result.data["verbose"] is False
 
         # Test category list verbose
-        result = parse_command(["category", "list", "--verbose"])
+        result = parse_command([":category", "list", "--verbose"])
         assert result.data["verbose"] is True
 
         # Test category add
-        result = parse_command(["category", "add", "test-cat", "*.py", "*.js"])
+        result = parse_command([":category", "add", "test-cat", "*.py", "*.js"])
         assert result.type == "crud"
         assert result.target == "category"
         assert result.operation == "add"
@@ -51,19 +51,19 @@ class TestClickCommandParser:
         assert result.data["patterns"] == ["*.py", "*.js"]
 
         # Test category add with description
-        result = parse_command(["category", "add", "test-cat", "*.py", "--description", "Test category"])
+        result = parse_command([":category", "add", "test-cat", "*.py", "--description", "Test category"])
         assert result.data["description"] == "Test category"
 
     def test_collection_commands(self):
         """Test collection command parsing."""
         # Test collection list
-        result = parse_command(["collection", "list"])
+        result = parse_command([":collection", "list"])
         assert result.type == "crud"
         assert result.target == "collection"
         assert result.operation == "list"
 
         # Test collection add
-        result = parse_command(["collection", "add", "test-coll", "cat1", "cat2"])
+        result = parse_command([":collection", "add", "test-coll", "cat1", "cat2"])
         assert result.type == "crud"
         assert result.target == "collection"
         assert result.operation == "add"
@@ -73,13 +73,13 @@ class TestClickCommandParser:
     def test_document_commands(self):
         """Test document command parsing."""
         # Test document list
-        result = parse_command(["document", "list"])
+        result = parse_command([":document", "list"])
         assert result.type == "crud"
         assert result.target == "document"
         assert result.operation == "list"
 
         # Test document create
-        result = parse_command(["document", "create", "test.md", "# Test Content"])
+        result = parse_command([":document", "create", "test.md", "# Test Content"])
         assert result.type == "crud"
         assert result.target == "document"
         assert result.operation == "create"
@@ -112,4 +112,79 @@ class TestClickCommandParser:
     def test_empty_args(self):
         """Test handling of empty arguments."""
         result = parse_command([])
+        assert result.type == "help"
+
+    def test_colon_prefix_detection(self):
+        """Test that :command is recognized as a command."""
+        # Test :discuss is recognized as discuss command
+        result = parse_command([":discuss"])
+        assert result.type == "discuss"
+
+        # Test :plan is recognized as plan command
+        result = parse_command([":plan"])
+        assert result.type == "plan"
+
+        # Test :implement is recognized as implement command
+        result = parse_command([":implement"])
+        assert result.type == "implement"
+
+        # Test :check is recognized as check command
+        result = parse_command([":check"])
+        assert result.type == "check"
+
+        # Test :status is recognized as status command
+        result = parse_command([":status"])
+        assert result.type == "status"
+
+        # Test :help is recognized as help command
+        result = parse_command([":help"])
+        assert result.type == "help"
+
+    def test_semicolon_prefix_tolerance(self):
+        """Test that ;command is recognized as a command (typo tolerance)."""
+        # Test ;discuss is recognized as discuss command
+        result = parse_command([";discuss"])
+        assert result.type == "discuss"
+
+        # Test ;plan is recognized as plan command
+        result = parse_command([";plan"])
+        assert result.type == "plan"
+
+    def test_unprefixed_args_are_category_access(self):
+        """Test that unprefixed args are treated as category/collection access."""
+        # Test 'discuss' without prefix is category access
+        result = parse_command(["discuss"])
+        assert result.type == "category_access"
+        assert result.category == "discuss"
+
+        # Test 'plan' without prefix is category access
+        result = parse_command(["plan"])
+        assert result.type == "category_access"
+        assert result.category == "plan"
+
+        # Test 'guide' without prefix is category access
+        result = parse_command(["guide"])
+        assert result.type == "category_access"
+        assert result.category == "guide"
+
+    def test_legacy_short_forms_removed(self):
+        """Test that legacy short forms no longer work."""
+        # Test -d does not trigger discuss command
+        result = parse_command(["-d"])
+        assert result.type == "help"  # Should fall back to help
+
+        # Test -p does not trigger plan command
+        result = parse_command(["-p"])
+        assert result.type == "help"
+
+        # Test -i does not trigger implement command
+        result = parse_command(["-i"])
+        assert result.type == "help"
+
+        # Test -c does not trigger check command
+        result = parse_command(["-c"])
+        assert result.type == "help"
+
+        # Test -s does not trigger status command
+        result = parse_command(["-s"])
         assert result.type == "help"
