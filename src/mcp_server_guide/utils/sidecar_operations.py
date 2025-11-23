@@ -3,8 +3,9 @@
 import json
 from pathlib import Path
 from typing import Optional
-from ..models.document_metadata import DocumentMetadata
+
 from ..logging_config import get_logger
+from ..models.document_metadata import DocumentMetadata
 from .document_helpers import get_metadata_path
 
 logger = get_logger()

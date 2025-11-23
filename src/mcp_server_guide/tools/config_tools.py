@@ -1,6 +1,6 @@
 """Configuration access tools."""
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 async def get_project_config(project: Optional[str] = None) -> Dict[str, Any]:

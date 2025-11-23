@@ -1,7 +1,8 @@
 """Config model with operation mappings."""
 
 from types import MappingProxyType
-from typing import Dict, Any, Optional, ClassVar, Type
+from typing import Any, ClassVar, Dict, Optional, Type
+
 from ..operations.model_base import BaseModelOperations
 from ..operations.operation_base import BaseOperation
 

@@ -1,7 +1,8 @@
 """Collection model with operation mappings."""
 
 from types import MappingProxyType
-from typing import List, Optional, ClassVar, Dict, Type
+from typing import ClassVar, Dict, List, Optional, Type
+
 from ..operations.model_base import BaseModelOperations
 from ..operations.operation_base import BaseOperation
 
@@ -17,13 +18,13 @@ class CollectionModel(BaseModelOperations):
         if not cls.operations:
             # Local imports to avoid circular dependency
             from ..operations.collection_ops import (
-                CollectionAddOperation,
-                CollectionUpdateOperation,
-                CollectionRemoveOperation,
-                CollectionListOperation,
                 AddToCollectionOperation,
-                RemoveFromCollectionOperation,
+                CollectionAddOperation,
+                CollectionListOperation,
+                CollectionRemoveOperation,
+                CollectionUpdateOperation,
                 GetCollectionContentOperation,
+                RemoveFromCollectionOperation,
             )
 
             cls.operations = {

@@ -1,11 +1,13 @@
 """Secure HTTP client with security hardening."""
 
 import time
+from typing import Any, List, Optional
 from urllib.parse import urlparse
-from typing import Any, Optional, List
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
 from ..exceptions import NetworkError, SecurityError
 
 

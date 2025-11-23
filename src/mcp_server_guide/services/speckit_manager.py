@@ -1,6 +1,7 @@
 """SpecKit management service."""
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from ..models.speckit_config import SpecKitConfig
 from ..session_manager import SessionManager
 

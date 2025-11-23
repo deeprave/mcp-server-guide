@@ -1,19 +1,19 @@
 """External change detection and async cleanup service."""
 
-from mcp_server_guide.commands import CMD_CATEGORY
-
 import asyncio
 import hashlib
 import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Set, Optional, Any
+from typing import Any, Dict, Optional, Set
+
+from ..commands import CMD_CATEGORY
 from ..constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
-from ..utils.sidecar_operations import read_sidecar_metadata, create_sidecar_metadata
-from ..models.document_metadata import DocumentMetadata
 from ..logging_config import get_logger
-from ..utils.document_utils import generate_content_hash, detect_mime_type
+from ..models.document_metadata import DocumentMetadata
+from ..utils.document_utils import detect_mime_type, generate_content_hash
+from ..utils.sidecar_operations import create_sidecar_metadata, read_sidecar_metadata
 
 logger = get_logger()
 

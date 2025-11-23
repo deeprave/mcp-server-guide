@@ -1,11 +1,10 @@
 """Input validation framework for MCP server guide."""
 
 import re
-from typing import Any, Callable, Dict, List, Union, Optional
 from functools import wraps
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from .exceptions import ValidationError
-
 
 # ============================================================================
 # Input Validation Framework

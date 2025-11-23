@@ -1,17 +1,16 @@
 """MCP prompt handlers for the developer guide system."""
 
-from mcp_server_guide.commands import CMD_CHECK, CMD_DISCUSS, CMD_IMPLEMENT, CMD_PLAN, CMD_STATUS
-
 import json
 import re
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import Context, FastMCP
 
-from .http.secure_client import SecureHTTPClient
+from .commands import CMD_CHECK, CMD_DISCUSS, CMD_IMPLEMENT, CMD_PLAN, CMD_STATUS
 from .exceptions import NetworkError, SecurityError
+from .http.secure_client import SecureHTTPClient
 from .logging_config import get_logger
-from .services.speckit_manager import enable_speckit, is_speckit_enabled, update_speckit_config, get_speckit_config
+from .services.speckit_manager import enable_speckit, get_speckit_config, is_speckit_enabled, update_speckit_config
 
 # Category tools are now accessed through guide integration
 from .tools.content_tools import get_content

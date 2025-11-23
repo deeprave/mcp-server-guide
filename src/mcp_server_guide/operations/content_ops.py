@@ -1,10 +1,11 @@
 """Content-specific operations."""
 
-from typing import Dict, Any, Optional
-from .operation_base import BaseOperation
+from typing import Any, Dict, Optional
+
+from ..models.project_config import ProjectConfig
 from ..tools.content_tools import get_content, search_content
 from ..tools.file_tools import get_file_content
-from ..models.project_config import ProjectConfig
+from .operation_base import BaseOperation
 
 
 class GetContentOperation(BaseOperation):

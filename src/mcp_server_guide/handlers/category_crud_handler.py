@@ -3,10 +3,10 @@
 from pathlib import Path
 from typing import Any, Dict, List
 
+from ..exceptions import SecurityError
 from ..handlers.unified_crud_handler import UnifiedCrudHandler
 from ..models.enhanced_instruction import EnhancedInstruction
 from ..security.path_validator import PathValidator
-from ..exceptions import SecurityError
 
 
 class CategoryCrudHandler(UnifiedCrudHandler):

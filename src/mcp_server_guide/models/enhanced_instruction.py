@@ -1,6 +1,7 @@
 """Enhanced instruction model with flexible action placement and field validation."""
 
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 

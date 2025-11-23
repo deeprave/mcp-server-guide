@@ -1,7 +1,8 @@
 """Base class for models that define operations."""
 
 from types import MappingProxyType
-from typing import Dict, Type, ClassVar
+from typing import ClassVar, Dict, Type
+
 from pydantic import BaseModel
 
 from .operation_base import BaseOperation
@@ -38,6 +39,7 @@ def discover_models() -> list[Type[BaseModelOperations]]:
 
     import importlib
     import pkgutil
+
     from .. import models
 
     # Dynamically import all modules in the models package

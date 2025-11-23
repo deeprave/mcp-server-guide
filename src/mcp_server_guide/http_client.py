@@ -2,7 +2,9 @@
 
 from dataclasses import dataclass
 from typing import Dict, Optional
+
 import requests
+
 from .logging_config import get_logger
 from .naming import user_agent
 

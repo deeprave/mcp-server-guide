@@ -1,7 +1,7 @@
 """Pattern normalization utilities."""
 
 import shlex
-from typing import List, Union, Any
+from typing import Any, List, Union
 
 
 def normalize_patterns(patterns_input: Union[str, List[Any]]) -> List[str]:

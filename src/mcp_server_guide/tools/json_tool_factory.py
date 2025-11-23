@@ -1,6 +1,7 @@
 """Factory for creating JSON tool functions to eliminate duplication."""
 
-from typing import Dict, Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable, Dict
+
 from ..operations.base import execute_json_operation
 
 

@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Optional
+
 from .logging_config import get_logger
 
 logger = get_logger()
@@ -71,8 +72,9 @@ class FileCache:
         if cache_dir:
             self.cache_dir = Path(cache_dir)
         else:
-            from .naming import cache_directory_name
             import os
+
+            from .naming import cache_directory_name
 
             xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
             if xdg_cache_home:

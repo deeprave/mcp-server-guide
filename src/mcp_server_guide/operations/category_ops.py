@@ -1,17 +1,18 @@
 """Category-specific operations."""
 
-from typing import List, Dict, Any, Optional
-from .operation_base import BaseOperation
+from typing import Any, Dict, List, Optional
+
 from ..models.project_config import ProjectConfig
 from ..tools.category_tools import (
     add_category,
-    update_category,
-    remove_category,
-    list_categories,
     add_to_category,
-    remove_from_category,
     get_category_content,
+    list_categories,
+    remove_category,
+    remove_from_category,
+    update_category,
 )
+from .operation_base import BaseOperation
 
 
 class CategoryAddOperation(BaseOperation):

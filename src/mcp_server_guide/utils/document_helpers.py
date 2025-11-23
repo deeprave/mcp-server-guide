@@ -1,7 +1,8 @@
 """Helper functions for document management."""
 
 from pathlib import Path
-from ..constants import METADATA_SUFFIX, DOCUMENT_SUBDIR
+
+from ..constants import DOCUMENT_SUBDIR, METADATA_SUFFIX
 
 # Supported document file extensions
 DOCUMENT_EXTENSIONS = {".md", ".yaml", ".yml", ".json", ".pdf", ".txt", ".rst", ".adoc"}

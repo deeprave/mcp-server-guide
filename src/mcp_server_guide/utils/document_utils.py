@@ -2,9 +2,11 @@
 
 import hashlib
 import mimetypes
-import magic
-from typing import Optional
 from pathlib import Path
+from typing import Optional
+
+import magic
+
 from ..logging_config import get_logger
 
 logger = get_logger()

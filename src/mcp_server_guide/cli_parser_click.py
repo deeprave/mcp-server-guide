@@ -1,10 +1,11 @@
 """Click-based CLI parser for guide commands."""
 
-import click
-from typing import List, Optional, Any
 from dataclasses import dataclass
+from typing import Any, List, Optional
 
-from mcp_server_guide.commands import (
+import click
+
+from .commands import (
     CMD_AGENT_INFO,
     CMD_CATEGORY,
     CMD_CHECK,

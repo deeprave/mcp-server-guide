@@ -1,16 +1,17 @@
 """Persistent project configuration (Issue 004)."""
 
-import yaml
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
+
+import yaml
 
 from .file_lock import lock_update
 from .logging_config import get_logger
-from .path_resolver import LazyPath
-from .models.project_config import ProjectConfig
 from .models.config_file import ConfigFile
+from .models.project_config import ProjectConfig
 from .models.speckit_config import SpecKitConfig
+from .path_resolver import LazyPath
 
 __all__ = ["ProjectConfig", "ProjectConfigManager"]
 

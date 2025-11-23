@@ -1,7 +1,7 @@
 """Document data array processing utilities."""
 
-from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from .text_conversion import decode_data_array, encode_data_array
 

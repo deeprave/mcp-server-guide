@@ -1,8 +1,8 @@
 """Language auto-detection based on project files."""
 
-from pathlib import Path
-from typing import Optional, List
 import glob
+from pathlib import Path
+from typing import List, Optional
 
 
 def count_source_files(project_path: str, patterns: List[str], max_depth: int = 3, max_files: int = 60) -> int:

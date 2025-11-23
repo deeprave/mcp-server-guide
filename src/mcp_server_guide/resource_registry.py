@@ -1,15 +1,15 @@
 """Resource registration for MCP server."""
 
-from typing import TYPE_CHECKING, Callable, Awaitable
+from typing import TYPE_CHECKING, Awaitable, Callable
 
 from mcp.server.fastmcp import FastMCP
 
+from .help_system import format_guide_help
 from .logging_config import get_logger
-from .models.collection import Collection
 from .models.category import Category
+from .models.collection import Collection
 from .tools.category_tools import get_category_content
 from .tools.collection_tools import get_collection_content
-from .help_system import format_guide_help
 
 if TYPE_CHECKING:
     from .project_config import ProjectConfig

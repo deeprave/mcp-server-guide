@@ -1,8 +1,8 @@
 """DocumentInfo model for managed documents."""
 
-from pathlib import Path
-from typing import Dict, Any
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict
 
 
 @dataclass

@@ -1,6 +1,6 @@
 """Prompt discovery tools."""
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 async def list_prompts() -> Dict[str, Any]:

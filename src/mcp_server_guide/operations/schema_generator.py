@@ -1,7 +1,8 @@
 """Schema generation for operation tool descriptions."""
 
 import json
-from typing import Dict, List, Type, Any
+from typing import Any, Dict, List, Type
+
 from .model_base import BaseModelOperations, discover_models
 
 

@@ -1,12 +1,14 @@
 """Main CLI entry point for MCP server."""
 
+import asyncio
 import logging
 import os
 import sys
-import asyncio
-from typing import Any, Dict, cast
-import click
 from contextvars import ContextVar
+from typing import Any, Dict, cast
+
+import click
+
 from .config import Config
 from .logging_config import get_logger
 from .path_resolver import LazyPath
@@ -212,6 +214,7 @@ def parse_cli_arguments() -> Dict[str, Any]:
     It does NOT start the server - that's handled separately.
     """
     import sys
+
     from click.testing import CliRunner
 
     # Get the Click command

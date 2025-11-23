@@ -1,10 +1,12 @@
 """Async HTTP client with security features."""
 
 import asyncio
-from typing import Dict, Any, Optional, Type
 from types import TracebackType
+from typing import Any, Dict, Optional, Type
 from urllib.parse import urlparse
+
 import aiohttp
+
 from ..logging_config import get_logger
 
 logger = get_logger()

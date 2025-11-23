@@ -3,16 +3,17 @@
 import json
 from pathlib import Path
 from typing import Dict, List
+
+from ..constants import DOCUMENT_SUBDIR
+from ..logging_config import get_logger
 from ..models.category import Category
 from ..models.document_info import DocumentInfo
-from ..logging_config import get_logger
 from ..utils.document_helpers import (
-    get_docs_dir,
-    is_document_file,
-    get_metadata_path,
     DOCUMENT_EXTENSIONS,
+    get_docs_dir,
+    get_metadata_path,
+    is_document_file,
 )
-from ..constants import DOCUMENT_SUBDIR
 
 logger = get_logger()
 
