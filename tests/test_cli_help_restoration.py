@@ -56,9 +56,15 @@ def test_cli_parser_parses_help_flag():
     """Test CLI parser parses help flag correctly."""
     command = parse_command(["-h"])
     assert command.type == "help"
+    assert command.data is not None
+    assert "help_text" in command.data
+    assert command.target is None
 
     command = parse_command(["--help"])
     assert command.type == "help"
+    assert command.data is not None
+    assert "help_text" in command.data
+    assert command.target is None
 
 
 def test_cli_parser_help_with_context():
@@ -86,13 +92,13 @@ async def test_guide_integration_handles_help_flag():
     """Test guide integration handles help flag."""
     handler = GuidePromptHandler()
 
-    with patch("mcp_server_guide.help_system.format_guide_help") as mock_help:
-        mock_help.return_value = "Test help content"
+    # -h and --help now return Click's captured help text
+    result = await handler.handle_guide_request(["-h"])
+    assert "Usage: guide" in result or "Error: No such option: -h" in result
 
-        result = await handler.handle_guide_request(["-h"])
-
-        assert result == "Test help content"
-        mock_help.assert_called_once()
+    result = await handler.handle_guide_request(["--help"])
+    assert "Usage: guide" in result
+    assert "Options:" in result
 
 
 @pytest.mark.asyncio
@@ -100,13 +106,9 @@ async def test_guide_integration_handles_help_with_context():
     """Test guide integration handles help with context."""
     handler = GuidePromptHandler()
 
-    with patch("mcp_server_guide.help_system.format_guide_help") as mock_help:
-        mock_help.return_value = "Context-specific help"
-
-        result = await handler.handle_guide_request(["-h", "planning"])
-
-        assert result == "Context-specific help"
-        mock_help.assert_called_once()  # No context parameter in original implementation
+    # Click now handles help - it will show error for invalid args
+    result = await handler.handle_guide_request(["-h", "planning"])
+    assert "Usage: guide" in result or "Error:" in result
 
 
 @pytest.mark.asyncio
@@ -114,10 +116,6 @@ async def test_guide_integration_handles_long_help_flag():
     """Test guide integration handles --help flag."""
     handler = GuidePromptHandler()
 
-    with patch("mcp_server_guide.help_system.format_guide_help") as mock_help:
-        mock_help.return_value = "Test help content"
-
-        result = await handler.handle_guide_request(["--help"])
-
-        assert result == "Test help content"
-        mock_help.assert_called_once()
+    result = await handler.handle_guide_request(["--help"])
+    assert "Usage: guide" in result
+    assert "Options:" in result

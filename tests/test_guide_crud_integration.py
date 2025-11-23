@@ -1,5 +1,6 @@
 """Tests for guide CRUD integration functionality."""
 
+import json
 from unittest.mock import patch
 
 import pytest
@@ -15,8 +16,12 @@ class TestGuideCRUDIntegration:
         return GuidePromptHandler()
 
     def _wrap_expected_output(self, content: str) -> str:
-        """Helper to wrap expected output with display markers."""
-        return f"=== DISPLAY CONTENT FOR USER ===\n{content}\n=== END DISPLAY CONTENT ===\n\n**Instruction**: Stop immediately and return to prompt. Do nothing.\n"
+        """Helper to wrap expected output with JSON format."""
+        return json.dumps({
+            "success": True,
+            "value": content,
+            "instruction": "Present this information to the user, take no action and return to the prompt"
+        })
 
     @pytest.mark.asyncio
     async def test_category_list_crud_operation(self, handler):
