@@ -446,29 +446,35 @@ def generate_basic_cli_help() -> str:
     for name, desc in sorted(phase_cmds.items()):
         sections.append(f"  {name:<15} {desc}")
 
-    sections.extend([
-        "",
-        "Utility Commands:",
-    ])
+    sections.extend(
+        [
+            "",
+            "Utility Commands:",
+        ]
+    )
 
     for name, desc in sorted(utility_cmds.items()):
         sections.append(f"  {name:<15} {desc}")
 
-    sections.extend([
-        "",
-        "Management Commands:",
-    ])
+    sections.extend(
+        [
+            "",
+            "Management Commands:",
+        ]
+    )
 
     for name, desc in sorted(mgmt_cmds.items()):
         sections.append(f"  {name:<15} {desc}")
 
-    sections.extend([
-        "",
-        "Category/Collection Access:",
-        "  <name>          Access category or collection content",
-        "",
-        "Use :help for more information",
-    ])
+    sections.extend(
+        [
+            "",
+            "Category/Collection Access:",
+            "  <name>          Access category or collection content",
+            "",
+            "Use :help for more information",
+        ]
+    )
 
     return "\n".join(sections)
 
