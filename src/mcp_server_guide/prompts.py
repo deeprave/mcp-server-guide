@@ -14,6 +14,7 @@ from .services.speckit_manager import enable_speckit, get_speckit_config, is_spe
 
 # Category tools are now accessed through guide integration
 from .tools.content_tools import get_content
+from .utils.result import Result
 
 if TYPE_CHECKING:
     from .models.project_config import ProjectConfig
@@ -231,7 +232,6 @@ async def check_prompt(arg: Optional[str] = None, content: Optional[str] = None)
 
 async def config_prompt(project: Optional[str] = None, list_projects: bool = False, verbose: bool = False) -> str:
     """Handle config prompt."""
-    from .help_system import _wrap_display_content
     from .session_manager import SessionManager
 
     session_manager = SessionManager()
@@ -240,11 +240,14 @@ async def config_prompt(project: Optional[str] = None, list_projects: bool = Fal
     if project is not None:
         project = project.strip()
         if not project:
-            return _wrap_display_content("Error: Project name cannot be empty")
+            result = Result.failure("Project name cannot be empty", error_type="validation")
+            return json.dumps(result.to_json())
         if len(project) > 255:
-            return _wrap_display_content("Error: Project name too long (max 255 characters)")
+            result = Result.failure("Project name too long (max 255 characters)", error_type="validation")
+            return json.dumps(result.to_json())
         if any(c in project for c in ["/", "\\", "..", "\0"]):
-            return _wrap_display_content("Error: Invalid characters in project name")
+            result = Result.failure("Invalid characters in project name", error_type="validation")
+            return json.dumps(result.to_json())
 
     if list_projects:
         projects = await session_manager.list_all_projects()
@@ -265,7 +268,9 @@ async def config_prompt(project: Optional[str] = None, list_projects: bool = Fal
                     parts.append(f"**Project**: {proj_name}\n**Error**: Failed to load configuration")
             content = "\n\n".join(parts)
 
-        return _wrap_display_content(content)
+        result = Result.ok(content)
+        result.instruction = "Present this information to the user, take no action and return to the prompt"
+        return json.dumps(result.to_json())
 
     # Show specific or current project
     if project:
@@ -275,14 +280,19 @@ async def config_prompt(project: Optional[str] = None, list_projects: bool = Fal
         try:
             project_name = session_manager.get_project_name()
         except ValueError as e:
-            return _wrap_display_content(f"Error: {str(e)}")
-        config = session_manager.get_full_project_config()
+            result = Result.failure(str(e), error_type="project_context", exception=e)
+            result.instruction = "Call switch_project with the basename of the current working directory"
+            return json.dumps(result.to_json())
+        config = await session_manager.get_or_create_project_config(project_name)
 
     if not config:
-        return _wrap_display_content(f"Project '{project_name}' not found")
+        result = Result.failure(f"Project '{project_name}' not found", error_type="project_not_found")
+        return json.dumps(result.to_json())
 
     content = await _format_project_config(project_name, config, verbose=verbose)
-    return _wrap_display_content(content)
+    result = Result.ok(content)
+    result.instruction = "Present this information to the user, take no action and return to the prompt"
+    return json.dumps(result.to_json())
 
 
 async def spec_prompt(arg: Optional[str] = None, ctx: Optional["Context[Any, Any]"] = None) -> str:

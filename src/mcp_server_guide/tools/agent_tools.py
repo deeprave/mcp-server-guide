@@ -1,9 +1,12 @@
 """Agent detection tools."""
 
+import json
+
 from mcp.server.fastmcp import Context
 
 from ..agent_detection import detect_agent, format_agent_info
 from ..logging_config import get_logger
+from ..utils.result import Result
 
 logger = get_logger(__name__)
 
@@ -24,7 +27,8 @@ async def guide_get_agent_info(ctx: Context) -> str:
         server = await get_current_server()
         if not server:
             logger.error("Server not available")
-            return "Error: Server not available"
+            result = Result.failure("Server not available", error_type="server_unavailable")
+            return json.dumps(result.to_json())
 
         # Check cache first
         if server.extensions.agent_info:
@@ -38,10 +42,17 @@ async def guide_get_agent_info(ctx: Context) -> str:
                 logger.debug(f"Agent info detected and cached: {agent_info.name}")
             except (AttributeError, ValueError) as e:
                 logger.error(f"Cannot access session.client_params: {e}")
-                return "Error: Agent detection requires an active MCP session"
+                result = Result.failure(
+                    "Agent detection requires an active MCP session", error_type="session_unavailable", exception=e
+                )
+                return json.dumps(result.to_json())
 
-        return format_agent_info(agent_info, server.name, markdown=False)
+        content = format_agent_info(agent_info, server.name, markdown=False)
+        result = Result.ok(content)
+        result.instruction = "Present this information to the user, take no action and return to the prompt"
+        return json.dumps(result.to_json())
 
     except Exception as e:
         logger.error(f"Exception in guide_get_agent_info: {type(e).__name__}: {str(e)}", exc_info=True)
-        return f"Error: {type(e).__name__}: {str(e)}"
+        result = Result.failure(f"{type(e).__name__}: {str(e)}", error_type="unexpected", exception=e)
+        return json.dumps(result.to_json())

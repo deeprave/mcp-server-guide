@@ -1,5 +1,6 @@
 """Test config_prompt project name resolution with PWD fallback."""
 
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,11 +20,11 @@ async def test_config_prompt_uses_get_project_name_method(monkeypatch: pytest.Mo
         # Mock get_project_name to return test project
         mock_sm.get_project_name.return_value = "test-project"
 
-        # Mock get_full_project_config
+        # Mock get_or_create_project_config
         mock_config = MagicMock()
         mock_config.categories = {}
         mock_config.collections = {}
-        mock_sm.get_full_project_config.return_value = mock_config
+        mock_sm.get_or_create_project_config = AsyncMock(return_value=mock_config)
 
         result = await config_prompt()
 
@@ -73,3 +74,46 @@ async def test_config_prompt_with_explicit_project_bypasses_get_project_name() -
         # Should NOT call get_project_name when explicit project provided
         mock_sm.get_project_name.assert_not_called()
         assert "explicit-project" in result
+
+
+@pytest.mark.asyncio
+async def test_config_prompt_returns_result_json_format() -> None:
+    """Test that config_prompt returns Result.to_json() format."""
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm_class:
+        mock_sm = MagicMock()
+        mock_sm_class.return_value = mock_sm
+
+        mock_sm.get_project_name.return_value = "test-project"
+        mock_config = MagicMock()
+        mock_config.categories = {}
+        mock_config.collections = {}
+        mock_sm.get_or_create_project_config = AsyncMock(return_value=mock_config)
+
+        result = await config_prompt()
+
+        # Should be JSON string with Result format
+        parsed = json.loads(result)
+        assert parsed["success"] is True
+        assert "value" in parsed
+        assert "instruction" in parsed
+        assert "test-project" in parsed["value"]
+
+
+@pytest.mark.asyncio
+async def test_config_prompt_error_includes_error_type() -> None:
+    """Test that config_prompt errors include error_type field from Result."""
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm_class:
+        mock_sm = MagicMock()
+        mock_sm_class.return_value = mock_sm
+
+        error_msg = "Cannot determine project name"
+        mock_sm.get_project_name.side_effect = ValueError(error_msg)
+
+        result = await config_prompt()
+
+        # Should include error_type field from Result pattern
+        parsed = json.loads(result)
+        assert parsed["success"] is False
+        assert "error" in parsed
+        assert "error_type" in parsed  # This is the new field from Result
+        assert parsed["error_type"] == "project_context"
