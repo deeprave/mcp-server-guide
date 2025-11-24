@@ -106,3 +106,38 @@ def test_detect_agent_unknown():
     assert info.normalized_name == "unknown"
     assert info.version == "1.0.0"
     assert info.prompt_prefix == "/"  # Default fallback
+
+
+import json
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_agent_info_returns_result_json_format():
+    """Test that guide_get_agent_info returns Result.to_json() format."""
+    from mcp_server_guide.agent_detection import AgentInfo
+    from mcp_server_guide.tools.agent_tools import guide_get_agent_info
+
+    # Mock context
+    mock_ctx = MagicMock()
+    mock_ctx.session.client_params.client_info.name = "test-agent"
+    mock_ctx.session.client_params.client_info.version = "1.0.0"
+
+    # Mock server
+    mock_server = MagicMock()
+    mock_server.name = "test-server"
+    mock_server.extensions.agent_info = AgentInfo(
+        name="test-agent", normalized_name="test", version="1.0.0", prompt_prefix="@"
+    )
+
+    with patch("mcp_server_guide.server.get_current_server", new=AsyncMock(return_value=mock_server)):
+        result = await guide_get_agent_info(mock_ctx)
+
+        # Should be JSON string with Result format
+        parsed = json.loads(result)
+        assert parsed["success"] is True
+        assert "value" in parsed
+        assert "instruction" in parsed
+        assert "test-agent" in parsed["value"]
