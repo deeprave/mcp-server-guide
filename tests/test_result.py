@@ -1,5 +1,7 @@
 """Tests for Result class."""
 
+import json
+
 import pytest
 
 from mcp_server_guide.utils.result import Result
@@ -107,3 +109,37 @@ def test_result_to_json_omits_none_values() -> None:
     assert "value" not in json_output
     assert "message" not in json_output
     assert "instruction" not in json_output
+
+
+def test_result_failure_default_error_type() -> None:
+    """Test Result.failure() defaults to error_type='unknown'."""
+    result = Result.failure("some error")
+
+    assert result.success is False
+    assert result.error == "some error"
+    assert result.error_type == "unknown"
+
+
+def test_result_failure_default_error_type_in_json() -> None:
+    """Test to_json() includes default error_type='unknown'."""
+    result = Result.failure("some error")
+    json_output = result.to_json()
+
+    assert json_output == {
+        "success": False,
+        "error": "some error",
+        "error_type": "unknown",
+    }
+    assert "exception_type" not in json_output
+    assert "exception_message" not in json_output
+
+
+def test_result_to_json_str_helper() -> None:
+    """Test to_json_str() helper method."""
+    result = Result.ok("test value")
+    json_str = result.to_json_str()
+
+    assert isinstance(json_str, str)
+    parsed = json.loads(json_str)
+    assert parsed["success"] is True
+    assert parsed["value"] == "test value"

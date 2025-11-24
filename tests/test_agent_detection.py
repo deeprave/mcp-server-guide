@@ -109,7 +109,7 @@ def test_detect_agent_unknown():
 
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 
@@ -141,3 +141,71 @@ async def test_agent_info_returns_result_json_format():
         assert "value" in parsed
         assert "instruction" in parsed
         assert "test-agent" in parsed["value"]
+
+
+@pytest.mark.asyncio
+async def test_agent_info_server_unavailable_error():
+    """Server unavailable: get_current_server returns None -> error_type=server_unavailable."""
+    from mcp_server_guide.tools.agent_tools import guide_get_agent_info
+
+    mock_ctx = MagicMock()
+
+    with patch("mcp_server_guide.server.get_current_server", new=AsyncMock(return_value=None)):
+        result = await guide_get_agent_info(mock_ctx)
+
+    parsed = json.loads(result)
+
+    assert parsed["success"] is False
+    assert parsed["error_type"] == "server_unavailable"
+    assert "Server not available" in parsed["error"]
+
+
+@pytest.mark.asyncio
+async def test_agent_info_session_unavailable_error():
+    """Session unavailable: accessing session.client_params raises AttributeError."""
+    from mcp_server_guide.tools.agent_tools import guide_get_agent_info
+
+    mock_ctx = MagicMock()
+    mock_server = MagicMock()
+    mock_server.extensions.agent_info = None
+
+    # Make detect_agent raise AttributeError when accessing client_params
+    with (
+        patch("mcp_server_guide.server.get_current_server", new=AsyncMock(return_value=mock_server)),
+        patch(
+            "mcp_server_guide.tools.agent_tools.detect_agent", side_effect=AttributeError("client_params not available")
+        ),
+    ):
+        result = await guide_get_agent_info(mock_ctx)
+
+    parsed = json.loads(result)
+
+    assert parsed["success"] is False
+    assert parsed["error_type"] == "session_unavailable"
+    assert "Agent detection requires an active MCP session" in parsed["error"]
+
+
+@pytest.mark.asyncio
+async def test_agent_info_unexpected_exception_error():
+    """Unexpected exception: detect_agent raises -> error_type=unexpected and exception details."""
+    from mcp_server_guide.tools.agent_tools import guide_get_agent_info
+
+    mock_ctx = MagicMock()
+    mock_server = MagicMock()
+    mock_server.extensions.agent_info = None
+
+    unexpected_error = RuntimeError("boom")
+
+    with (
+        patch("mcp_server_guide.server.get_current_server", new=AsyncMock(return_value=mock_server)),
+        patch("mcp_server_guide.tools.agent_tools.detect_agent", side_effect=unexpected_error),
+    ):
+        result = await guide_get_agent_info(mock_ctx)
+
+    parsed = json.loads(result)
+
+    assert parsed["success"] is False
+    assert parsed["error_type"] == "unexpected"
+    # Exception diagnostics should be present
+    assert parsed.get("exception_type") == "RuntimeError"
+    assert parsed.get("exception_message") == "boom"

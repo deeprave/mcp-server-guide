@@ -12,6 +12,7 @@ async def test_config_prompt_empty_project_name() -> None:
     result = await config_prompt(project="   ", list_projects=False, verbose=False)
     parsed = json.loads(result)
     assert parsed["success"] is False
+    assert parsed["error_type"] == "validation"
     assert "Project name cannot be empty" in parsed["error"]
 
 
@@ -22,6 +23,7 @@ async def test_config_prompt_long_project_name() -> None:
     result = await config_prompt(project=long_name, list_projects=False, verbose=False)
     parsed = json.loads(result)
     assert parsed["success"] is False
+    assert parsed["error_type"] == "validation"
     assert "Project name too long" in parsed["error"]
 
 
@@ -31,6 +33,7 @@ async def test_config_prompt_invalid_characters_slash() -> None:
     result = await config_prompt(project="project/name", list_projects=False, verbose=False)
     parsed = json.loads(result)
     assert parsed["success"] is False
+    assert parsed["error_type"] == "validation"
     assert "Invalid characters in project name" in parsed["error"]
 
 
@@ -40,6 +43,7 @@ async def test_config_prompt_invalid_characters_backslash() -> None:
     result = await config_prompt(project="project\\name", list_projects=False, verbose=False)
     parsed = json.loads(result)
     assert parsed["success"] is False
+    assert parsed["error_type"] == "validation"
     assert "Invalid characters in project name" in parsed["error"]
 
 
@@ -49,6 +53,7 @@ async def test_config_prompt_invalid_characters_dotdot() -> None:
     result = await config_prompt(project="../project", list_projects=False, verbose=False)
     parsed = json.loads(result)
     assert parsed["success"] is False
+    assert parsed["error_type"] == "validation"
     assert "Invalid characters in project name" in parsed["error"]
 
 
@@ -58,6 +63,7 @@ async def test_config_prompt_invalid_characters_null() -> None:
     result = await config_prompt(project="project\0name", list_projects=False, verbose=False)
     parsed = json.loads(result)
     assert parsed["success"] is False
+    assert parsed["error_type"] == "validation"
     assert "Invalid characters in project name" in parsed["error"]
 
 

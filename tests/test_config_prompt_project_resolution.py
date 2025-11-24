@@ -117,3 +117,51 @@ async def test_config_prompt_error_includes_error_type() -> None:
         assert "error" in parsed
         assert "error_type" in parsed  # This is the new field from Result
         assert parsed["error_type"] == "project_context"
+
+
+@pytest.mark.asyncio
+async def test_config_prompt_list_projects_returns_result_json_format() -> None:
+    """Test list_projects=True branch returns Result.to_json() format."""
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm_class:
+        mock_sm = MagicMock()
+        mock_sm_class.return_value = mock_sm
+
+        # Mock projects list
+        mock_sm.list_all_projects = AsyncMock(return_value=["proj-a", "proj-b"])
+
+        result = await config_prompt(list_projects=True)
+
+        # Should be JSON string with Result format
+        parsed = json.loads(result)
+        assert parsed["success"] is True
+        assert "value" in parsed
+        assert "instruction" in parsed
+
+        # Projects should be included in the value
+        assert "proj-a" in parsed["value"]
+        assert "proj-b" in parsed["value"]
+
+
+@pytest.mark.asyncio
+async def test_config_prompt_project_not_found_error_result_json_format() -> None:
+    """Test project_not_found error branch returns Result.to_json() format."""
+    with patch("mcp_server_guide.session_manager.SessionManager") as mock_sm_class:
+        mock_sm = MagicMock()
+        mock_sm_class.return_value = mock_sm
+
+        # Mock project name resolution
+        mock_sm.get_project_name.return_value = "missing-project"
+
+        # Simulate missing project config
+        mock_sm.get_or_create_project_config = AsyncMock(return_value=None)
+
+        result = await config_prompt()
+
+        # Should be JSON string with Result error format
+        parsed = json.loads(result)
+        assert parsed["success"] is False
+        assert parsed["error_type"] == "project_not_found"
+
+        # Error message should reference the missing project
+        assert "error" in parsed
+        assert "missing-project" in parsed["error"]
