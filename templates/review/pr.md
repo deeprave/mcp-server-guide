@@ -13,7 +13,7 @@ Use markdown format (dashes, not bullets and subheadings as appropriate)
 - Provide a description of the changes
   - Provide the following
   - Overview
-    - Describe the reason/rationale/bugfix by this pull request
+    - Describe the reason, rationale or issue addressed by this pull request
   - Changes
     - Provide a concise description of the changes made
       - Do not provide specific details of the change (files, line numbers)

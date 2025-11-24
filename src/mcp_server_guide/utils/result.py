@@ -1,6 +1,7 @@
 """Result pattern for rich error handling."""
 
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
 
@@ -15,7 +16,7 @@ class Result:
     value: Optional[str] = None
     error: Optional[str] = None
     error_type: Optional[str] = None
-    exception: Optional[Exception] = None
+    exception: Optional[Exception] = field(default=None, repr=False, compare=False)
     message: Optional[str] = None
     instruction: Optional[str] = None
 
@@ -60,3 +61,7 @@ class Result:
             result["instruction"] = self.instruction
 
         return result
+
+    def to_json_str(self) -> str:
+        """Convert to JSON string for MCP tool responses."""
+        return json.dumps(self.to_json())
