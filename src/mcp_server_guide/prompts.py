@@ -272,8 +272,11 @@ async def config_prompt(project: Optional[str] = None, list_projects: bool = Fal
         config = await session_manager.load_project_config(project)
         project_name = project
     else:
+        try:
+            project_name = session_manager.get_project_name()
+        except ValueError as e:
+            return _wrap_display_content(f"Error: {str(e)}")
         config = session_manager.get_full_project_config()
-        project_name = session_manager.project_name or "unknown"
 
     if not config:
         return _wrap_display_content(f"Project '{project_name}' not found")
