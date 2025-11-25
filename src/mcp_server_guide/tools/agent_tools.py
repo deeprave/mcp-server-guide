@@ -26,7 +26,7 @@ async def guide_get_agent_info(ctx: Context) -> str:
         server = await get_current_server()
         if not server:
             logger.error("Server not available")
-            result = Result.failure("Server not available", error_type="server_unavailable")
+            result: Result[str] = Result.failure("Server not available", error_type="server_unavailable")
             return result.to_json_str()
 
         # Check cache first

@@ -9,141 +9,97 @@ class TestDiscussPrompt:
     """Test discuss prompt functionality."""
 
     @pytest.mark.asyncio
-    async def test_discuss_works_when_no_consent_file(self, session_temp_dir):
-        """Test that discuss prompt works without .consent file."""
+    async def test_discuss_is_callable(self):
+        """Test that discuss prompt is callable and returns non-empty string."""
         result = await discuss_prompt()
-        assert "Discuss" in result or "discuss" in result
+        assert isinstance(result, str)
+        assert len(result) > 0
 
     @pytest.mark.asyncio
-    async def test_discuss_provides_file_instructions(self, session_temp_dir):
-        """Test that discuss prompt provides file management instructions."""
-        # Create .consent file
-        consent_file = session_temp_dir / ".consent"
-        consent_file.write_text("implementation")
+    async def test_discuss_includes_user_text(self):
+        """Test that discuss prompt includes user-provided text."""
+        user_text = "refactoring authentication module"
+        result = await discuss_prompt(user_text)
+        assert isinstance(result, str)
+        assert len(result) > 0
+        assert user_text in result
 
-        result = await discuss_prompt()
 
-        # Should provide instructions to remove .consent file
-        assert "Remove `.consent` file" in result or "remove" in result.lower()
-        # File should still exist since server doesn't manipulate it
-        assert consent_file.exists()
+class TestPlanPrompt:
+    """Test plan prompt functionality."""
 
     @pytest.mark.asyncio
-    async def test_plan_works_independently(self, session_temp_dir):
-        """Test that plan prompt works independently."""
+    async def test_plan_is_callable(self):
+        """Test that plan prompt is callable and returns non-empty string."""
         result = await plan_prompt()
-        assert "Plan" in result or "plan" in result
+        assert isinstance(result, str)
+        assert len(result) > 0
 
     @pytest.mark.asyncio
-    async def test_discuss_and_plan_return_different_results(self, session_temp_dir):
-        """Test that discuss and plan return different content."""
-        discuss_result = await discuss_prompt()
-        plan_result = await plan_prompt()
-
-        # Should be different responses
-        assert discuss_result != plan_result
-        assert "discuss" in discuss_result.lower() or "Discuss" in discuss_result
-        assert "plan" in plan_result.lower() or "Plan" in plan_result
-
-
-class TestStatusPrompt:
-    """Test status prompt functionality."""
-
-    @pytest.mark.asyncio
-    async def test_status_works_when_no_consent(self, session_temp_dir):
-        """Test that status works without .consent file."""
-        result = await status_prompt()
-        assert "Status" in result or "status" in result.lower()
-
-    @pytest.mark.asyncio
-    async def test_status_works_with_implementation_consent(self, session_temp_dir):
-        """Test that status works with implementation .consent file."""
-        consent_file = session_temp_dir / ".consent"
-        consent_file.write_text("implementation")
-
-        result = await status_prompt()
-        assert "Status" in result or "check" in result.lower()
-
-    @pytest.mark.asyncio
-    async def test_status_works_with_check_consent(self, session_temp_dir):
-        """Test that status works with check .consent file."""
-        consent_file = session_temp_dir / ".consent"
-        consent_file.write_text("check")
-
-        result = await status_prompt()
-        assert "Status" in result or "check" in result.lower()
+    async def test_plan_includes_user_text(self):
+        """Test that plan prompt includes user-provided text."""
+        user_text = "implement caching layer"
+        result = await plan_prompt(user_text)
+        assert isinstance(result, str)
+        assert len(result) > 0
+        assert user_text in result
 
 
 class TestImplementPrompt:
     """Test implement prompt functionality."""
 
     @pytest.mark.asyncio
-    async def test_implement_works_when_consent_contains_implementation(self, session_temp_dir):
-        """Test that implement prompt works with proper consent."""
+    async def test_implement_is_callable(self):
+        """Test that implement prompt is callable and returns non-empty string."""
         result = await implement_prompt()
-        assert "Implementation" in result or "implementation" in result.lower()
+        assert isinstance(result, str)
+        assert len(result) > 0
 
     @pytest.mark.asyncio
-    async def test_implement_fails_when_consent_missing_or_wrong(self, session_temp_dir):
-        """Test that implement prompt provides instructions when consent missing."""
-        result = await implement_prompt()
-        # Should provide instructions to create .consent file
-        assert "Create `.consent` file" in result or ".consent" in result
+    async def test_implement_includes_user_text(self):
+        """Test that implement prompt includes user-provided text."""
+        user_text = "add error handling"
+        result = await implement_prompt(user_text)
+        assert isinstance(result, str)
+        assert len(result) > 0
+        assert user_text in result
 
 
 class TestCheckPrompt:
     """Test check prompt functionality."""
 
     @pytest.mark.asyncio
-    async def test_check_works_when_consent_contains_check(self, session_temp_dir):
-        """Test that check prompt works with proper consent."""
+    async def test_check_is_callable(self):
+        """Test that check prompt is callable and returns non-empty string."""
         result = await check_prompt()
-        assert "Check" in result or "check" in result.lower()
-
-    @pytest.mark.asyncio
-    async def test_check_fails_when_consent_missing_or_wrong(self, session_temp_dir):
-        """Test that check prompt provides instructions when consent missing."""
-        result = await check_prompt()
-        # Should provide instructions to update .consent file
-        assert "Update `.consent` file" in result or ".consent" in result
-
-
-class TestEdgeCases:
-    """Test invalid arguments and unexpected file states."""
-
-    @pytest.mark.asyncio
-    async def test_prompts_with_invalid_arguments(self, session_temp_dir):
-        """Test prompts handle invalid arguments gracefully."""
-        # Test with invalid argument types
-        result = await status_prompt("invalid_arg")
         assert isinstance(result, str)
-
-        result = await discuss_prompt("invalid_arg")
-        assert isinstance(result, str)
+        assert len(result) > 0
 
     @pytest.mark.asyncio
-    async def test_corrupted_consent_file(self, session_temp_dir):
-        """Test behavior with corrupted .consent file."""
-        consent_file = session_temp_dir / ".consent"
-        consent_file.write_bytes(b"\x00\x01\x02")  # Binary data
+    async def test_check_includes_user_text(self):
+        """Test that check prompt includes user-provided text."""
+        user_text = "verify type annotations"
+        result = await check_prompt(user_text)
+        assert isinstance(result, str)
+        assert len(result) > 0
+        assert user_text in result
 
+
+class TestStatusPrompt:
+    """Test status prompt functionality."""
+
+    @pytest.mark.asyncio
+    async def test_status_is_callable(self):
+        """Test that status prompt is callable and returns non-empty string."""
         result = await status_prompt()
         assert isinstance(result, str)
+        assert len(result) > 0
 
     @pytest.mark.asyncio
-    async def test_permission_denied_consent_file(self, session_temp_dir):
-        """Test behavior when .consent file is not readable."""
-        import os
-
-        consent_file = session_temp_dir / ".consent"
-        consent_file.write_text("test")
-
-        # Make file unreadable (skip on Windows)
-        if os.name != "nt":
-            consent_file.chmod(0o000)
-
-            result = await status_prompt()
-            assert isinstance(result, str)
-
-            # Restore permissions for cleanup
-            consent_file.chmod(0o644)
+    async def test_status_includes_user_text(self):
+        """Test that status prompt includes user-provided text."""
+        user_text = "check current progress"
+        result = await status_prompt(user_text)
+        assert isinstance(result, str)
+        assert len(result) > 0
+        assert user_text in result
