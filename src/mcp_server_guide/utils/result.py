@@ -2,18 +2,20 @@
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Generic, Optional, TypeVar
+
+T = TypeVar("T")
 
 
 @dataclass
-class Result:
+class Result(Generic[T]):
     """Result pattern for rich error handling.
 
-    Simplified non-generic version with string values.
+    Generic result type that can hold any value type.
     """
 
     success: bool
-    value: Optional[str] = None
+    value: Optional[T] = None
     error: Optional[str] = None
     error_type: Optional[str] = None
     exception: Optional[Exception] = field(default=None, repr=False, compare=False)
@@ -21,12 +23,12 @@ class Result:
     instruction: Optional[str] = None
 
     @classmethod
-    def ok(cls, value: Optional[str]) -> "Result":
+    def ok(cls, value: T) -> "Result[T]":
         """Create a successful result."""
         return cls(success=True, value=value)
 
     @classmethod
-    def failure(cls, error: str, error_type: str = "unknown", exception: Optional[Exception] = None) -> "Result":
+    def failure(cls, error: str, error_type: str = "unknown", exception: Optional[Exception] = None) -> "Result[T]":
         """Create a failure result with error information."""
         return cls(success=False, error=error, error_type=error_type, exception=exception)
 

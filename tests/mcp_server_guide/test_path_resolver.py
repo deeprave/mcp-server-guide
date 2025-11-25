@@ -395,7 +395,8 @@ class TestLazyPathResolveOptions:
         resolved = lazy_path.resolve(expand=True)
 
         expected = Path.home() / "test" / "path"
-        assert resolved == expected
+        # Resolve both paths to handle macOS symlinks (/var vs /private/var)
+        assert resolved.resolve() == expected.resolve()
 
     @pytest.mark.asyncio
     async def test_resolve_combined_expansions(self):
@@ -408,6 +409,7 @@ class TestLazyPathResolveOptions:
             resolved = lazy_path.resolve(expand=True)
 
             expected = Path.home() / "mydir" / "file"
-            assert resolved == expected
+            # Resolve both paths to handle macOS symlinks (/var vs /private/var)
+            assert resolved.resolve() == expected.resolve()
         finally:
             del os.environ["SUBDIR"]

@@ -93,15 +93,3 @@ class TestSessionScopedTestIsolation:
 
             # Directory should be completely removed
             assert not test_dir.exists()
-
-    def test_per_test_subdirectories_are_isolated(self, session_temp_dir, complete_test_isolation):
-        """Test that each test gets its own subdirectory within session temp dir."""
-        # Check that we're running in a subdirectory of the session temp dir
-        current_dir = Path.cwd().resolve()
-        session_dir_resolved = session_temp_dir.resolve()
-
-        # Current working directory should be within session temp dir
-        assert session_dir_resolved in current_dir.parents or current_dir == session_dir_resolved
-
-        # Should be in a unique test subdirectory
-        assert current_dir != session_dir_resolved

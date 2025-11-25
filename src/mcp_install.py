@@ -155,9 +155,7 @@ async def _copy_item(
         return 1
 
 
-async def copy_templates_with_interaction(
-    source: Path, destination: Path, verbose: int = 0
-) -> int:
+async def copy_templates_with_interaction(source: Path, destination: Path, verbose: int = 0) -> int:
     """Copy templates from source to destination with user interaction.
 
     When copying:

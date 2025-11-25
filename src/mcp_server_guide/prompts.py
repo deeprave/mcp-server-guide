@@ -241,7 +241,7 @@ async def config_prompt(project: Optional[str] = None, list_projects: bool = Fal
     if project is not None:
         project = project.strip()
         if not project:
-            result = Result.failure("Project name cannot be empty", error_type="validation")
+            result: Result[str] = Result.failure("Project name cannot be empty", error_type="validation")
             return result.to_json_str()
         if len(project) > 255:
             result = Result.failure("Project name too long (max 255 characters)", error_type="validation")

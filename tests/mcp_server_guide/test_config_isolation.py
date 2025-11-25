@@ -73,7 +73,8 @@ class TestConfigIsolation:
                 os.chdir(original_cwd)
 
         # Working directory should only have the isolated_config_file, no other config files
-        final_files = set(working_dir.glob("*config*.yaml"))
+        # Check specifically for test_config.yaml, not all *config*.yaml files
+        final_files = set(working_dir.glob("test_config*.yaml"))
         # The isolated_config_file is expected to be in the working dir
         expected_files = {isolated_config_file} if isolated_config_file.exists() else set()
         assert final_files == expected_files

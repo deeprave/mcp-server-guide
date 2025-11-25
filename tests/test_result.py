@@ -1,6 +1,7 @@
 """Tests for Result class."""
 
 import json
+from typing import Any
 
 import pytest
 
@@ -19,7 +20,7 @@ def test_result_ok_creates_success() -> None:
 
 def test_result_failure_creates_error() -> None:
     """Test Result.failure() creates error result."""
-    result = Result.failure("test error", error_type="validation")
+    result: Result[Any] = Result.failure("test error", error_type="validation")
 
     assert result.success is False
     assert result.error == "test error"
@@ -67,7 +68,7 @@ def test_result_to_json_success_with_instruction() -> None:
 
 def test_result_to_json_failure_basic() -> None:
     """Test to_json() for basic failure."""
-    result = Result.failure("Something went wrong", error_type="unknown")
+    result: Result[str] = Result.failure("Something went wrong", error_type="unknown")
     json_output = result.to_json()
 
     assert json_output == {"success": False, "error": "Something went wrong", "error_type": "unknown"}
@@ -75,7 +76,7 @@ def test_result_to_json_failure_basic() -> None:
 
 def test_result_to_json_failure_with_instruction() -> None:
     """Test to_json() for failure with instruction."""
-    result = Result.failure("Project not found", error_type="project_context")
+    result: Result[str] = Result.failure("Project not found", error_type="project_context")
     result.instruction = "Call switch_project to set context"
     json_output = result.to_json()
 
@@ -90,7 +91,7 @@ def test_result_to_json_failure_with_instruction() -> None:
 def test_result_to_json_failure_with_exception() -> None:
     """Test to_json() includes exception details."""
     exc = ValueError("Invalid input")
-    result = Result.failure("Validation failed", error_type="validation", exception=exc)
+    result: Result[str] = Result.failure("Validation failed", error_type="validation", exception=exc)
     json_output = result.to_json()
 
     assert json_output["success"] is False
@@ -113,7 +114,7 @@ def test_result_to_json_omits_none_values() -> None:
 
 def test_result_failure_default_error_type() -> None:
     """Test Result.failure() defaults to error_type='unknown'."""
-    result = Result.failure("some error")
+    result: Result[str] = Result.failure("some error")
 
     assert result.success is False
     assert result.error == "some error"
@@ -122,7 +123,7 @@ def test_result_failure_default_error_type() -> None:
 
 def test_result_failure_default_error_type_in_json() -> None:
     """Test to_json() includes default error_type='unknown'."""
-    result = Result.failure("some error")
+    result: Result[str] = Result.failure("some error")
     json_output = result.to_json()
 
     assert json_output == {
@@ -143,3 +144,52 @@ def test_result_to_json_str_helper() -> None:
     parsed = json.loads(json_str)
     assert parsed["success"] is True
     assert parsed["value"] == "test value"
+
+
+# Tests for Generic[T] behavior
+
+
+def test_result_ok_with_dict_value() -> None:
+    """Test Result.ok() with dict value."""
+    data = {"key": "value", "count": 42}
+    result = Result.ok(data)
+
+    assert result.success is True
+    assert result.value == data
+    assert result.value["key"] == "value"
+    assert result.value["count"] == 42
+
+
+def test_result_ok_with_list_value() -> None:
+    """Test Result.ok() with list value."""
+    items = ["item1", "item2", "item3"]
+    result = Result.ok(items)
+
+    assert result.success is True
+    assert result.value == items
+    assert len(result.value) == 3
+
+
+def test_result_ok_with_custom_object() -> None:
+    """Test Result.ok() with custom object."""
+
+    class CustomObject:
+        def __init__(self, name: str):
+            self.name = name
+
+    obj = CustomObject("test")
+    result = Result.ok(obj)
+
+    assert result.success is True
+    assert result.value is not None
+    assert result.value.name == "test"
+
+
+def test_result_to_json_with_dict_value() -> None:
+    """Test to_json() preserves dict values."""
+    data = {"nested": {"key": "value"}}
+    result = Result.ok(data)
+    json_output = result.to_json()
+
+    assert json_output["success"] is True
+    assert json_output["value"] == data

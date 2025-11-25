@@ -2,6 +2,7 @@
 
 import asyncio
 import atexit
+import hashlib
 import os
 import shutil
 import tempfile
@@ -18,12 +19,77 @@ from mcp_server_guide.session_manager import SessionManager
 _session_temp_dir: Path | None = None
 
 
+def pytest_configure(config):
+    """Configure pytest - runs BEFORE any test collection or imports.
+
+    This is the ONLY way to ensure environment variables are set before
+    any code imports and caches paths.
+    """
+    global _session_temp_dir
+
+    # Create session-wide temp directory
+    _session_temp_dir = Path(tempfile.mkdtemp(prefix="mcp_test_session_"))
+
+    # Create isolated config and docs directories
+    test_config_dir = _session_temp_dir / "config"
+    test_docs_dir = _session_temp_dir / "docs"
+    test_config_dir.mkdir(parents=True)
+    test_docs_dir.mkdir(parents=True)
+
+    # Create mcp-server-guide subdirectory for config files
+    (test_config_dir / "mcp-server-guide").mkdir(parents=True, exist_ok=True)
+
+    # Override environment variables BEFORE any imports
+    os.environ["HOME"] = str(_session_temp_dir)
+    os.environ["XDG_CONFIG_HOME"] = str(test_config_dir)
+    os.environ["XDG_DATA_HOME"] = str(test_docs_dir)
+
+    # Windows support
+    if os.name == "nt":
+        os.environ["APPDATA"] = str(test_config_dir)
+        os.environ["LOCALAPPDATA"] = str(test_config_dir)
+
+
+def pytest_unconfigure(config):
+    """Cleanup after all tests complete."""
+    global _session_temp_dir
+
+    if _session_temp_dir:
+        robust_cleanup(_session_temp_dir)
+        _session_temp_dir = None
+
+
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for the test session."""
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture
+def unique_category_name(request):
+    """Generate a unique category name for each test to prevent conflicts.
+
+    Category names must be alphanumeric with hyphens/underscores and max 30 chars.
+    """
+    # Use hash of test node ID to create short unique name
+    test_id = request.node.nodeid
+    hash_val = hashlib.md5(test_id.encode()).hexdigest()[:8]
+    return f"cat_{hash_val}"
+
+
+@pytest.fixture(autouse=True)
+def reset_singleton_before_test():
+    """Reset SessionManager singleton before each test to prevent state leakage.
+
+    This ensures every test starts with a fresh SessionManager instance.
+    """
+    import mcp_server_guide.session_manager as sm_module
+
+    sm_module._session_manager_instance = None
+    yield
+    sm_module._session_manager_instance = None
 
 
 @pytest.fixture
@@ -66,6 +132,30 @@ def isolated_config_file():
 
 
 @pytest.fixture
+def isolated_session_manager(isolated_config_file):
+    """Provide a SessionManager with isolated config file.
+
+    Note: Session-level isolation already ensures all paths are in temp directory.
+    This fixture sets a unique config filename and resets the singleton for the test.
+    """
+    import mcp_server_guide.session_manager as sm_module
+
+    # Reset singleton to get fresh instance
+    sm_module._session_manager_instance = None
+
+    manager = SessionManager()
+    manager._set_config_filename(isolated_config_file)
+
+    # Ensure config file directory exists
+    isolated_config_file.parent.mkdir(parents=True, exist_ok=True)
+
+    yield manager
+
+    # Reset singleton after test
+    sm_module._session_manager_instance = None
+
+
+@pytest.fixture
 def chdir():
     """Fixture that provides a chdir function that updates both cwd and PWD."""
 
@@ -91,63 +181,6 @@ def robust_cleanup(directory: Path) -> None:
 
     if directory.exists():
         shutil.rmtree(directory, onerror=handle_remove_readonly)
-
-
-# pytest hooks for session setup/teardown
-
-
-# noinspection PyUnusedLocal
-def pytest_sessionstart(session):
-    """Create the session-scoped temp directory."""
-    global _session_temp_dir
-    _session_temp_dir = Path(tempfile.mkdtemp(prefix="mcp_test_session_"))
-
-    # Register cleanup to run even if pytest crashes
-    atexit.register(lambda: robust_cleanup(_session_temp_dir))
-
-
-# noinspection PyUnusedLocal
-def pytest_sessionfinish(session, exitstatus):
-    """Clean up the session-scoped temp directory."""
-    global _session_temp_dir
-    if _session_temp_dir:
-        robust_cleanup(_session_temp_dir)
-
-
-@pytest.fixture(autouse=True)
-def complete_test_isolation(request, monkeypatch):
-    """Ensure complete test isolation - no modification of project files."""
-    global _session_temp_dir
-
-    # Store original working directory and PWD
-    original_cwd = os.getcwd()
-    original_pwd = os.environ.get("PWD")
-
-    # Reset SessionManager singleton
-    SessionManager.clear()
-
-    # Create unique subdirectory for this test within session temp dir
-    test_name = request.node.name
-    test_subdir = _session_temp_dir / f"test_{test_name}_{id(request)}"
-    test_subdir.mkdir(parents=True, exist_ok=True)
-
-    # Change to test subdirectory and update PWD
-    os.chdir(test_subdir)
-    os.environ["PWD"] = str(test_subdir)
-
-    # No need to mock ClientPath since it's been removed
-    # PWD-based project detection will handle directory context
-
-    try:
-        yield str(test_subdir)
-    finally:
-        # Always restore original directory and PWD
-        os.chdir(original_cwd)
-        if original_pwd is not None:
-            os.environ["PWD"] = original_pwd
-        elif "PWD" in os.environ:
-            del os.environ["PWD"]
-        SessionManager.clear()
 
 
 @pytest.fixture
