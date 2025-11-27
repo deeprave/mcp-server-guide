@@ -24,7 +24,7 @@ Use markdown format (dashes, not bullets and subheadings as appropriate)
   - Large changes: Detailed body with motivation, approach, and any breaking changes
   - Bug fixes: Include what was broken and how it was fixed
 
-- Information that MUST NOTE be included:
+- Information that MUST NOT be included:
   - Too much detailed information about the implementation
   - Changes with administrative/specification documents in openspec/
   - Test statistics (it is assumed that tests pass with sufficient coverage)
