@@ -25,21 +25,24 @@ fi
 
 # ---------------- Paths allowlist (glob patterns)
 EXEMPT_PATHS=(
+  '.consent'
+  '.issue'
   '.todo/**'
   '/tmp/**'
   'tasks/**'
   'specs/**'
+  'openspec/**'
 )
 
-  # ---------------- Command allowlist patterns (ERE for bash)
-  # Bash uses Extended Regular Expressions with [[ =~ ]]
-  EXEMPT_COMMAND_PATTERNS=(
-    '^(cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)([[:space:]]|$)'
-    '^git$'
-    '^git[[:space:]]+(status|log|rev-parse|ls-files)([[:space:]].*)?$'
-    '^git[[:space:]]+diff([[:space:]].*)?$'
-    '^git[[:space:]]+show([[:space:]].*)?$'
-  )
+# ---------------- Command allowlist patterns (ERE for bash)
+# Bash uses Extended Regular Expressions with [[ =~ ]]
+EXEMPT_COMMAND_PATTERNS=(
+  '^(cat|find|grep|tree|hostname|df|du|pwd|env|jq|ls|rg|acli|which)([[:space:]]|$)'
+  '^git$'
+  '^git[[:space:]]+(status|log|rev-parse|ls-files)([[:space:]].*)?$'
+  '^git[[:space:]]+diff([[:space:]].*)?$'
+  '^git[[:space:]]+show([[:space:]].*)?$'
+)
 
   # ---------------- Timeout command detection
   TIMEOUT=60

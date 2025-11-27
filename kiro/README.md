@@ -14,34 +14,24 @@ Files in this directory are for integration with the Amazon Kiro CLI client.
    ```bash
    kiro-cli --version
    ```
-2. Create directories if they don't exist:
+
+2. Run the installation script:
 
    ```bash
-   mkdir -p ~/.kiro/agents ~/.kiro/scripts
+   mcp-server-guide-kiro-install
    ```
-3. Copy the consent agent to your Kiro agents directory:
+
+   This script automatically installs the `guide` and `guide-review` agents along with required hook scripts to `~/.kiro/agents` and `~/.kiro/scripts`.
+
+   **Note for existing users:** The agent names have been updated from `consent`/`review` to `guide`/`guide-review`. This reduces the likelihood of overwriting any custom agents you may have created, and the names clearly indicate their origin from mcp-server-guide.
+
+3. Set `guide` as your default agent:
 
    ```bash
-   cp -rv agents/ ~/.kiro/agents/
-   ```
-4. Copy the content of scripts folder to the `scripts` subdir and set permissions:
-
-   ```bash
-   cp -rv scripts/* ~/.kiro/scripts/
-   chmod +x ~/.kiro/scripts/*/*.sh
+   kiro-cli settings chat.defaultAgent guide
    ```
 
-   Note: The location of these scripts is unimportant, so if you wish to place them elsewhere
-   you may do so, but the paths in the agent files `consent.json` and `review.json` will
-   need to be adjusted.
-
-5. Make `consent` your default cli agent with the following command:
-
-   ```bash
-   kiro-cli settings chat.defaultAgent consent
-   ```
-
-   This will cause kiro-cli chat to display `[consent]` before each prompt to remind you that the agent is active.
+   This will cause kiro-cli chat to display `[guide]` before each prompt to remind you that the agent is active.
 
 6. Verify installation:
 
@@ -49,28 +39,28 @@ Files in this directory are for integration with the Amazon Kiro CLI client.
    kiro-cli chat
    ```
 
-   You should see the `[consent]` prompt indicating the agent is active.
+   You should see the `[guide]` prompt indicating the agent is active.
 
-7. When in CHECK mode, the consent agent will now pause once completed and before returning
-   to DISCUSSION mode. This is an ideal time to switch to consent mode:
+7. When in CHECK mode, the guide agent will now pause once completed and before returning
+   to DISCUSSION mode. This is an ideal time to switch to guide-review mode:
 
    ```shell
-   /agent swap review
+   /agent swap guide-review
    ```
 
    and simply ask it to review.
 
    Review mode is a "read-only" mode that allows the agent to do a deep review and create a
    markdown file with issues: critical, warning and notes (optionals).
-   To switch back to the consent agent:
+   To switch back to the guide agent:
 
    ```shell
-   /agent swap consent
+   /agent swap guide
    ```
 
 ## Troubleshooting
 
-- If `kiro-cli chat` doesn't show `[consent]`, verify the agent was set correctly:
+- If `kiro-cli chat` doesn't show `[guide]`, verify the agent was set correctly:
   `kiro-cli settings chat.defaultAgent`
 - If scripts fail to execute, ensure they have proper permissions:
   `ls -la ~/.kiro/scripts/*`
@@ -94,7 +84,7 @@ Similarly, a CHECK phase is also being introduced as a subphase of IMPLEMENTATIO
 is asked to check the implementation work against the plan using the usual check tools for the current
 project (type checks, linting, unit and integration tests, etc.).
 
-An additional review agent is also provided in this repository.
+An additional guide-review agent is also provided in this repository.
 Its use is optional, however, my personal experience is that this offers a lot of value that supplements
 the code review process.
 
@@ -111,13 +101,15 @@ The .issue file is used to keep track of the current issue being planned or impl
 and the agent should be instructed to write the path to the plan or specification document during
 the planning phase.
 
-The q_PreToolUse.sh script includes some exceptions that are intended to allow the agent write access
+The sp_reToolUse.sh script includes some exceptions that are intended to allow the agent write access
 to specific folders for creating and updating implementation plans or specifications.
 It will also allow a subset of shell commands to be executed that do not cause changes to the project
 outside of the folder dedicated to plans and specifications.
 
-The prompts `@guide discuss` and `@guide implement` provide a means to manually switch modes,
-and `@guide status` asks the agent to provide the current status.
+The prompts `@guide :discuss` and `@guide :implement` provide a means to manually switch modes,
+and `@guide :status` asks the agent to provide the current status.
+Alternatively, asking the agent to switch mode and providing consent when requested will usually
+trigger it to do the correct thing.
 
 Handling of the .consent and .issue file is done by instructing the agent as the MCP is unable nor
 required to have filesystem access.
@@ -126,11 +118,12 @@ required to have filesystem access.
 
 Using this MCP requires an agent so that it can be configured with custom commands and permissions
 that do not interrupt the workflow.
-The `consent.json` file in the cli-agents directory is a fully working example configuration for
+
+The `guide.json` file in the agents directory is a fully working example configuration for
 Kiro-CLI agents that enables enforcement of DISCUSSION functionality (restricted filesystem operations)
 through hook scripts.
 
-Similarly, `review.json` sets the schene for the agent to review its own work, critically and analytically,
+Similarly, `guide-review.json` sets the schene for the agent to review its own work, critically and analytically,
 to hopefully clean up after its most common failings - code duplication, inconsistent implementation
-(different sessions!), over-engineering and simple lapses of which we are all guilty from time to time.
+(different sessions!), over-engineering and simple lapses of which even we humans are all guilty from time to time.
 

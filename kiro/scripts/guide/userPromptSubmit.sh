@@ -1,7 +1,7 @@
 #!/bin/bash
 if [[ ! -f ".consent" ]]; then
   echo "🚨 You MUST NOT make changes to the project"
-  echo " - You MAY create plans, specifications and tasks within the agreed upon folder"
+  echo " - You MAY create plans, specifications and tasks within the agreed upon folder (openspec/, .todo/)"
   if [[ -f .issue ]]; then
     echo "📋 You are in **PLANNING** phase:"
     echo " - Current issues: $(cat .issue)"

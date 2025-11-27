@@ -15,7 +15,7 @@ if [[ -f .hook_log ]]; then
     local data="$*"
     echo "$(date '+%Y-%m-%d %H:%M:%S')" "$data" >> "$log_file"
   }
-  logger "consent: $json_data"
+  logger "guide: $json_data"
 else
   function logger() {
     # shellcheck disable=SC2317
@@ -31,6 +31,7 @@ EXEMPT_PATHS=(
   '/tmp/**'
   'tasks/**'
   'specs/**'
+  'openspec/**'
 )
 
 # ---------------- Command allowlist patterns (ERE for bash)

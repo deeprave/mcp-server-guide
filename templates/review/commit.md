@@ -9,6 +9,7 @@ Use markdown format (dashes, not bullets and subheadings as appropriate)
   - Capitalisation: Capitalise the first letter
   - No period: Don't end with a period
   - Be specific: Describe concisely what the change does, not how or why
+  - If known, use an associated issue-id
 
 - Optionally (but recommended) provide a body
   - Blank line: Always separate title/subject from body with a blank line
@@ -22,3 +23,10 @@ Use markdown format (dashes, not bullets and subheadings as appropriate)
   - Medium changes: Add a brief body explaining context
   - Large changes: Detailed body with motivation, approach, and any breaking changes
   - Bug fixes: Include what was broken and how it was fixed
+
+- Information that MUST NOTE be included:
+  - Too much detailed information about the implementation
+  - Changes with administrative/specification documents in openspec/
+  - Test statistics (it is assumed that tests pass with sufficient coverage)
+  - Review feedback and actions/changes as a result of review
+  - References to phases or other task
