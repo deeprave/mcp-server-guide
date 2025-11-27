@@ -14,12 +14,16 @@ Use markdown format (dashes, not bullets and subheadings as appropriate)
   - Provide the following
   - Overview
     - Describe the reason, rationale or issue addressed by this pull request
+    - Be brief and provide functional (not implementation) details
   - Changes
-    - Provide a concise description of the changes made
+    - Provide a *concise* description of the changes made
       - Do not provide specific details of the change (files, line numbers)
       - Provide the functional effects of the change
   - Impact of the change
   - Additional Notes
+    - Be brief!
+    - Do not mention that tests pass (they must for this PR to be accepted) or test coverage
+    - Do not mention code quality checks (likewise)
 
 - Guidelines
   - Use bullet points: For multiple changes or details
